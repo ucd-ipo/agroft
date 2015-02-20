@@ -1,0 +1,99 @@
+---
+title: "Analysis Report"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  html_document
+---
+
+# Analysis
+
+```{r, echo=FALSE, warning=FALSE, error=FALSE, message=FALSE}
+#library(pander)
+library(shiny)
+library(xtable)
+
+analysis <- input$analysis
+analysis <- c('glm'=' (Generalized) Linear Model', 
+              'aov'='n ANOVA',
+              't.test'=' t-test')[analysis]
+```
+
+You chose to run a`r analysis` on your data. Below are histograms for each continuous variable in your data. 
+
+```{r echo=FALSE, warning=FALSE, error=FALSE}
+varinds <- which(sapply(dat2(), is.numeric2))
+for(i in names(dat2())[varinds]){
+  hist(dat2()[,i], main=i, xlab='')
+}
+```
+
+-----
+
+# Output
+
+The standard output from your model can be seen below. 
+
+```{r echo=FALSE, results='asis', warning=FALSE, error=FALSE}
+if(input$analysis=='t.test'){
+  sum <- fit()
+} else {
+  test <- ifelse((input$analysis=='glm' & input$dv_type=='gaussian') |
+                       input$analysis=='aov',
+                     'F', 'LRT')
+  sum <- anova(fit(), test=test)
+}
+
+#pander(sum, justify='left', split.tables=Inf)
+includerownames <- ifelse(input$analysis=='t.test',FALSE,TRUE)
+
+tab <- xtable(sum)
+print(tab, type='html', booktabs=TRUE, 
+      include.rownames=includerownames)
+```
+
+-----
+
+# Figures
+
+Below are plots of the individual effects seen in your model. If you chose to run a t-test, no plots will be displayed. 
+
+
+
+```{r, echo=FALSE, warning=FALSE, error=FALSE}
+if(input$analysis != 't.test'){
+ef <- vector('list', length(input$iv))
+names(ef) <- input$iv
+assign('my_data', dat2(), env=.GlobalEnv)
+assign('.fit', fit(), env=.GlobalEnv)
+for(i in input$iv){
+ ef[[i]] <- Effect(i, .fit)
+}
+
+ps <- lapply(ef(), plot, ci.style='bars')
+for(i in seq_along(ps)){
+ class(ps[[i]]) <- 'trellis'
+}
+for(i in ps){
+  print(i)
+}
+}
+```
+
+# R code
+
+The R code needed to run these analysis can be seen below. 
+
+```r
+# read in your data 
+`r read_code()`
+```
+
+```r
+`r mcode()`
+```
+
+
+
+
+
+
