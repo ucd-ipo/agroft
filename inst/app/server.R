@@ -1,4 +1,4 @@
-source('pkg_check')
+source(system.file('app','pkg_check.R', package='AIP'))
 
 library(knitr)     # dynamic reports
 library(lsmeans)   # analysis intrepretation
