@@ -1,4 +1,4 @@
-# create strings here for LaTeX header and body
+
 source('plot_effects.R')
 
 strip.args <- function(x){
