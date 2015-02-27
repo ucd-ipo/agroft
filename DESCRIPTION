@@ -4,7 +4,7 @@ Date: 2015-02-20
 Title: USAID AIP Analysis Interface
 Author: Ian K. Kyle
 Maintainer: Ian K. Kyle <ikkyle@ucdavis.edu>
-Depends: shiny (>= 0.11),
+Suggests: shiny (>= 0.11),
   shinyAce (>= 0.2-1),
   shinyBS (>= 0.50),
   knitr (>= 1.8),
@@ -12,7 +12,8 @@ Depends: shiny (>= 0.11),
   agricolae, 
   lattice,
   effects,
-  lsmeans
+  lsmeans,
+  devtools
 Description: Package for running the USAID AIP data analysis interface 
 License: GPL (>= 2)
 URL: http://epakag.ucdavis.edu/
