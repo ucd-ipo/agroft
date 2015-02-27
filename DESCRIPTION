@@ -4,7 +4,7 @@ Date: 2015-02-20
 Title: USAID AIP Analysis Interface
 Author: Ian K. Kyle
 Maintainer: Ian K. Kyle <ikkyle@ucdavis.edu>
-Suggests: shiny (>= 0.11),
+Enhances: shiny (>= 0.11),
   shinyAce (>= 0.2-1),
   shinyBS (>= 0.50),
   knitr (>= 1.8),
