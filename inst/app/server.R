@@ -1,3 +1,5 @@
+source('pkg_check')
+
 library(knitr)     # dynamic reports
 library(lsmeans)   # analysis intrepretation
 library(effects)   # for plotting

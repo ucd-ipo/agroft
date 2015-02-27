@@ -1,3 +1,5 @@
+source('pkg_check')
+
 library(shiny)
 library(shinyAce)
 library(shinyBS)
