@@ -12,5 +12,6 @@ need.pkgs <- c('shiny',
               'devtools')
 
 if(!all(need.pkgs %in% inst.pkgs)){
-  stop('Not all the required packages are installed. \nPlease run initialise_AIP() to install them')
+  stop()
+  cat('Not all the required packages are installed.\n\nPress escape to exit the app and  run initialise_AIP() to install dependencies')
 }
