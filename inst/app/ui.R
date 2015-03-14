@@ -10,7 +10,7 @@ shinyUI(
       windowTitle='AIP Analysis Interface', 
       position='fixed-top',
       tabPanel('1. Load data',
-               tags$style(type="text/css", "body {padding-top: 50px;}"),
+               tags$style(type="text/css", "body {padding-top: 55px;}"),
                sidebarLayout(
                  sidebarPanel(h4('Upload your CSV file by pressing "Load data" below'),
                               h5('Your data should appear to the right. If this data is correct, please move to tab 2: "Data analysis"'),
@@ -41,7 +41,7 @@ shinyUI(
                                         content='The R code needed to read in your data will appear here. If you have selected "use sample data instead," you will be given the option of selecting from a number of datasets available to R users. These datasets provide an easy way to explore different data analysis techniques.',
                                         placement='top', trigger='click')),
                  mainPanel(h4('Loaded Data'),
-                           #                            verbatimTextOutput('debug'),
+                                                       verbatimTextOutput('debug'),
                            dataTableOutput('data_table')),
                )
       ), 
@@ -159,13 +159,9 @@ shinyUI(
       tabPanel('5. Report',
                sidebarLayout(
                  sidebarPanel(
-                   #                  radioButtons('format', 'Document format', c(
-                   #                   # 'PDF', 
-                   #                    'HTML', 
-                   #                    'Microsoft Word (.docx)'),
-                   #                               inline = TRUE),
                    downloadButton('download_report')),
-                 mainPanel(h3('Preview report')))),
+                 mainPanel()
+                 )),
       navbarMenu('Help',
                  tabPanel('1. Load data'),
                  tabPanel('2. Data analysis'),
