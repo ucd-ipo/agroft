@@ -64,3 +64,13 @@ xtable.htest <- function(x){
   
   xtable(tbl, caption=caption)
 }
+
+paste_na <- function(...,sep="; ", collapse=NULL) {
+  L <- list(...)
+  L <- L[!is.na(L)]
+  ret <- do.call(paste,c(L,list(sep=sep, collapse=collapse)))
+  ret <- gsub(paste0('^(',sep,'){1,}|(', sep, '){1,}$'), '', ret, fixed=TRUE)
+  ret <- gsub(paste0('(',sep,'){2,}'), sep, ret, fixed=TRUE)
+  is.na(ret) <- ret==""
+  ret
+}
