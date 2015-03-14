@@ -13,7 +13,7 @@ library(shinyBS)   # http://spark.rstudio.com/johnharrison/shinyBS-Demo/
 
 shinyServer(function(input, output, session){
 
-  output$debug <- renderText({})
+  output$debug <- renderText({fmla()})
   
 ##### server side element for reading in data ####################################
   datp <- reactive({
@@ -143,18 +143,46 @@ dat2 <- reactive({
 
 ##### select the interactions  ################################
 # TukeyHSD or multcomp::glht
-# output$ <- renderUI({
-#   if(input$analysis == 't.test'){return(NULL)}
-#   seletInput('')
-#   })
+output$select_interactions <- renderUI({
+  
+  ch <- expand.grid(var1=input$iv, var2=input$iv)
+  ch <- ch[which(ch$var1 != ch$var2), ]
+  ch <- apply(ch, 2, c)
+  ch2 <- list()
+  for(i in 1:nrow(ch)){
+    ch2[[i]] <- ch[i, ]
+  }
+  for(i in seq_along(ch2)){
+    ch2[[i]] <- sort(ch2[[i]])
+  }
+  ch2 <- data.frame(ch2)
+  names(ch2) <- paste('var', 1:ncol(ch2))
+  ch2 <- as.data.frame(t(ch2))
+  ch2$int <- paste(ch2$var2, ch2$var1, sep='.___.___.')
+  ch2 <- unlist(subset(ch2, !duplicated(int), select='int'))
+  ch2 <- unname(gsub('.___.___.', ' & ', ch2, fixed=TRUE))
+  names(ch2) <- ch2
+  ch2 <- gsub('&','*', ch2) 
+  
+  if(input$analysis == 't.test'){return(NULL)}
+  selectInput('interaction_input', 
+                     label=NULL,
+                     choices=ch2,
+              multiple=TRUE)
+})
 
 
 
 
 ##### create the formula for analysis ##########################
   fmla <- reactive({
-    paste0(input$dv, ' ~ ', 
-           paste0(input$iv, collapse=' + '))
+    int <- paste0(input$interaction_input, 
+                  collapse=' + ')
+    int <- ifelse(is.null(input$interaction_input), NA, int)
+    main <- paste0(input$iv, collapse=' + ')
+    eff <- paste_na(main, int, sep=' + ')
+    
+    paste0(input$dv, ' ~ ', eff)
     })
   
 ##### run the analysis, assign to reactive object "fit" ##############
