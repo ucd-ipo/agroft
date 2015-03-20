@@ -1,4 +1,4 @@
-source(system.file('app','pkg_check.R', package='AIP'))
+source('pkg_check.R')
 
 library(knitr)     # dynamic reports
 library(lsmeans)   # analysis intrepretation
@@ -65,7 +65,8 @@ shinyServer(function(input, output, session){
                 'Select your statistical model',
                 choices=c('t-test'='t.test', 
                           'ANOVA'='aov',
-                          'Linear or Generalized Linear Model'='glm'),
+                          'Linear or Generalized Linear Model'='glm',
+                          'Randomized Complete Block Design'='rcbd'),
                 selected=NULL)
     }
   })
@@ -80,13 +81,51 @@ shinyServer(function(input, output, session){
   })
   
 ##### UI element for selecting IV #################################
-  output$select_iv <- renderUI({
-    if(length(input$dv)==0){return(NULL)}
-    selectInput('iv', 
-                'Select your independent variable(s)',
-                choices=names(dat2())[!names(dat2()) %in% input$dv],
-                multiple=ifelse(input$analysis=='t.test', FALSE, TRUE))
+
+output$select_block <- renderUI({
+    if(length(input$dv)==0 || input$analysis !='rcbd'){return(NULL)}
+      selectInput('block', 
+                  'Select your block variable',
+                  choices=names(dat2())[!names(dat2()) %in% input$dv],
+                  multiple=FALSE,
+                  selected=NULL)
   })
+
+output$select_treatment <- renderUI({
+  if(length(input$dv)==0 || input$analysis != 'rcbd'){return(NULL)}
+  selectInput('treatment',
+              'Select your treatment variable',
+              choices=names(dat2())[!names(dat2()) %in% c(input$dv, input$block)],
+              multiple=FALSE, 
+              selected=NULL)
+})
+
+output$select_iv <- renderUI({
+  if(length(input$dv)==0 || input$analysis=='rcbd'){return(NULL)}
+  selectInput('iv', 
+              switch(input$analysis, 
+                     aov='Select your independent variable(s)',
+                     t.test='Select your grouping variable',
+                     glm='Select your independent variables(s)',
+                     rcbd='Select your treatment variable'),
+              choices=names(dat2())[!names(dat2()) %in% input$dv],
+              multiple=ifelse(input$analysis %in% c('t.test', 'rcbd'), FALSE, TRUE))
+})
+
+ivs <- reactive({
+  if(length(input$dv) == 1){
+    if(input$analysis=='rcbd'){
+      return(c(input$block, input$treatment)) 
+    } else if(input$analysis %in% c('aov', 't.test', 'glm')){
+      return(input$iv)
+    }
+  } else {
+    return(NULL)
+  }
+})
+
+
+
 
 ##### UI element for selecting the DV type ##########################
   output$select_dv_type <- renderUI({
@@ -145,7 +184,14 @@ dat2 <- reactive({
 # TukeyHSD or multcomp::glht
 output$select_interactions <- renderUI({
   
-  ch <- expand.grid(var1=input$iv, var2=input$iv)
+  if(input$analysis=='t.test'){
+    return(h4('Interactions not available for t-tests'))
+  } 
+  if(input$analysis=='rcbd'){
+    return(h4('Interactions not allowed in RCBD. To run a more flexible ANOVA, please select "ANOVA" under tab 2: Type of analysis'))
+  }
+  
+  ch <- expand.grid(var1=ivs(), var2=ivs())
   ch <- ch[which(ch$var1 != ch$var2), ]
   ch <- apply(ch, 2, c)
   ch2 <- list()
@@ -178,8 +224,8 @@ output$select_interactions <- renderUI({
   fmla <- reactive({
     int <- paste0(input$interaction_input, 
                   collapse=' + ')
-    int <- ifelse(is.null(input$interaction_input), NA, int)
-    main <- paste0(input$iv, collapse=' + ')
+    int <- ifelse(is.null(input$interaction_input) | input$analysis=='rcbd', NA, int)
+    main <- paste0(ivs(), collapse=' + ')
     eff <- paste_na(main, int, sep=' + ')
     
     paste0(input$dv, ' ~ ', eff)
@@ -246,6 +292,16 @@ fit.expr <- reactive({
   output$action_button <- renderUI({
     actionButton('run_analysis', 'Run analysis')
   })
+
+##### model check #############################################################
+
+pois <- renderPrint({
+  if(is.pois(dat2()[input$dv])){
+    h3('Your dependent variable may be poisson distributed. Consider running a generalized linear model and selecting "count" Where asked "What type of data is your dependent variable?" See the help tab on data analysis for more information')
+  }
+})
+
+
   
 ##### the code for reading in the data ###################################
   read_code <- reactive({
@@ -305,12 +361,14 @@ fit.expr <- reactive({
     if(input$analysis=='t.test'){
       return(NULL)
     }
-   ef <- vector('list', length(input$iv))
-   names(ef) <- input$iv
+    #browser()
+    coeff.ind <- row.names(anova(fit()))[which(!row.names(anova((fit()))) %in% c('NULL', 'Residuals'))]
+   ef <- vector('list', length(coeff.ind))
+   names(ef) <- coeff.ind
    assign('my_data', dat2(), env=.GlobalEnv)
    assign('.fit', fit(), env=.GlobalEnv)
-   for(i in input$iv){
-     ef[[i]] <- Effect(i, .fit)
+   for(i in names(ef)){
+     ef[[i]] <- effect(i, .fit)
    }
    remove('.fit', env=.GlobalEnv)
    remove('my_data', envir=.GlobalEnv)
@@ -322,7 +380,8 @@ fit.expr <- reactive({
    if(input$analysis=='t.test'){
      return(NULL)
    }
-   ps <- lapply(ef(), plot, ci.style='bars')
+   ps <- lapply(ef(), plot, ci.style='bars', multiline=TRUE, 
+                colors=rep('black', length(ef())))
    for(i in seq_along(ps)){
      class(ps[[i]]) <- 'trellis'
    }
