@@ -1,11 +1,9 @@
----
-title: "Analysis Report"
-date: "`r format(Sys.time(), '%d %B, %Y')`"
-output: 
-  html_document
----
 
-# Analysis
+# Analysis Report
+### `r format(Sys.time(), '%d %B, %Y')`
+
+
+## Analysis
 
 ```{r, echo=FALSE, warning=FALSE, error=FALSE, message=FALSE}
 #library(pander)
@@ -15,12 +13,14 @@ library(xtable)
 analysis <- input$analysis
 analysis <- c('glm'=' (Generalized) Linear Model', 
               'aov'='n ANOVA',
-              't.test'=' t-test')[analysis]
+              't.test'=' t-test',
+              'rcbd'='ANOVA')[analysis]
+datatype <- ifelse(analysis=='rcbd', ' RCBD', ' ') 
 ```
 
-You chose to run a`r analysis` on your data. Below are histograms for each continuous variable in your data. 
+You chose to run a`r analysis` on your`r datatype` data. Below are histograms for each continuous variable in your data. 
 
-```{r echo=FALSE, warning=FALSE, error=FALSE}
+```{r echo=FALSE, warning=FALSE, message=FALSE}
 varinds <- which(sapply(dat2(), is.numeric2))
 for(i in names(dat2())[varinds]){
   hist(dat2()[,i], main=i, xlab='')
@@ -29,11 +29,11 @@ for(i in names(dat2())[varinds]){
 
 -----
 
-# Output
+## Output
 
 The standard output from your model can be seen below. 
 
-```{r echo=FALSE, results='asis', warning=FALSE, error=FALSE}
+```{r echo=FALSE, results='asis', warning=FALSE, message=FALSE}
 if(input$analysis=='t.test'){
   sum <- fit()
 } else {
@@ -53,33 +53,36 @@ print(tab, type='html', booktabs=TRUE,
 
 -----
 
-# Figures
+## Figures
 
 Below are plots of the individual effects seen in your model. If you chose to run a t-test, no plots will be displayed. 
 
 
 
-```{r, echo=FALSE, warning=FALSE, error=FALSE}
-if(input$analysis != 't.test'){
-ef <- vector('list', length(input$iv))
-names(ef) <- input$iv
-assign('my_data', dat2(), env=.GlobalEnv)
-assign('.fit', fit(), env=.GlobalEnv)
-for(i in input$iv){
- ef[[i]] <- Effect(i, .fit)
-}
-
-ps <- lapply(ef(), plot, ci.style='bars')
-for(i in seq_along(ps)){
- class(ps[[i]]) <- 'trellis'
-}
-for(i in ps){
-  print(i)
-}
-}
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+if(input$analysis !='t.test'){
+  
+  coeff.ind <- row.names(anova(fit()))[which(!row.names(anova((fit()))) %in% c('NULL', 'Residuals'))]
+  ef <- vector('list', length(coeff.ind))
+  names(ef) <- coeff.ind
+  assign('my_data', dat2(), env=.GlobalEnv)
+  assign('.fit', fit(), env=.GlobalEnv)
+  for(i in names(ef)){
+    ef[[i]] <- effect(i, .fit)
+    }
+  ps <- lapply(ef(), plot, ci.style='bars', multiline=TRUE, 
+               colors=rep('black', length(ef())))
+  for(i in seq_along(ps)){
+    class(ps[[i]]) <- 'trellis'
+    }
+  for(i in ps){
+    print(i)
+    }
+  
+  }
 ```
 
-# R code
+## R code
 
 The R code needed to run these analysis can be seen below. 
 
