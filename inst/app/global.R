@@ -1,29 +1,43 @@
-
 source('plot_effects.R')
 
+# function to take a t.test/aov/glm function call and return only the aruments that make sense in the model, then convert it back into a call to be run. 
+# the call to the function can then be printed in the app to show the correct code
 strip.args <- function(x){
   # x is a call that needs to be striped of arguments
   x <- as.list(x)
-  aov.calls <- c('formula', 'data')
-  glm.calls <- c('formula', 'family', 'data')
+  aov.calls    <- c('formula', 'data')
+  lm.calls     <- c('formula', 'data')
+  glm.calls    <- c('formula', 'family', 'data')
   t.test.calls <- c('formula', 'data')
+  
+  if(length(x$family) > 0 && x$family=='gaussian'){
+    x[[1]] <- as.name('lm')
+  }
   
   the.call <- deparse(x[[1]])
   
-  x <- switch(the.call, 
-              aov=x[c(1, which(names(x) %in% aov.calls))],
-              glm=x[c(1, which(names(x) %in% glm.calls))],
-              t.test=x[c(1, which(names(x) %in% t.test.calls))])
+  if(the.call=='rcbd'){
+    x[[1]] <- as.name('aov')
+  }
+
+  x <- switch(the.call,
+              rcbd   = x[c(1, which(names(x) %in% aov.calls))],
+              lm     = x[c(1, which(names(x) %in% lm.calls))],
+              aov    = x[c(1, which(names(x) %in% aov.calls))],
+              glm    = x[c(1, which(names(x) %in% glm.calls))],
+              t.test = x[c(1, which(names(x) %in% t.test.calls))])
   
   x <- as.call(x)
   return(x)
 }
 
+# test whether variable is numeric and has > 9 unique values
+# used to determine if a histogram should be run
 is.numeric2 <- function(x){
-  is.numeric(x) & length(unique(x)) > 5
+  is.numeric(x) & length(unique(x)) > 9
 }
   
-
+# function for formatting p-values - used in xtable.htest
 p.val <- function(x, sig.indicator=FALSE, pass.chars=FALSE){
   if(pass.chars==FALSE){
     x <- as.numeric(x)
@@ -47,6 +61,7 @@ p.val <- function(x, sig.indicator=FALSE, pass.chars=FALSE){
   return(gsub('0\\.', '.', as.character(p.val)))
 }
 
+# generic function for xtable with t-tests in the report
 xtable.htest <- function(x){
   tstat <- round(x$statistic, 2)
   df    <- round(x$parameter, 2)
@@ -65,6 +80,7 @@ xtable.htest <- function(x){
   xtable(tbl, caption=caption)
 }
 
+# function for pasting the formula together
 paste_na <- function(...,sep="; ", collapse=NULL) {
   L <- list(...)
   L <- L[!is.na(L)]
@@ -74,3 +90,47 @@ paste_na <- function(...,sep="; ", collapse=NULL) {
   is.na(ret) <- ret==""
   ret
 }
+
+
+##### functions for testing data characteristics and transforming #####
+# transform poisson to normal
+ptrans <- function(x){
+  2 * sqrt(x)
+}
+# transform estimates back to poisson
+pinv <- function(x){
+  (x / 2)^2
+}
+
+### test whether data are poisson
+# if data are integer and 
+# skewness > threshold(default 1) and
+# mean of dist ~= sd of dist then
+# distribution is probably poisson and user should be warned
+is.pois <- function(x, skewThreshold=.65, poisThreshold=1){
+  x <- x[!is.na(x)]
+  is.num <- is.numeric(x)
+  if(is.num){
+    is.int <- all(x %% 1 == 0)
+    is.rskew <- skew(x) > skewThreshold
+    mean.is.sd <- abs(mean(x) - sd(x)) < poisThreshold
+    res <- all(is.int, is.rskew, mean.is.sd)
+  } else {
+    res <- FALSE
+  }
+  return(res)
+}
+
+
+
+
+
+
+# test skewness
+skew <- function(x){
+  x  <- x[!is.na(x)]
+  n  <- length(x)
+  sk <- sum((x - mean(x))^3/sqrt(as.numeric(var(x)))^3)/length(x)
+  return(sk)
+}
+########################################################################
