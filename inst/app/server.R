@@ -1,37 +1,44 @@
-source('pkg_check.R')
+source('pkg_check.R') # this sources the file that checks whether all the packages are installed. It might be a good idea to edit this source file (located in the app working directory, "AIP/inst/app") so that it checks the required version is installed too. Required versions can be found in the package DESCRIPTION file
 
-library(knitr)     # dynamic reports
-library(lsmeans)   # analysis intrepretation
-library(effects)   # for plotting
+library(knitr)     # for loading dynamic reports. I don't use rmarkdown because that requires that pandoc be installed which is a whole different ballgame. knitr doesn't require dependencies like that
+library(lsmeans)   # analysis intrepretation functions like glht and lsmeans will be useful for intrepriting interactions 
+library(effects)   # for creating the "eff" object to pass to plot_effects (in the app working directory, sourced in global.R)
 library(agricolae) # for datasets 
-library(shiny)     # the web app javascript engine
-library(shinyAce)  # for displaying R code - pull from github
-library(lattice)   # for plotting
-library(gridExtra) # for arranging plots
-#library(readxl)    # for reading in excel files, uncomment once on CRAN
-library(shinyBS)   # http://spark.rstudio.com/johnharrison/shinyBS-Demo/, vers. 0.5 should be on CRAN soon, that is the version we need. Once it is up there, change the code in initialize_AIP() to pull from CRAN instead
+library(shiny)     # the main web app javascript engine
+library(shinyAce)  # for displaying R code - pull from github until the correct version is on CRAN
+library(lattice)   # for plotting, the main dependency of plot_effects function
+library(gridExtra) # for arranging plots in the plots/Effect plots tab
+#library(readxl)    # for reading in excel files, uncomment once on CRAN. For now it is on github only. It is a package that has no Java dependencies (only c++), so once binaries are on CRAN, anyone can install it (no JRE required!) and the app can have functionality to read in excel files. 
+library(shinyBS)   # http://spark.rstudio.com/johnharrison/shinyBS-Demo/, vers. 0.5 should be on CRAN soon, that is the version we need. Once it is up there, change the code in initialize_AIP() to pull from CRAN instead. This package has bindings for some cool twitter bootstrap UI stuff that shiny doesn't include. Includes the modals, collapse panels, and tool tips. 
 
+# install github packages via:
 # devtools::install_github("ebailey78/shinyBS", ref = "shinyBS3")
 # devtools::install_github("trestletech/shinyAce")
 
+
 shinyServer(function(input, output, session){
 
+  # for debugging. Uncomment the verbatimTextOutput under main panel in the UI script to see the contents of this. Useful for seeing what the objects you are crating actually look like rather than what you think/want them to look like.
   output$debug <- renderText({fmla()})
   
 ##### server side element for reading in data ####################################
   datp <- reactive({
-    if((is.null(input$data_file) || length(input$data_file)==0) && !input$use_sample_data){return(NULL)
+    if((is.null(input$data_file) || length(input$data_file)==0) && !input$use_sample_data){return(NULL) # if no file has been uploaded or a file has been uploaded but it is of length zero (i.e. corrupt or weird filetype) and the user hasn't selected use sample data, then... make the reactive expression "datp" NULL, otherwise, do read in data things
     } else {
+      # if a data file has been uploaded and the user doesn't want to use sample data...
       if(length(input$data_file) > 0 && !input$use_sample_data){
         # uncomment once readxl gets on CRAN
 #         readcall <- switch(file_ext(input$data_file$name),
 #                            'csv'='read.csv',
 #                            'xls'='read_excel',
 #                            'xlsx'='read_excel')
+        # make the call "read.csv". It is set up like this so that when the readxl is enabled, we can change the call depeding on the file tpe uploaded
+        # # this is sep us as a call rather than just the function so it is easy to print to the example code section of the app via deparse()
         readcall <- 'read.csv'
         dat <- call(readcall, 
                     file=input$data_file$datapath)
       } else {
+        # if there is no data selected and the user wants to use sample data dat should be the name of the dataset to use
         dat <- as.name(input$sample_data_buttons)
       }
     }
@@ -39,18 +46,23 @@ shinyServer(function(input, output, session){
   })
 
 ##### assign data to "dat" by evaluating the call to "read.csv" or loading the data
+
   dat <- reactive({
+    # the call to eval loads the dataset the user wanted into the workspace
       eval(call('data', input$sample_data_buttons, 
                 package='agricolae',
                 envir = environment()))
+      # set "dat" to the datp object 
+      # remeber that datp is either NULL, the call to red.csv, or the name of the dataset the user wants. 
+      # if we eval NULL, nothing dat is set to NULL, if we eval read.csv, we get the data the user submitted. If we eval the name of the data the user wanted, that data is assigned to dat (because we read it into the workspace via the call to 'data' above)
     dat <- eval(datp(), envir=environment())
-    if(input$use_sample_data){ dat$A <- NULL }
     return(dat)
     })
 
 
 ##### create the code needed to read in data ##########
   read.expr <- reactive({
+    # if they aren't using sample data, deparse the call to get the character represntation of the call, otherwise, construct it from scratch
     if(!input$use_sample_data){
       return(deparse(datp()))
     } else {
