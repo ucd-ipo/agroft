@@ -8,8 +8,11 @@ library(shiny)     # the web app javascript engine
 library(shinyAce)  # for displaying R code - pull from github
 library(lattice)   # for plotting
 library(gridExtra) # for arranging plots
-library(shinyBS)   # http://spark.rstudio.com/johnharrison/shinyBS-Demo/
+#library(readxl)    # for reading in excel files, uncomment once on CRAN
+library(shinyBS)   # http://spark.rstudio.com/johnharrison/shinyBS-Demo/, vers. 0.5 should be on CRAN soon, that is the version we need. Once it is up there, change the code in initialize_AIP() to pull from CRAN instead
+
 # devtools::install_github("ebailey78/shinyBS", ref = "shinyBS3")
+# devtools::install_github("trestletech/shinyAce")
 
 shinyServer(function(input, output, session){
 
@@ -20,10 +23,15 @@ shinyServer(function(input, output, session){
     if((is.null(input$data_file) || length(input$data_file)==0) && !input$use_sample_data){return(NULL)
     } else {
       if(length(input$data_file) > 0 && !input$use_sample_data){
-        dat <- call('read.csv', 
+        # uncomment once readxl gets on CRAN
+#         readcall <- switch(file_ext(input$data_file$name),
+#                            'csv'='read.csv',
+#                            'xls'='read_excel',
+#                            'xlsx'='read_excel')
+        readcall <- 'read.csv'
+        dat <- call(readcall, 
                     file=input$data_file$datapath)
       } else {
-#         dat <- parse(text=input$sample_data_buttons)
         dat <- as.name(input$sample_data_buttons)
       }
     }
@@ -295,9 +303,9 @@ fit.expr <- reactive({
 
 ##### model check #############################################################
 
-pois <- renderPrint({
+output$pois <- renderPrint({
   if(is.pois(dat2()[input$dv])){
-    h3('Your dependent variable may be poisson distributed. Consider running a generalized linear model and selecting "count" Where asked "What type of data is your dependent variable?" See the help tab on data analysis for more information')
+    h3('Your dependent variable may be poisson distributed. Consider running a generalized linear model and selecting "count" where asked "What type of data is your dependent variable?" See the help tab on data analysis for more information.')
   }
 })
 
