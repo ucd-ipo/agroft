@@ -4,3 +4,4 @@
 aip-analysis.Rproj
 .*~$
 NAMESPACE~
+.Rbuildignore
