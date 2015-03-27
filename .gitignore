@@ -1,6 +1,7 @@
 .Rproj.user
 .Rhistory
 .RData
+*.Rproj
 aip-analysis.Rproj
 .*~$
 NAMESPACE~
