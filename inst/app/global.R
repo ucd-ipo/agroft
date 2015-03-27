@@ -1,7 +1,8 @@
+# function for plotting the effects seen in the analysis
 source('plot_effects.R')
 
 # function to take a t.test/aov/glm function call and return only the aruments that make sense in the model, then convert it back into a call to be run. 
-# the call to the function can then be printed in the app to show the correct code
+# the call to the function can then be printed in the app (via. deparse()) to show the correct code
 strip.args <- function(x){
   # x is a call that needs to be striped of arguments
   x <- as.list(x)
@@ -92,20 +93,10 @@ paste_na <- function(...,sep="; ", collapse=NULL) {
 }
 
 
-##### functions for testing data characteristics and transforming #####
-# transform poisson to normal
-ptrans <- function(x){
-  2 * sqrt(x)
-}
-# transform estimates back to poisson
-pinv <- function(x){
-  (x / 2)^2
-}
-
-### test whether data are poisson
+### test whether data are poisson ######################################
 # if data are integer and 
 # skewness > threshold(default 1) and
-# mean of dist ~= sd of dist then
+# mean of dist ~= var of dist then
 # distribution is probably poisson and user should be warned
 is.pois <- function(x, skewThreshold=.65, poisThreshold=1){
   x <- x[!is.na(x)]
@@ -113,18 +104,13 @@ is.pois <- function(x, skewThreshold=.65, poisThreshold=1){
   if(is.num){
     is.int <- all(x %% 1 == 0)
     is.rskew <- skew(x) > skewThreshold
-    mean.is.sd <- abs(mean(x) - sd(x)) < poisThreshold
-    res <- all(is.int, is.rskew, mean.is.sd)
+    mean.is.var <- abs(mean(x) - var(x)) < poisThreshold
+    res <- all(is.int, is.rskew, mean.is.var)
   } else {
     res <- FALSE
   }
   return(res)
 }
-
-
-
-
-
 
 # test skewness
 skew <- function(x){
