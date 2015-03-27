@@ -104,8 +104,13 @@ is.pois <- function(x, skewThreshold=.65, poisThreshold=1){
   if(is.num){
     is.int <- all(x %% 1 == 0)
     is.rskew <- skew(x) > skewThreshold
+<<<<<<< HEAD
     mean.is.var <- abs(mean(x) - var(x)) < poisThreshold
     res <- all(is.int, is.rskew, mean.is.var)
+=======
+    mean.is.sd <- abs(mean(x) - var(x)) < poisThreshold
+    res <- all(is.int, is.rskew, mean.is.sd)
+>>>>>>> f403f29e21477f43448f654401079f9449d9e6d9
   } else {
     res <- FALSE
   }
