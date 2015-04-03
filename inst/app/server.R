@@ -140,7 +140,7 @@ output$select_iv <- renderUI({
               choices=names(dat2())[!names(dat2()) %in% c(input$dv, 
                                                           input$treatment, 
                                                           input$block)],
-              multiple=ifelse(input$analysis == 't.test', FALSE, TRUE)) # only allow multiple if you are using a t-test
+              multiple=input$analysis != 't.test') # only allow multiple if you aren't using a t-test
 })
 
 # list of IVs being used for use in constructing the formula
