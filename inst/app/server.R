@@ -54,7 +54,7 @@ shinyServer(function(input, output, session){
                 envir = environment()))
       # set "dat" to the datp object 
       # remeber that datp is either NULL, the call to red.csv, or the name of the dataset the user wants. 
-      # if we eval NULL, nothing dat is set to NULL, if we eval read.csv, we get the data the user submitted. If we eval the name of the data the user wanted, that data is assigned to dat (because we read it into the workspace via the call to 'data' above)
+      # if we eval NULL, dat is set to NULL, if we eval read.csv, we get the data the user submitted. If we eval the name of the data the user wanted, that data is assigned to dat (because we read it into the workspace via the call to 'data' above)
     dat <- eval(datp(), envir=environment())
     return(dat)
     })
@@ -78,6 +78,7 @@ shinyServer(function(input, output, session){
 
 ##### UI element for selecting the desired analysis ############  
   output$select_analysis <- renderUI({
+    # if the data reactive expression is NULL, tell them up upload their data, othewise give them options for tests to run
     if(is.null(dat())){
       h4('please upload data first')
     } else {
@@ -94,6 +95,9 @@ shinyServer(function(input, output, session){
 ##### UI element for selecting DV ##################################
   output$select_dv <- renderUI({
     if(length(input$analysis)==0){return(NULL)}
+    # don't return dv selection if they haven't selected an analysis
+    # otherwise, select a DV
+    # choices are all the variables in dat()
     selectInput('dv',
                 'Select your dependent variable',
                 choices=names(dat()),
@@ -102,40 +106,49 @@ shinyServer(function(input, output, session){
   
 ##### UI element for selecting IV #################################
 
+# if they are running a RCBD, ask them for their block variable
 output$select_block <- renderUI({
     if(length(input$dv)==0 || input$analysis !='rcbd'){return(NULL)}
       selectInput('block', 
                   'Select your block variable',
-                  choices=names(dat2())[!names(dat2()) %in% input$dv],
-                  multiple=FALSE,
+                  choices=names(dat2())[!names(dat2()) %in% input$dv], # remove the DV from the options
+                  multiple=FALSE, # only one block variable allowed
                   selected=NULL)
   })
 
+# if they are running RCBD, ask them for treatment variable
 output$select_treatment <- renderUI({
   if(length(input$dv)==0 || input$analysis != 'rcbd'){return(NULL)}
   selectInput('treatment',
               'Select your treatment variable',
-              choices=names(dat2())[!names(dat2()) %in% c(input$dv, input$block)],
-              multiple=FALSE, 
+              choices=names(dat2())[!names(dat2()) %in% c(input$dv, input$block)],# remove DV and block from their options
+              multiple=FALSE, # only one treatment variable allowed, other IVs can be added with the input$iv input
               selected=NULL)
 })
 
+# select the IV 
 output$select_iv <- renderUI({
-  if(length(input$dv)==0 || input$analysis=='rcbd'){return(NULL)}
+  if(length(input$dv)==0){return(NULL)}
+  # change the input text depending on input$analysis
+  # rcbd is set to "Select any other independent variables" because you can alread select the block and treatment in the inputs specific to those variables
   selectInput('iv', 
               switch(input$analysis, 
                      aov='Select your independent variable(s)',
                      t.test='Select your grouping variable',
                      glm='Select your independent variables(s)',
-                     rcbd='Select your treatment variable'),
-              choices=names(dat2())[!names(dat2()) %in% input$dv],
-              multiple=ifelse(input$analysis %in% c('t.test', 'rcbd'), FALSE, TRUE))
+                     rcbd='Select any other independent variables'),
+              choices=names(dat2())[!names(dat2()) %in% c(input$dv, 
+                                                          input$treatment, 
+                                                          input$block)],
+              multiple=ifelse(input$analysis == 't.test', FALSE, TRUE)) # only allow multiple if you are using a t-test
 })
 
+# list of IVs being used for use in constructing the formula
+# if you have a DV
 ivs <- reactive({
   if(length(input$dv) == 1){
     if(input$analysis=='rcbd'){
-      return(c(input$block, input$treatment)) 
+      return(c(input$block, input$treatment, ifelse(is.null(input$iv), NA, input$iv))) 
     } else if(input$analysis %in% c('aov', 't.test', 'glm')){
       return(input$iv)
     }
@@ -148,6 +161,7 @@ ivs <- reactive({
 
 
 ##### UI element for selecting the DV type ##########################
+# if they are using a GLM, select the dist family to be put in the family argument of glm
   output$select_dv_type <- renderUI({
     if(length(input$dv)==0 || input$analysis != 'glm'){return(NULL)}
     selectInput('dv_type',
@@ -159,7 +173,7 @@ ivs <- reactive({
   })
 
 ##### select variable types #####################################
-
+# prompt the user to select the class of each variable. The default selected class is the one that R read the data in as. 
 output$var_types_select <- renderUI({
   
   if(is.null(dat())){
@@ -172,7 +186,7 @@ output$var_types_select <- renderUI({
                     'numeric'='numeric',
                     'integer'='numeric')
   btns <- list()
-  
+  # a loop to create radio buttons for each variable in the data
   for(i in 1:ncol(dat())){
     clss <- class(dat()[,i])
     clss <- class.recode[clss]
@@ -188,10 +202,13 @@ output$var_types_select <- renderUI({
 
 ######## convert variables to their respective types ############
 
+
 dat2 <- reactive({
   dat2 <- dat() 
   for(i in 1:ncol(dat2)){
+    # each input ID was apended "_recode" so for each column of the data take that value nd recode it to the correct value based on the input id. 
     var_type <- input[[paste0(names(dat2)[i], '_recode')]]
+    # since the input value will be either numeric or factor, you can paste "as." in front of it to create the function call we'll use. then convert that variable type and return the data with the converted variables. Call it dat2 so it doensn't get mixed up with dat()
     dat2[,i] <- eval(call(paste0('as.', var_type),
                           dat2[,i]))
   }
@@ -206,11 +223,8 @@ output$select_interactions <- renderUI({
   
   if(input$analysis=='t.test'){
     return(h4('Interactions not available for t-tests'))
-  } 
-  if(input$analysis=='rcbd'){
-    return(h4('Interactions not allowed in RCBD. To run a more flexible ANOVA, please select "ANOVA" under tab 2: Type of analysis'))
-  }
-  
+  }   
+  # this is kind of crazy. It creates every possible combination of IVs and then gets all the uniqe combos
   ch <- expand.grid(var1=ivs(), var2=ivs())
   ch <- ch[which(ch$var1 != ch$var2), ]
   ch <- apply(ch, 2, c)
@@ -224,7 +238,7 @@ output$select_interactions <- renderUI({
   ch2 <- data.frame(ch2)
   names(ch2) <- paste('var', 1:ncol(ch2))
   ch2 <- as.data.frame(t(ch2))
-  ch2$int <- paste(ch2$var2, ch2$var1, sep='.___.___.')
+  ch2$int <- paste(ch2$var2, ch2$var1, sep='.___.___.') # I made this weird separator so it doesn't conflict with any other separators that might be in their variable names. Later it gets substituted out and replaced with "&" for the dropdown box
   ch2 <- unlist(subset(ch2, !duplicated(int), select='int'))
   ch2 <- unname(gsub('.___.___.', ' & ', ch2, fixed=TRUE))
   names(ch2) <- ch2
@@ -241,10 +255,11 @@ output$select_interactions <- renderUI({
 
 
 ##### create the formula for analysis ##########################
+# This uses the paste_na function from global.R to create the formula, joining all the main and interaction effects
   fmla <- reactive({
     int <- paste0(input$interaction_input, 
                   collapse=' + ')
-    int <- ifelse(is.null(input$interaction_input) | input$analysis=='rcbd', NA, int)
+    int <- ifelse(is.null(input$interaction_input), NA, int)
     main <- paste0(ivs(), collapse=' + ')
     eff <- paste_na(main, int, sep=' + ')
     
