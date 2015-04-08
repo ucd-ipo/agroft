@@ -1,4 +1,4 @@
-source('pkg_check.R') # this sources the file that checks whether all the packages are installed. It might be a good idea to edit this source file (located in the app working directory, "AIP/inst/app") so that it checks the required version is installed too. Required versions can be found in the package DESCRIPTION file
+source('pkg_check.R') # this sources the file that checks whether all the packages are installed. It might be a good idea to edit this source file (located in the app working directory, "AIP/inst/app") so that it checks the required version is installed too. Required versions can be found in the AIP package DESCRIPTION file
 
 library(knitr)     # for loading dynamic reports. I don't use rmarkdown because that requires that pandoc be installed which is a whole different ballgame. knitr doesn't require dependencies like that
 library(lsmeans)   # analysis intrepretation functions like glht and lsmeans will be useful for intrepriting interactions 
@@ -330,6 +330,7 @@ fit.expr <- reactive({
 
 ##### model check #############################################################
 
+# this hasn't been implimented in the UI yet  
 output$pois <- renderPrint({
   if(is.pois(dat2()[input$dv])){
     h3('Your dependent variable may be poisson distributed. Consider running a generalized linear model and selecting "count" where asked "What type of data is your dependent variable?" See the help tab on data analysis for more information.')
@@ -366,7 +367,7 @@ output$pois <- renderPrint({
    mcode <- paste(mcode, sep='', collapse='')
    mcode <- gsub('(\\, )', ',\n\t\t\t', mcode)
    
-   
+   # recode the analysis name
    analysis.name <- c('aov'='ANOVA', 'glm'='(generalized) linear model',
                       't.test'='t-test')[input$analysis]
    
@@ -415,6 +416,8 @@ output$pois <- renderPrint({
    if(input$analysis=='t.test'){
      return(NULL)
    }
+   # right now it uses the default plot method (plot.eff), but the plot_effects.R is a somewhat more flexible version of plot.eff that I wrote and can be used if needed. It isn't documented but I can add documentation for that function eventually. It should probably be moved into the AIP/R directory so it is a function exported in the AIP package rather than sourcing the function from the app wd. 
+   # actually, plot_effects might not be needed because John Fox recently edited the function in effects to fix the main issue I had a problem with. So the newest version should be fine. 
    ps <- lapply(ef(), plot, ci.style='bars', multiline=TRUE, 
                 colors=rep('black', length(ef())))
    for(i in seq_along(ps)){
