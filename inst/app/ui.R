@@ -41,7 +41,7 @@ shinyUI(
                                         content='The R code needed to read in your data will appear here. If you have selected "use sample data instead," you will be given the option of selecting from a number of datasets available to R users. These datasets provide an easy way to explore different data analysis techniques.',
                                         placement='top', trigger='click')),
                  mainPanel(h4('Loaded Data'),
-                                                       verbatimTextOutput('debug'),
+                                                       #verbatimTextOutput('debug'),
                            dataTableOutput('data_table')),
                )
       ), 
