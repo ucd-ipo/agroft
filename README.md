@@ -2,8 +2,8 @@
 
 ## Installation
 
-The shiny app for AIP has been built into a package and the development version
-is hosted on Github. Currently, it can be installed using the `devtools` R
+The AIP Shiny app has been built into a package and the development version is
+hosted on Github. Currently, it can be installed using the `devtools` R
 package.
 
 Install devtools and Shiny R packages:
@@ -26,14 +26,14 @@ Get the other dendencies by initializing the app:
 > initialize_AIP()
 ```
 
-You may need to update the lattice package:
+### Notes on installation
+
+You may need to update the lattice package after the `initialize_AIP()` call:
 
 ```R
 > unloadNamespace("lattice")
 > update.packages('lattice')
 ```
-
-### Notes on installation
 
 The required packages are listed in "Enhances" rather than "Depends" or
 "Imports" because `install_github` won't install dependencies from github. In
