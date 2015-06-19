@@ -11,14 +11,14 @@ library(shiny)
 library(xtable)
 
 analysis <- input$analysis
-analysis <- c('glm'=' (Generalized) Linear Model', 
+analysis <- c('glm'=' (Generalized) Linear Model',
               'aov'='n ANOVA',
               't.test'=' t-test',
               'rcbd'='ANOVA')[analysis]
-datatype <- ifelse(analysis=='rcbd', ' RCBD', ' ') 
+datatype <- ifelse(analysis=='rcbd', ' RCBD', ' ')
 ```
 
-You chose to run a`r analysis` on your`r datatype` data. Below are histograms for each continuous variable in your data. 
+You chose to run a`r analysis` on your`r datatype` data. Below are histograms for each continuous variable in your data.
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 varinds <- which(sapply(dat2(), is.numeric2))
@@ -31,7 +31,7 @@ for(i in names(dat2())[varinds]){
 
 ## Output
 
-The standard output from your model can be seen below. 
+The standard output from your model can be seen below.
 
 ```{r echo=FALSE, results='asis', warning=FALSE, message=FALSE}
 if(input$analysis=='t.test'){
@@ -47,7 +47,7 @@ if(input$analysis=='t.test'){
 includerownames <- ifelse(input$analysis=='t.test',FALSE,TRUE)
 
 tab <- xtable(sum)
-print(tab, type='html', booktabs=TRUE, 
+print(tab, type='html', booktabs=TRUE,
       include.rownames=includerownames)
 ```
 
@@ -55,13 +55,13 @@ print(tab, type='html', booktabs=TRUE,
 
 ## Figures
 
-Below are plots of the individual effects seen in your model. If you chose to run a t-test, no plots will be displayed. 
+Below are plots of the individual effects seen in your model. If you chose to run a t-test, no plots will be displayed.
 
 
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 if(input$analysis !='t.test'){
-  
+
   coeff.ind <- row.names(anova(fit()))[which(!row.names(anova((fit()))) %in% c('NULL', 'Residuals'))]
   ef <- vector('list', length(coeff.ind))
   names(ef) <- coeff.ind
@@ -70,7 +70,7 @@ if(input$analysis !='t.test'){
   for(i in names(ef)){
     ef[[i]] <- effect(i, .fit)
     }
-  ps <- lapply(ef(), plot, ci.style='bars', multiline=TRUE, 
+  ps <- lapply(ef(), plot, ci.style='bars', multiline=TRUE,
                colors=rep('black', length(ef())))
   for(i in seq_along(ps)){
     class(ps[[i]]) <- 'trellis'
@@ -78,25 +78,19 @@ if(input$analysis !='t.test'){
   for(i in ps){
     print(i)
     }
-  
+
   }
 ```
 
 ## R code
 
-The R code needed to run these analysis can be seen below. 
+The R code needed to run these analysis can be seen below.
 
 ```r
-# read in your data 
+# read in your data
 `r read_code()`
 ```
 
 ```r
 `r mcode()`
 ```
-
-
-
-
-
-
