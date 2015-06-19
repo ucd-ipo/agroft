@@ -1,6 +1,3 @@
-# function for plotting the effects seen in the analysis
-source('plot_effects.R')
-
 # function to take a t.test/aov/glm function call and return only the aruments
 # that make sense in the model, then convert it back into a call to be run.
 # the call to the function can then be printed in the app (via. deparse()) to
