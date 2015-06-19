@@ -9,12 +9,12 @@ Enhances: shiny (>= 0.11),
   shinyBS (>= 0.50),
   knitr (>= 1.8),
   gridExtra,
-  agricolae, 
+  agricolae,
   lattice,
   effects,
   lsmeans,
   devtools
-Description: Package for running the USAID AIP data analysis interface 
-License: GPL (>= 2)
+Description: Package for running the USAID AIP data analysis interface
+License: BSD
 URL: http://epakag.ucdavis.edu/
 BugReports: ikkyle@ucdavis.edu
