@@ -51,16 +51,21 @@ shinyServer(function(input, output, session){
   # script to see the contents of this. Useful for seeing what the objects you
   # are crating actually look like rather than what you think/want them to look
   # like.
-  output$debug <- renderText({fmla()})
+  output$debug <- renderText({GenerateFormula()})
 
 ##### server side element for reading in data ####################################
-  datp <- reactive({
+  GetLoadCall <- reactive({
+    # Returns one of three things:
+    # 1. language:call containing the read.csv unevaluated function call
+    # 2. symbol:name containing the name of the agricolae data set
+    # 3. NULL
     # if no file has been uploaded or a file has been uploaded but it is of
     # length zero (i.e. corrupt or weird filetype) and the user hasn't selected
-    # use sample data, then... make the reactive expression "datp" NULL,
+    # use sample data, then... make the reactive expression "GetLoadCall" NULL,
     # otherwise, do read in data things
     if((is.null(input$data_file) || length(input$data_file)==0) &&
-       !input$use_sample_data){return(NULL)
+       !input$use_sample_data) {
+      return(NULL)
     } else {
       # if a data file has been uploaded and the user doesn't want to use sample
       # data...
@@ -76,41 +81,52 @@ shinyServer(function(input, output, session){
         # # this is sep us as a call rather than just the function so it is easy
         # to print to the example code section of the app via deparse()
         readcall <- 'read.csv'
-        dat <- call(readcall,
-                    file=input$data_file$datapath)
+        load.call <- call(readcall, file=input$data_file$datapath)
       } else {
         # if there is no data selected and the user wants to use sample data dat
         # should be the name of the dataset to use
-        dat <- as.name(input$sample_data_buttons)
+        load.call <- as.name(input$sample_data_buttons)
       }
     }
-    return(dat)
+    return(load.call)
   })
 
-##### assign data to "dat" by evaluating the call to "read.csv" or loading the data
+##### Assign the data frame to the variable "data" by evaluating the call to
+##### load the data.
 
-  dat <- reactive({
-    # the call to eval loads the dataset the user wanted into the workspace
-      eval(call('data', input$sample_data_buttons,
-                package='agricolae',
-                envir = environment()))
-      # set "dat" to the datp object
-      # remeber that datp is either NULL, the call to red.csv, or the name of
-      # the dataset the user wants.
-      # if we eval NULL, dat is set to NULL, if we eval read.csv, we get the
-      # data the user submitted. If we eval the name of the data the user
-      # wanted, that data is assigned to dat (because we read it into the
-      # workspace via the call to 'data' above)
-    dat <- eval(datp(), envir=environment())
-    return(dat)
+  LoadData <- reactive({
+    # Returns a list:data.frame with the appropriate data set or NULL.
+
+    # TODO : This should only run if GetLoadCall returns a name:symbol.
+    # TODO : This should probably be in the GetLoadCall function.
+    # The following loads the selected agricolae data set into the workspace,
+    # regardless if the user selects "Use sample data instead". The name of the
+    # data.frame is the same as input$sample_data_buttons.
+    eval(call('data', input$sample_data_buttons, package='agricolae',
+              envir=environment()))
+
+    # set "dat" to the GetLoadCall object
+    # remeber that GetLoadCall is either NULL, the call to read.csv, or the name of
+    # the dataset the user wants.
+    # if we eval NULL, data is set to NULL, if we eval read.csv, we get the
+    # data the user submitted. If we eval the name of the data the user
+    # wanted, that data is assigned to data (because we read it into the
+    # workspace via the call to 'data' above)
+    data <- eval(GetLoadCall(), envir=environment())
+
+    return(data)
+
     })
 
-##### create the code needed to read in data ##########
-  read.expr <- reactive({
+##### Generate the code used to load the data ##########
+
+  GetSimpleLoadExpr <- reactive({
+    # Returns a char containing the code an R user would use to load the data.
+
     # if they aren't using sample data, deparse the call to get the character
     # represntation of the call, otherwise, construct it from scratch
     if(!input$use_sample_data){
-      return(deparse(datp()))
+      return(deparse(GetLoadCall()))
     } else {
       l <- 'library(agricolae)  # load "agricolae" package for the sample data'
       l <- paste0(l, '\ndata("',input$sample_data_buttons,  '")')
@@ -119,16 +135,16 @@ shinyServer(function(input, output, session){
     })
 
 ##### display the data on the "upload data" tab ################
-  output$data_table <- renderDataTable({dat()})
+  output$data_table <- renderDataTable({LoadData()})
 
 ##### UI element for selecting the desired analysis ############
   output$select_analysis <- renderUI({
     # if the data reactive expression is NULL, tell them up upload their data,
-    # othewise give them options for tests to run
-    if(is.null(dat())){
+    # otherwise give them options for tests to run
+    if(is.null(LoadData())){
       h4('please upload data first')
     } else {
-    selectInput('analysis', 
+    selectInput('analysis',
                 'Select your statistical model',
                 choices=c('t-test'='t.test',
                           'ANOVA'='aov',
@@ -138,19 +154,19 @@ shinyServer(function(input, output, session){
     }
   })
 
-##### UI element for selecting DV ##################################
+##### UI element for selecting the dependent variable ############
   output$select_dv <- renderUI({
     if(length(input$analysis)==0){return(NULL)}
     # don't return dv selection if they haven't selected an analysis
     # otherwise, select a DV
-    # choices are all the variables in dat()
+    # choices are all the variables in LoadData()
     selectInput('dv',
                 'Select your dependent variable',
-                choices=names(dat()),
+                choices=names(LoadData()),
                 selected=NULL)
   })
 
-##### UI element for selecting IV #################################
+##### UI element for selecting the independent variable(s) #########
 
 # if they are running a RCBD, ask them for their block variable
 output$select_block <- renderUI({
@@ -158,7 +174,7 @@ output$select_block <- renderUI({
       selectInput('block',
                   'Select your block variable',
                   # remove the DV from the options
-                  choices=names(dat2())[!names(dat2()) %in% input$dv],
+                  choices=names(ConvertData())[!names(ConvertData()) %in% input$dv],
                   multiple=FALSE, # only one block variable allowed
                   selected=NULL)
   })
@@ -169,7 +185,7 @@ output$select_treatment <- renderUI({
   selectInput('treatment',
               'Select your treatment variable',
               # remove DV and block from their options
-              choices=names(dat2())[!names(dat2()) %in% c(input$dv, input$block)],
+              choices=names(ConvertData())[!names(ConvertData()) %in% c(input$dv, input$block)],
               # only one treatment variable allowed, other IVs can be added with
               # the input$iv input
               multiple=FALSE,
@@ -181,7 +197,7 @@ output$select_iv <- renderUI({
   if(length(input$dv)==0){return(NULL)}
   # change the input text depending on input$analysis
   # rcbd is set to "Select any other independent variables" because you can
-  # alread select the block and treatment in the inputs specific to those
+  # already select the block and treatment in the inputs specific to those
   # variables
   selectInput('iv',
               switch(input$analysis,
@@ -189,7 +205,7 @@ output$select_iv <- renderUI({
                      t.test='Select your grouping variable',
                      glm='Select your independent variables(s)',
                      rcbd='Select any other independent variables'),
-              choices=names(dat2())[!names(dat2()) %in% c(input$dv,
+              choices=names(ConvertData())[!names(ConvertData()) %in% c(input$dv,
                                                           input$treatment,
                                                           input$block)],
               # only allow multiple if you aren't using a t-test
@@ -225,94 +241,98 @@ ivs <- reactive({
 ##### select variable types #####################################
 # prompt the user to select the class of each variable. The default selected
 # class is the one that R read the data in as.
-output$var_types_select <- renderUI({
+  output$var_types_select <- renderUI({
 
-  if(is.null(dat())){
-    return(NULL)
-  }
+    raw.data <- LoadData()
+    raw.data.col.names <- names(raw.data)
 
-  class.recode <- c('character'='factor',
-                    'factor'='factor',
-                    'logical'='factor',
-                    'numeric'='numeric',
-                    'integer'='numeric')
-  btns <- list()
-  # a loop to create radio buttons for each variable in the data
-  for(i in 1:ncol(dat())){
-    clss <- class(dat()[,i])
-    clss <- class.recode[clss]
+    if(is.null(raw.data)){
+      return(NULL)
+    }
 
-    btns[[i]] <- radioButtons(inputId=paste0(names(dat())[i], '_recode'),
-                             label=names(dat())[i],
-                             choices=c('Numeric'='numeric', 'Grouping'='factor'),
-                             selected=clss,
-                             inline=TRUE)
-  }
-  return(btns)
-})
+    class.recode <- c('character'='factor',
+                      'factor'='factor',
+                      'logical'='factor',
+                      'numeric'='numeric',
+                      'integer'='numeric')
+    btns <- list()
+    # a loop to create radio buttons for each variable in the data
+    for(i in 1:ncol(raw.data)){
+      clss <- class(raw.data[,i])
+      clss <- class.recode[clss]
+
+      btns[[i]] <- radioButtons(inputId=paste0(raw.data.col.names[i], '_recode'),
+                                label=raw.data.col.names[i],
+                                choices=c('Numeric'='numeric', 'Grouping'='factor'),
+                                selected=clss,
+                                inline=TRUE)
+    }
+    return(btns)
+  })
 
 ######## convert variables to their respective types ############
 
-dat2 <- reactive({
-  dat2 <- dat()
-  for(i in 1:ncol(dat2)){
-    # each input ID was apended "_recode" so for each column of the data take
-    # that value nd recode it to the correct value based on the input id.
-    var_type <- input[[paste0(names(dat2)[i], '_recode')]]
-    # since the input value will be either numeric or factor, you can paste
-    # "as." in front of it to create the function call we'll use. then convert
-    # that variable type and return the data with the converted variables. Call
-    # it dat2 so it doensn't get mixed up with dat()
-    dat2[,i] <- eval(call(paste0('as.', var_type),
-                          dat2[,i]))
-  }
-  return(dat2)
-})
+  ConvertData <- reactive({
+    raw.data <- LoadData()
+    col.names <- names(raw.data)
+    for(i in 1:ncol(raw.data)){
+      # each input ID was apended "_recode" so for each column of the raw.data take
+      # that value and recode it to the correct value based on the input id.
+      var_type <- input[[paste0(col.names[i], '_recode')]]
+      # since the input value will be either numeric or factor, you can paste
+      # "as." in front of it to create the function call we'll use. then convert
+      # that variable type and return the raw.data with the converted variables. Call
+      # it raw.data so it doensn't get mixed up with LoadData()
+      raw.data[,i] <- eval(call(paste0('as.', var_type), raw.data[,i]))
+    }
+    return(raw.data)
+  })
 
 ##### select the interactions  ################################
 # TukeyHSD or multcomp::glht
-output$select_interactions <- renderUI({
+  output$select_interactions <- renderUI({
 
-  if(input$analysis=='t.test'){
-    return(h4('Interactions not available for t-tests'))
-  }
-  # this is kind of crazy. It creates every possible combination of IVs and then
-  # gets all the uniqe combos
-  ch <- expand.grid(var1=ivs(), var2=ivs())
-  ch <- ch[which(ch$var1 != ch$var2), ]
-  ch <- apply(ch, 2, c)
-  ch2 <- list()
-  for(i in 1:nrow(ch)){
-    ch2[[i]] <- ch[i, ]
-  }
-  for(i in seq_along(ch2)){
-    ch2[[i]] <- sort(ch2[[i]])
-  }
-  ch2 <- data.frame(ch2)
-  names(ch2) <- paste('var', 1:ncol(ch2))
-  ch2 <- as.data.frame(t(ch2))
-  # I made this weird separator so it doesn't conflict with any other separators
-  # that might be in their variable names. Later it gets substituted out and
-  # replaced with "&" for the dropdown box
-  ch2$int <- paste(ch2$var2, ch2$var1, sep='.___.___.')
-  ch2 <- unlist(subset(ch2, !duplicated(int), select='int'))
-  ch2 <- unname(gsub('.___.___.', ' & ', ch2, fixed=TRUE))
-  names(ch2) <- ch2
-  ch2 <- gsub('&','*', ch2)
+    if(input$analysis=='t.test'){
+      return(h4('Interactions not available for t-tests'))
+    }
+    # this is kind of crazy. It creates every possible combination of IVs and then
+    # gets all the uniqe combos
+    ch <- expand.grid(var1=ivs(), var2=ivs())
+    ch <- ch[which(ch$var1 != ch$var2), ]
+    ch <- apply(ch, 2, c)
+    ch2 <- list()
+    for(i in 1:nrow(ch)){
+      ch2[[i]] <- ch[i, ]
+    }
+    for(i in seq_along(ch2)){
+      ch2[[i]] <- sort(ch2[[i]])
+    }
+    ch2 <- data.frame(ch2)
+    names(ch2) <- paste('var', 1:ncol(ch2))
+    ch2 <- as.data.frame(t(ch2))
+    # I made this weird separator so it doesn't conflict with any other separators
+    # that might be in their variable names. Later it gets substituted out and
+    # replaced with "&" for the dropdown box
+    ch2$int <- paste(ch2$var2, ch2$var1, sep='.___.___.')
+    ch2 <- unlist(subset(ch2, !duplicated(int), select='int'))
+    ch2 <- unname(gsub('.___.___.', ' & ', ch2, fixed=TRUE))
+    names(ch2) <- ch2
+    ch2 <- gsub('&','*', ch2)
 
-  if(input$analysis == 't.test'){return(NULL)}
-  selectInput('interaction_input',
-                     label=NULL,
-                     choices=ch2,
-              multiple=TRUE)
-})
+    if(input$analysis == 't.test'){return(NULL)}
+    selectInput('interaction_input',
+                       label=NULL,
+                       choices=ch2,
+                multiple=TRUE)
+  })
 
 ##### create the formula for analysis ##########################
 # This uses the paste_na function from global.R to create the formula, joining
 # all the main and interaction effects
-  fmla <- reactive({
-    int <- paste0(input$interaction_input,
-                  collapse=' + ')
+# dv : dependent variable
+# invs: independent variables
+  GenerateFormula <- reactive({
+    int <- paste0(input$interaction_input, collapse=' + ')
     int <- ifelse(is.null(input$interaction_input), NA, int)
     main <- paste0(ivs(), collapse=' + ')
     eff <- paste_na(main, int, sep=' + ')
@@ -321,54 +341,91 @@ output$select_interactions <- renderUI({
     })
 
 ##### run the analysis, assign to reactive object "fit" ##############
-  fitp <- reactive({
+
+  GetFitCall <- reactive({
+    # Returns the call used to run the analysis.
+
+    # The following line forces this reactive expression to take a dependency on
+    # the "Run Analysis" button. Thus this will run anytime it is clicked.
     input$run_analysis
+
+    # isolate prevents this reactive expression from depending on any of the
+    # variables inside the isolated expression.
     isolate({
+
       if(!is.character(input$analysis)){
         return(NULL)
       }
+
       fit <- call(input$analysis,
-                  formula=as.formula(fmla()),
+                  formula=as.formula(GenerateFormula()),
                   family=input$dv_type,
                   data=as.name('my_data'))
+
+      # santizes the call (from global.R)
       fit <- strip.args(fit)
+
     })
+
     return(fit)
+
     })
 
-fit <- reactive({
-  input$run_analysis
+  EvalFit <- reactive({
+    # Returns the fit model.
+
+    # Run every time the "Run Analysis" button is pressed.
+    input$run_analysis
+
     isolate({
-      my_data <- dat2()
-      x <- eval(fitp())
+      my_data <- ConvertData()
+      x <- eval(GetFitCall())
     })
-  return(x)
-  })
 
-fit.expr <- reactive({
-  input$run_analysis
-  isolate({
-    x <- deparse(fitp(), width.cutoff=500L)
+    return(x)
+
+    })
+
+  GetFitExpr <- reactive({
+    # Returns the char of the expression used to evaluate the fit.
+
+    # Run every time the "Run Analysis" button is pressed.
+    input$run_analysis
+
+    isolate({
+      x <- deparse(GetFitCall(), width.cutoff=500L)
+    })
+
+    return(x)
+
   })
-  return(x)
-})
 
 ##### the fit summary for analysis ###################################
 ### print anova table for all linear models
-### the interpretaion tab will show post-hoc tests
+# TODO : This code should be shown to the user, otherwise the table output in
+# the app doesn't match the code shown above it.
   output$fit_summary <- renderPrint({
+
     analysis <- isolate(input$analysis)
+
+    # Run every time the "Run Analysis" button is pressed.
     input$run_analysis
+
     if(analysis=='t.test'){
-      sum <- isolate(fit())
+      fit_summary <- isolate(EvalFit())
     } else {
-      sum <- isolate(anova(fit(),
-                           test=ifelse((input$analysis=='glm' &
-                                          input$dv_type=='gaussian') |
-                                          input$analysis=='aov',
-                                       'F', 'LRT')))
+      isolate({
+        # See:
+        # https://stat.ethz.ch/R-manual/R-devel/library/stats/html/anova.glm.html
+        # for an explanation of the `test` argument.
+        tst = ifelse((input$analysis=='glm' & input$dv_type=='gaussian') |
+                     input$analysis=='aov', 'F', 'LRT')
+        fit_summary <- anova(EvalFit(), test=tst)
+      })
     }
-    return(sum)
+
+    return(fit_summary)
+
   })
 
 ##### UI element for fit_summary object ####################################
@@ -386,7 +443,7 @@ fit.expr <- reactive({
 
 # this hasn't been implimented in the UI yet
 output$pois <- renderPrint({
-  if(is.pois(dat2()[input$dv])){
+  if(is.pois(ConvertData()[input$dv])){
     h3(paste('Your dependent variable may be poisson distributed. Consider ',
              'running a generalized linear model and selecting "count" where ',
              'asked "What type of data is your dependent variable?" See the ',
@@ -400,10 +457,10 @@ output$pois <- renderPrint({
     if(!input$use_sample_data){
     filestr <- gsub('(?<=file \\= ").*(?="\\))',
                     input$data_file$name, perl=TRUE,
-                    read.expr())
+                    GetSimpleLoadExpr())
     filestr <- paste0('my_data <- ', filestr)
     } else {
-      filestr <- read.expr()
+      filestr <- GetSimpleLoadExpr()
     }
     return(filestr)
   })
@@ -417,7 +474,7 @@ output$pois <- renderPrint({
 ##### return the code used to run the model ##############################
  mcode <- reactive({
    if(is.null(input$analysis) || input$run_analysis==0){return(NULL)}
-    mcode <- paste0('model.fit <- ', fit.expr())
+    mcode <- paste0('model.fit <- ', GetFitExpr())
 
    mcode <- paste(mcode, sep='', collapse='')
    mcode <- gsub('(\\, )', ',\n\t\t\t', mcode)
@@ -426,9 +483,9 @@ output$pois <- renderPrint({
    analysis.name <- c('aov'='ANOVA', 'glm'='(generalized) linear model',
                       't.test'='t-test')[input$analysis]
 
-   factor.ind <- which(sapply(dat2(), is.factor))
+   factor.ind <- which(sapply(ConvertData(), is.factor))
     if(length(factor.ind)>0){
-      factor.name <- names(dat2()[factor.ind])
+      factor.name <- names(ConvertData()[factor.ind])
 
       fcode <- paste0('my_data$', factor.name, ' <- as.factor(my_data$',
                       factor.name, ')', collapse='\n')
@@ -453,11 +510,11 @@ output$pois <- renderPrint({
       return(NULL)
     }
     #browser()
-    coeff.ind <- row.names(anova(fit()))[which(!row.names(anova((fit()))) %in% c('NULL', 'Residuals'))]
+    coeff.ind <- row.names(anova(EvalFit()))[which(!row.names(anova((EvalFit()))) %in% c('NULL', 'Residuals'))]
    ef <- vector('list', length(coeff.ind))
    names(ef) <- coeff.ind
-   assign('my_data', dat2(), env=.GlobalEnv)
-   assign('.fit', fit(), env=.GlobalEnv)
+   assign('my_data', ConvertData(), env=.GlobalEnv)
+   assign('.fit', EvalFit(), env=.GlobalEnv)
    for(i in names(ef)){
      ef[[i]] <- effect(i, .fit)
    }
@@ -492,7 +549,7 @@ output$pois <- renderPrint({
 
 ##### UI element - print the plots ##########################################
  output$plots <- renderUI({
-   if(is.null(fit())){
+   if(is.null(EvalFit())){
      return(NULL)
    }
    if(input$analysis=='t.test'){
@@ -505,16 +562,16 @@ output$pois <- renderPrint({
 
 ##### Histograms #############################################################
 output$histograms <- renderPlot({
-  varinds <- which(sapply(dat2(), is.numeric2))
+  varinds <- which(sapply(ConvertData(), is.numeric2))
   par(mfrow=c((length(varinds) + 1) %/% 2, 2))
-  for(i in names(dat2())[varinds]){
-    hist(dat2()[,i], main=i, xlab='')
+  for(i in names(ConvertData())[varinds]){
+    hist(ConvertData()[,i], main=i, xlab='')
   }
   })
 
 output$hists <- renderUI({
-  if(is.null(dat2())){return(NULL)}
-  h <- (length(which(sapply(dat2(), is.numeric2))) + 1) %/% 2
+  if(is.null(ConvertData())){return(NULL)}
+  h <- (length(which(sapply(ConvertData(), is.numeric2))) + 1) %/% 2
   plotOutput('histograms',
              height=h *450)
 })
