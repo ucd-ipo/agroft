@@ -591,9 +591,3 @@ output$download_report <- downloadHandler(
     file.rename(out, file)
   }
 )
-
-##### stop the session after it's over #########################################
-  session$onSessionEnded(function() {
-    stopApp()
-  })
-})
