@@ -591,3 +591,5 @@ output$download_report <- downloadHandler(
     file.rename(out, file)
   }
 )
+
+})
