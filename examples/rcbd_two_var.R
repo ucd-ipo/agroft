@@ -9,7 +9,7 @@ library('agricolae')
 library('effects')
 
 sep <- function(n){
-  # This function simply prints a line of "=" to the screen as a seperator and
+  # This function simply prints a line of "=" to the screen as a separator and
   # will not show up in the app. It is only here for nice printing.
   line <- paste0(paste(replicate(n, "="), collapse = ""), '\n')
   cat(line)
@@ -65,7 +65,7 @@ plot(allEffects(model))
 # so we then see which levels of both clone and nitrogen are significant with
 # respect to each other using least significant difference.
 # TODO : It isn't clear to me why the "block" variable wouldn't be checked here.
-cat('Least Significant Differnce\n')
+cat('Least Significant Difference\n')
 sep(50)
 LSD.test(model, c('clone', 'nitrogen'), alpha=alpha, console=TRUE)
 sep(50)
