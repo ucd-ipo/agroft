@@ -60,7 +60,7 @@ plot(allEffects(model))
 # The ANOVA table shows that the virus factor is significant, so we then see
 # which levels are significant with respect to each other using least
 # significant difference.
-cat('Least Significant Differnce\n')
+cat('Least Significant Difference\n')
 sep(50)
 LSD.test(model, "virus", alpha=alpha, console=TRUE)
 sep(50)
