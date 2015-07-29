@@ -45,8 +45,8 @@ model <- aov(formula = Yield ~ SeedLotA + Block + Error(SeedLotA:Block) + TrtmtB
 # Following the advice in [2] I create the same model without the error term for
 # assumption testing (and post hoc?). The F values and P values are not correct
 # for this model so the ANOVA table should not be shown to the user.
-model.tmp <- aov(formula = Yield ~ Block + SeedLotA + TrtmtB + SeedLotA:TrtmtB,
-                 data = oats.data)
+model.tmp <- aov(formula = Yield ~ Block + SeedLotA + TrtmtB + SeedLotA:Block +
+                 SeedLotA:TrtmtB, data = oats.data)
 
 # Plot the four standard fit plots: residuals vs predicted, sqrt of residuals vs
 # fitted, Normal Q-Q plot of the residuals, residuals vs leverages.
