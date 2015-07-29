@@ -20,7 +20,10 @@ wheat.data$sq_preds <- wheat.data$preds^2
 #Look at a plot of residual vs. predicted values
 plot(resids ~ preds, data = wheat.data,
      xlab = "Predicted Values", ylab = "Residuals")
-
+#Create Box Plot of treatments
+boxplot(Yield ~ Treatment, data = wheat.data,
+        main = "Effect of wheat variety on yield",
+        xlab = "Wheat cultivar", ylab = "Yield (ton/ha)")
 #Perform a Shapiro-Wilk test for normality of residuals
 shapiro.test(wheat.data$resids)
 qqnorm(resid(wheat.mod))
