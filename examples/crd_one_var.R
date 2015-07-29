@@ -13,6 +13,7 @@
 
 #------------------#
 library('agricolae')
+library('car')
 library('effects')
 #------------------#
 
@@ -24,16 +25,16 @@ sep <- function(n){
 }
 
 # The sweetpotato data set is a completely random experiment design with plots
-# of 50 sweet potatoes where there are three viruses and a control applied in 3
+# of 79 sweet potatoes where there are three viruses and a control applied in 3
 # reps, i.e. 3 plots for each of four virus levels.
 #---------------#
 data(sweetpotato)
-my_data <- sweetpotato  # rename the data frame
+my.data <- sweetpotato  # rename the data frame
 #---------------#
 
 # Construct the model.
 #---------------------------------------#
-model <- aov(yield ~ virus, data=my_data)
+model <- aov(yield ~ virus, data=my.data)
 #---------------------------------------#
 
 # Plot the four standard fit plots: residuals vs predicted, sqrt of residuals vs
@@ -46,11 +47,19 @@ plot(model)
 
 # Make sure the residuals are normal (this can also be seen in the Q-Q plot).
 cat('Shapiro-Wilk Normality Test\n')
-sep(50)
+sep(79)
 #----------------------------#
 shapiro.test(residuals(model))
 #----------------------------#
-sep(50)
+sep(79)
+
+# Run Levene's Test.
+cat("Levene's Test\n")
+sep(79)
+#---------------------------------------#
+leveneTest(yield ~ virus, data = my.data)
+#---------------------------------------#
+sep(79)
 
 # User selected alpha level.
 #-----------#
@@ -60,19 +69,19 @@ alpha <- 0.05
 # Print the ANOVA table of the fit. The user should will have to note the
 # significant factors. In this case the single virus factor is significant.
 cat('ANOVA Table\n')
-sep(50)
+sep(79)
 #-----------#
 anova(model)
 #-----------#
-sep(50)
+sep(79)
 
 # Show the confidence intervals for the intercept and each virus level.
 cat('Confidence Intervals\n')
-sep(50)
+sep(79)
 #-------------------------------#
 confint(model, level=1.0 - alpha)
 #-------------------------------#
-sep(50)
+sep(79)
 
 # Plot the mean yield with respect to each virus level.
 dev.new()
@@ -84,8 +93,8 @@ plot(allEffects(model))
 # which levels are significant with respect to each other using least
 # significant difference.
 cat('Least Significant Difference\n')
-sep(50)
+sep(79)
 #-------------------------------------------------#
 LSD.test(model, "virus", alpha=alpha, console=TRUE)
 #-------------------------------------------------#
-sep(50)
+sep(79)
