@@ -28,18 +28,19 @@ sep <- function(n){
 # reps, i.e. 3 plots for each of four virus levels.
 #---------------#
 data(sweetpotato)
+my_data <- sweetpotato  # rename the data frame
 #---------------#
 
 # Construct the model.
-#-------------------------------------------#
-model <- aov(yield ~ virus, data=sweetpotato)
-#-------------------------------------------#
+#---------------------------------------#
+model <- aov(yield ~ virus, data=my_data)
+#---------------------------------------#
 
 # Plot the four standard fit plots: residuals vs predicted, sqrt of residuals vs
 # fitted, Normal Q-Q plot of the residuals, residuals vs leverages.
 dev.new()
 #---------------------------------------#
-par(mfrow = c(2, 2), oma = c(0, 0, 2, 0))
+par(mfrow = c(2, 2), oma = c(0, 0, 2, 0))  # plots as subplots of single graph
 plot(model)
 #---------------------------------------#
 
