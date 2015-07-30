@@ -11,9 +11,8 @@
 # separator: #-----------------------------#
 
 #-----------------------------------------------------------------------------#
-library('agricolae')
+library('agricolae')  # for sweetpotato, LSD.test()
 library('car')  # for leveneTest()
-library('effects')  # for allEffects()
 #-----------------------------------------------------------------------------#
 
 sep <- function(n){
@@ -33,15 +32,22 @@ my.data <- sweetpotato  # rename the data frame
 
 # Construct the model.
 #-----------------------------------------------------------------------------#
-model <- aov(yield ~ virus, data=my.data)
+model <- aov(yield ~ virus, data = my.data)
 #-----------------------------------------------------------------------------#
 
-# Plot the four standard fit plots: residuals vs predicted, sqrt of residuals vs
-# fitted, Normal Q-Q plot of the residuals, residuals vs leverages.
+# Box plot of the effect on virus on yield.
 dev.new()
 #-----------------------------------------------------------------------------#
-par(mfrow = c(2, 2), oma = c(0, 0, 2, 0))  # plots as subplots of single graph
-plot(model)
+boxplot(yield ~ virus, data = my.data, main = "Effect of virus on yield",
+        xlab = "virus", ylab = "yield (?)")
+#-----------------------------------------------------------------------------#
+
+# Plot two standard fit plots: residuals vs predicted, Normal Q-Q plot of the
+# residuals.
+dev.new()
+#-----------------------------------------------------------------------------#
+par(mfrow = c(2, 1), oma = c(0, 0, 2, 0))  # plots as subplots of single graph
+plot(model, which = c(1, 2))
 #-----------------------------------------------------------------------------#
 
 # Make sure the residuals are normal (this can also be seen in the Q-Q plot).
@@ -60,10 +66,16 @@ leveneTest(yield ~ virus, data = my.data)
 #-----------------------------------------------------------------------------#
 sep(79)
 
-# The user will select the alpha value from the app.
-#-----------------------------------------------------------------------------#
-alpha <- 0.05
-#-----------------------------------------------------------------------------#
+# Generate predicted values for Tukey 1-df Test
+# Perform a Tukey 1-df Test for Non-additivity
+cat("Tukey 1-df Test for Non-additivity\n")
+sep(79)
+#------------------------------------------------------------------------------#
+my.data$sq_preds <- predict(model)^2
+one.df.model <- lm(yield ~ virus + sq_preds, my.data)
+anova(one.df.model)
+#------------------------------------------------------------------------------#
+sep(79)
 
 # Print the ANOVA table of the fit. The user should will have to note the
 # significant factors. In this case the single virus factor is significant.
@@ -78,15 +90,9 @@ sep(79)
 cat('Confidence Intervals\n')
 sep(79)
 #-----------------------------------------------------------------------------#
-confint(model, level=1.0 - alpha)
+confint(model)
 #-----------------------------------------------------------------------------#
 sep(79)
-
-# Plot the mean yield with respect to each virus level.
-dev.new()
-#-----------------------------------------------------------------------------#
-plot(allEffects(model))
-#-----------------------------------------------------------------------------#
 
 # The ANOVA table shows that the virus factor is significant, so we then see
 # which levels are significant with respect to each other using least
@@ -94,6 +100,6 @@ plot(allEffects(model))
 cat('Least Significant Difference\n')
 sep(79)
 #-----------------------------------------------------------------------------#
-LSD.test(model, "virus", alpha=alpha, console=TRUE)
+LSD.test(model, "virus", console=TRUE)
 #-----------------------------------------------------------------------------#
 sep(79)
