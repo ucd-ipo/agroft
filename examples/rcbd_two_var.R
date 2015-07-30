@@ -76,6 +76,14 @@ leveneTest(yield ~ clone, data=my.data)
 leveneTest(yield ~ nitrogen, data=my.data)
 #Note: clone is significant in Levene's test so transformation would be necessary
 #------------------------------------------------------------------------------#
+#Generate residual and predicted values for Tukey 1-df Test
+my.data$resids <- residuals(model)
+my.data$preds <- predict(model)
+my.data$sq_preds <- my.data$preds^2
+#Perform a Tukey 1-df Test for Non-additivity
+OneDF.model<-lm(yield ~ clone + nitrogen + block + sq_preds, my.data)
+anova(OneDF.model)
+##
 sep(79)
 
 # The user will select the alpha level from the app.
