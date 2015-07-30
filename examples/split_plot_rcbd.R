@@ -1,4 +1,4 @@
-# This is an example of a split RCBD experimental design based off of the first
+# This is an example of a split-plot RCBD experimental design based off of the first
 # example in [1] and further analysis in [2]. The data can be downloaded from
 # [3].
 #
