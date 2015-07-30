@@ -55,7 +55,7 @@ my.data$TrtmtB <- as.factor(my.data$TrtmtB)
 model <- aov(formula = Yield ~ SeedLotA + Block + Error(SeedLotA:Block) +
              TrtmtB + SeedLotA:TrtmtB, data = my.data)
 #-----------------------------------------------------------------------------#
-
+summary(model)
 # Following the advice in [2], I create the same model without the error term
 # for assumption testing (and post hoc?). The F values and P values are not
 # correct for this model so the ANOVA table should not be shown to the user.
