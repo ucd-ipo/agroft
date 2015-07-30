@@ -15,7 +15,7 @@
 #-----------------------------------------------------------------------------#
 library('agricolae')  # for LSD.test()
 library('car')  # for levenTest()
-library('effects')
+library('HH')  # for intxplot()
 #-----------------------------------------------------------------------------#
 
 sep <- function(n){
@@ -48,23 +48,25 @@ my.data$block <- as.factor(my.data$block)
 model <- aov(yield ~ block + clone + nitrogen + clone:nitrogen, data=my.data)
 #-----------------------------------------------------------------------------#
 
-# Create Box Plot of levels of treatments for each factor (in this case clone & nitrogen levels)
+# Create Box Plot of levels of treatments for each factor (in this case clone &
+# nitrogen levels).
 dev.new()
 #-----------------------------------------------------------------------------#
+par(mfrow = c(2, 1))
 boxplot(yield ~ clone, data = my.data,
         main = "Effect of clone on yield",
         xlab = "Clone", ylab = "Yield (?)")
 boxplot(yield ~ nitrogen, data = my.data,
-        main = "Effect of clone on yield",
+        main = "Effect of nitrogen on yield",
         xlab = "Nitrogen Level", ylab = "Yield (?)")
-        
 #-----------------------------------------------------------------------------#
-# Plot the four standard fit plots: residuals vs predicted, sqrt of residuals vs
-# fitted, Normal Q-Q plot of the residuals, residuals vs leverages.
+
+# Plot two standard fit plots: residuals vs predicted, Normal Q-Q plot of the
+# residuals.
 dev.new()
 #------------------------------------------------------------------------------#
-par(mfrow = c(2, 2), oma = c(0, 0, 2, 0))
-plot(model)
+par(mfrow = c(2, 1), oma = c(0, 0, 2, 0))
+plot(model, c(1, 2))
 #------------------------------------------------------------------------------#
 
 # Make sure the residuals are normal (this can also be seen in the Q-Q plot).
@@ -75,35 +77,30 @@ shapiro.test(residuals(model))
 #------------------------------------------------------------------------------#
 sep(50)
 
-# Run Levene's Test.
-# TODO : This gives the error: "Model must be completely crossed formula only."
-# Levene's test only valid for 1-way ANOVA. thus, we run levene's for each factor we are interested in.
-# in this case: clone, nitrogen 
+# Run Levene's Test for a one-way ANOVA of each of the main factors.
+# TODO : clone is significant in Levene's test so transformation is necessary.
 cat("Levene's Test\n")
 sep(79)
 #------------------------------------------------------------------------------#
-#leveneTest(model)
 leveneTest(yield ~ clone, data=my.data)
 leveneTest(yield ~ nitrogen, data=my.data)
-#Note: clone is significant in Levene's test so transformation would be necessary
 #------------------------------------------------------------------------------#
-#Generate residual and predicted values for Tukey 1-df Test
-my.data$resids <- residuals(model)
-my.data$preds <- predict(model)
-my.data$sq_preds <- my.data$preds^2
-#Perform a Tukey 1-df Test for Non-additivity
-OneDF.model<-lm(yield ~ clone + nitrogen + block + sq_preds, my.data)
-anova(OneDF.model)
-##
 sep(79)
 
-# The user will select the alpha level from the app.
+# Generate predicted values for Tukey 1-df Test
+# Perform a Tukey 1-df Test for Non-additivity
+cat("Tukey 1-df Test for Non-additivity\n")
+sep(79)
 #------------------------------------------------------------------------------#
-alpha <- 0.05
+my.data$sq_preds <- predict(model)^2
+one.df.model <- lm(yield ~ clone + nitrogen + block + sq_preds, my.data)
+anova(one.df.model)
 #------------------------------------------------------------------------------#
+sep(79)
 
-# Print the ANOVA table of the fit. The user should will have to note the
-# significant factors. In this case all factors, including interaction nitrogen*clone, are significant.
+# Print the ANOVA table of the fit. The user will have to note the significant
+# factors. In this case all factors, including interaction nitrogen:clone, are
+# significant.
 cat('ANOVA Table\n')
 sep(50)
 #------------------------------------------------------------------------------#
@@ -111,26 +108,25 @@ anova(model)
 #------------------------------------------------------------------------------#
 sep(50)
 
-# Show the confidence intervals for the intercept and each virus level.
+# Show the confidence intervals.
 cat('Confidence Intervals\n')
 sep(50)
 #------------------------------------------------------------------------------#
-confint(model, level=1.0 - alpha)
+confint(model)
 #------------------------------------------------------------------------------#
 sep(50)
 
-# Plot the mean yield with respect to each clone for each N level and vice versa.
-#generate these interaction plots:
-install.packages("HH")
-library(HH)
-intxplot(yield ~ clone, groups = nitrogen, data=my.data, se=TRUE, ylim=range(my.data$yield),
-         offset.scale=500)
-intxplot(yield ~ nitrogen, groups = clone, data=my.data, se=TRUE, ylim=range(my.data$yield),
-         offset.scale=500)
-# TODO : Is the default plot ok here, or is something different desired? (see above)
+# Plot the mean yield with respect to each clone for each N level and vice
+# versa.
+# TODO : This call to par() is not making the intxplots subplots for some
+# reason.
 dev.new()
 #------------------------------------------------------------------------------#
-plot(allEffects(model))
+par(mfrow = c(2, 1))
+intxplot(yield ~ clone, groups = nitrogen, data=my.data, se=TRUE,
+         ylim=range(my.data$yield), offset.scale=500)
+intxplot(yield ~ nitrogen, groups = clone, data=my.data, se=TRUE,
+         ylim=range(my.data$yield), offset.scale=500)
 #------------------------------------------------------------------------------#
 
 # The ANOVA table shows that each variable and the interaction are significant,
@@ -139,6 +135,6 @@ plot(allEffects(model))
 cat('Least Significant Difference\n')
 sep(50)
 #------------------------------------------------------------------------------#
-LSD.test(model, c('clone', 'nitrogen'), alpha=alpha, console=TRUE)
+LSD.test(model, c('clone', 'nitrogen'), console=TRUE)
 #------------------------------------------------------------------------------#
 sep(50)
