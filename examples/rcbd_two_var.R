@@ -74,6 +74,7 @@ sep(79)
 #leveneTest(model)
 leveneTest(yield ~ clone, data=my.data)
 leveneTest(yield ~ nitrogen, data=my.data)
+#Note: clone is significant in Levene's test so transformation would be necessary
 #------------------------------------------------------------------------------#
 sep(79)
 
@@ -83,7 +84,7 @@ alpha <- 0.05
 #------------------------------------------------------------------------------#
 
 # Print the ANOVA table of the fit. The user should will have to note the
-# significant factors. In this case the single virus factor is significant.
+# significant factors. In this case all factors, including interaction nitrogen*clone, are significant.
 cat('ANOVA Table\n')
 sep(50)
 #------------------------------------------------------------------------------#
