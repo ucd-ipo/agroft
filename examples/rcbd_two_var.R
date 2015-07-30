@@ -100,8 +100,15 @@ confint(model, level=1.0 - alpha)
 #------------------------------------------------------------------------------#
 sep(50)
 
-# Plot the mean yield with respect to each virus level.
-# TODO : Is the default plot ok here, or is something different desired?
+# Plot the mean yield with respect to each clone for each N level and vice versa.
+#generate these interaction plots:
+install.packages("HH")
+library(HH)
+intxplot(yield ~ clone, groups = nitrogen, data=my.data, se=TRUE, ylim=range(my.data$yield),
+         offset.scale=500)
+intxplot(yield ~ nitrogen, groups = clone, data=my.data, se=TRUE, ylim=range(my.data$yield),
+         offset.scale=500)
+# TODO : Is the default plot ok here, or is something different desired? (see above)
 dev.new()
 #------------------------------------------------------------------------------#
 plot(allEffects(model))
