@@ -48,6 +48,17 @@ my.data$block <- as.factor(my.data$block)
 model <- aov(yield ~ block + clone + nitrogen + clone:nitrogen, data=my.data)
 #-----------------------------------------------------------------------------#
 
+# Create Box Plot of levels of treatments for each factor (in this case clone & nitrogen levels)
+dev.new()
+#-----------------------------------------------------------------------------#
+boxplot(yield ~ clone, data = my.data,
+        main = "Effect of clone on yield",
+        xlab = "Clone", ylab = "Yield (?)")
+boxplot(yield ~ nitrogen, data = my.data,
+        main = "Effect of clone on yield",
+        xlab = "Nitrogen Level", ylab = "Yield (?)")
+        
+#-----------------------------------------------------------------------------#
 # Plot the four standard fit plots: residuals vs predicted, sqrt of residuals vs
 # fitted, Normal Q-Q plot of the residuals, residuals vs leverages.
 dev.new()
