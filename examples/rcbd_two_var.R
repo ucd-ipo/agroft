@@ -66,10 +66,14 @@ sep(50)
 
 # Run Levene's Test.
 # TODO : This gives the error: "Model must be completely crossed formula only."
+# Levene's test only valid for 1-way ANOVA. thus, we run levene's for each factor we are interested in.
+# in this case: clone, nitrogen 
 cat("Levene's Test\n")
 sep(79)
 #------------------------------------------------------------------------------#
 #leveneTest(model)
+leveneTest(yield ~ clone, data=my.data)
+leveneTest(yield ~ nitrogen, data=my.data)
 #------------------------------------------------------------------------------#
 sep(79)
 
