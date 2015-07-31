@@ -66,14 +66,6 @@ leveneTest(yield ~ virus, data = my.data)
 #-----------------------------------------------------------------------------#
 sep(79)
 
-# Generate predicted values for Tukey 1-df Test
-# Perform a Tukey 1-df Test for Non-additivity
-cat("Tukey 1-df Test for Non-additivity\n")
-sep(79)
-#------------------------------------------------------------------------------#
-my.data$sq_preds <- predict(model)^2
-one.df.model <- lm(yield ~ virus + sq_preds, my.data)
-anova(one.df.model)
 #------------------------------------------------------------------------------#
 sep(79)
 
