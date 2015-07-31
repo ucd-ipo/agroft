@@ -93,7 +93,7 @@ cat("Tukey 1-df Test for Non-additivity\n")
 sep(79)
 #------------------------------------------------------------------------------#
 my.data$sq_preds <- predict(model)^2
-one.df.model <- lm(yield ~ clone + nitrogen + block + sq_preds, my.data)
+one.df.model <- lm(yield ~ clone + nitrogen + clone:nitrogen + block + sq_preds, my.data)
 anova(one.df.model)
 #------------------------------------------------------------------------------#
 sep(79)
