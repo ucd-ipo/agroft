@@ -80,7 +80,14 @@ shapiro.test(residuals(model.tmp))
 #-----------------------------------------------------------------------------#
 sep(50)
 
-# TODO : Add Levene's Test.
+# Add Levene's Test.
+leveneTest(Yield ~ SeedLotA, data=my.data)
+leveneTest(Yield ~ TrtmtB, data=my.data)
+
+#1-df Tukey:
+my.data$sq_preds <- predict(model.tmp)^2
+one.df.model <- lm(Yield ~ SeedLotA + Block + SeedLotA:Block + TrtmtB + SeedLotA:TrtmtB + sq_preds, my.data)
+anova(one.df.model)
 
 # User selected alpha level.
 #-----------------------------------------------------------------------------#
