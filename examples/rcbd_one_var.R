@@ -10,7 +10,6 @@
 #-----------------------------------------------------------------------------#
 library(car)  # for leveneTest()
 library(agricolae)  # for LSD.test()
-library(effects)  # for allEffects()
 #-----------------------------------------------------------------------------#
 
 sep <- function(n){
@@ -45,24 +44,20 @@ anova(model)
 #-----------------------------------------------------------------------------#
 sep(79)
 
-# User sets the alpha level.
-#-----------------------------------------------------------------------------#
-alpha <- 0.05
-#-----------------------------------------------------------------------------#
-
 # Show the confidence intervals for the intercept and each virus level.
 cat('Confidence Intervals\n')
 sep(79)
 #-----------------------------------------------------------------------------#
-confint(model, level=1.0 - alpha)
+confint(model)
 #-----------------------------------------------------------------------------#
 sep(79)
-# Plot the four standard fit plots: residuals vs predicted, sqrt of residuals vs
-# fitted, Normal Q-Q plot of the residuals, residuals vs leverages.
+
+# Plot two standard fit plots: residuals vs predicted and Normal Q-Q plot of the
+# residuals.
 dev.new()
 #-----------------------------------------------------------------------------#
-par(mfrow = c(2, 2), oma = c(0, 0, 2, 0))  # plots as subplots of single graph
-plot(model)
+par(mfrow = c(2, 1), oma = c(0, 0, 2, 0))  # plots as subplots of single graph
+plot(model, which = c(1, 2))
 #-----------------------------------------------------------------------------#
 
 # Plot a kernel density plot of the residuals.
@@ -100,7 +95,7 @@ cat("Tukey's 1-df Test for Non-additivity\n")
 sep(79)
 #-----------------------------------------------------------------------------#
 my.data$sq_preds <- predict(model)^2
-eat_1df.mod<-lm(Yield ~ Treatment + Block + sq_preds, my.data)
+wheat_1df.mod<-lm(Yield ~ Treatment + Block + sq_preds, my.data)
 anova(wheat_1df.mod)
 #-----------------------------------------------------------------------------#
 sep(79)
