@@ -161,6 +161,18 @@ intxplot(Yield ~ TrtmtB, groups = SeedLotA, data=my.data, se=TRUE, ylim=range(my
 cat('Least Significant Difference\n')
 sep(50)
 #-----------------------------------------------------------------------------#
-LSD.test(model.tmp, 'SeedLotA', alpha=alpha, console=TRUE)
+#LSD.test(model.tmp, 'SeedLotA', alpha=alpha, console=TRUE)
+####Means comparisons####
+#(1)If the interaction between main plot * subplot is NOT significant, do both:
+  #(a)Comparisons among main plot levels
+   MP_comparison<-LSD.test(my.data$Yield, my.data$SeedLotA, DFerror = mp_df,
+                        MSerror = mp_error)
+   MP_comparison
+  #(b)Comparisons among subplot levels
+    #To compare subplots, it is not necessary to specify subplot error because 
+     #it is the residual error (the default MSE for all F tests):
+    SP_comparison<-LSD.test(my.data$Yield, my.data$TrtmtB, DFerror = sp_df,
+                            MSerror = sp_error)
+    SP_comparison    
 #-----------------------------------------------------------------------------#
 sep(50)
