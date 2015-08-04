@@ -46,6 +46,31 @@ my.data$Block <- as.factor(my.data$Block)
 my.data$TrtmtB <- as.factor(my.data$TrtmtB)
 #-----------------------------------------------------------------------------#
 
+##Testing various transformations for improving assumption tests##
+#(1) Create a sqrt-transformed variable
+my.data[,4]<-sqrt(my.data[,4])
+
+#(2) Create a log-transformed variable
+my.data[,4]<-log10(my.data[,4])
+
+#(3)----- Finding the exponent for a power transformation ---- #
+my.data$merged_treatment <- paste(my.data$SeedLotA, my.data$TrtmtB, sep = "-")
+as.factor(my.data$merged_treatment)
+str(my.data)
+means <- aggregate(my.data$Yield, list(my.data$merged_treatment), mean)
+vars <- aggregate(my.data$Yield, list(my.data$merged_treatment), var)
+logmeans <- log10(means$x)
+logvars <- log10(vars$x)
+power.mod<-lm(logvars ~ logmeans)
+summary<-summary(power.mod)
+#identify the slope
+summary$coefficients[2,1]
+#calculate the appropriate power of the transformation, where Power = 1 – (slope/2)
+power <- 1-(summary$coefficients[2,1])/2
+power
+#Create power-tranformed variable
+my.data$Yield<-(my.data$Yield)^(power)
+
 # This is the standard model for a split plot RCBD.
 # NOTE : I'm getting this warning message:
 # Warning message:
