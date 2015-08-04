@@ -88,7 +88,7 @@ summary(model)
 model.tmp <- aov(formula = Yield ~ Block + SeedLotA + TrtmtB + SeedLotA:Block +
                  SeedLotA:TrtmtB, data = my.data)
 #-----------------------------------------------------------------------------#
-#Save error and df terms for main-plot and sub-plot (i.e. SeedLotA and TrtmtB, respectively) 
+#Save error and df terms for main-plot error and sub-plot error (i.e. SeedLotA and TrtmtB, respectively) 
  #to be used later for LSD. Note that '[4]' in the following command represents the 
  #4th position of the Block:SeedLotA term in model.tmp. That order would need to be fixed for the following to always work:
 mp_error <- summary(model.tmp)[[1]][["Mean Sq"]][4]
