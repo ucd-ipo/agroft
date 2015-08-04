@@ -104,7 +104,7 @@ sep(50)
 summary(model)
 #-----------------------------------------------------------------------------#
 sep(50)
-
+#ANOVA table shows significant interaction ==> must do LSD for simple effects (all 12 combinations of SeedLotA and TrtmtB)
 # Show the confidence intervals of the model.
 cat('Confidence Intervals\n')
 sep(50)
