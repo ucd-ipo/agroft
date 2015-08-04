@@ -88,6 +88,10 @@ summary(model)
 model.tmp <- aov(formula = Yield ~ Block + SeedLotA + TrtmtB + SeedLotA:Block +
                  SeedLotA:TrtmtB, data = my.data)
 #-----------------------------------------------------------------------------#
+#Save error term for main plot (i.e. SeedLotA) to be used later for LSD. Note that '[4]' 
+ #in the following command represents the 4th position of the Block:SeedLotA term in 
+ #model.tmp. That order would need to be fixed for the following to always work:
+mp_error <- summary(model.tmp)[[1]][["Mean Sq"]][4]
 
 # Plot the four standard fit plots: residuals vs predicted, sqrt of residuals vs
 # fitted, Normal Q-Q plot of the residuals, residuals vs leverages.
