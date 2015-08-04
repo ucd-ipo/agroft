@@ -143,7 +143,12 @@ dev.new()
 #-----------------------------------------------------------------------------#
 plot(allEffects(model.tmp))
 #-----------------------------------------------------------------------------#
-
+#plot interaction plots
+library(HH)
+intxplot(Yield ~ SeedLotA, groups = TrtmtB, data=my.data, se=TRUE, ylim=range(my.data$Yield),
+  offset.scale=500)
+intxplot(Yield ~ TrtmtB, groups = SeedLotA, data=my.data, se=TRUE, ylim=range(my.data$Yield),
+  offset.scale=500)
 # TODO : Do we simply check for the SeedLotA in this example? Can we use the
 # LSD.test() on the model without the error term for the correct results?
 cat('Least Significant Difference\n')
