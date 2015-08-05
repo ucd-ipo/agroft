@@ -161,7 +161,7 @@ intxplot(Yield ~ TrtmtB, groups = SeedLotA, data=my.data, se=TRUE, ylim=range(my
 cat('Least Significant Difference\n')
 sep(50)
 #-----------------------------------------------------------------------------#
-#LSD.test(model.tmp, 'SeedLotA', alpha=alpha, console=TRUE) #This happens to give the same mean separations, 
+#LSD.test(model.tmp, 'SeedLotA', alpha=alpha, console=TRUE) #This happens to give the same mean separations as line169, 
               #but uses wrong LSD value, and it gives wrong conf intervals..
 ####Means comparisons####
 #(1)If the interaction between main plot * subplot is NOT significant, do both:
