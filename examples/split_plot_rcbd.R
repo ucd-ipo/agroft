@@ -105,10 +105,15 @@ plot(model.tmp)
 #-----------------------------------------------------------------------------#
 
 # Make sure the residuals are normal (this can also be seen in the Q-Q plot).
-cat('Shapiro-Wilk Normality Test\n')
+#Actually, "this is a tricky assumption to assess because there are actually
+#two random sources of variation coming from two different normal distributions corresponding
+#to the main-plot and sub-plot experimental units. As before, you have low power to detect nonnormality
+#in small samples and in large samples it is not important. Best left to experts."
+#Let's not do normality test for split-plot.
+#cat('Shapiro-Wilk Normality Test\n')
 sep(50)
 #-----------------------------------------------------------------------------#
-shapiro.test(residuals(model.tmp))
+#shapiro.test(residuals(model.tmp))
 #-----------------------------------------------------------------------------#
 sep(50)
 
