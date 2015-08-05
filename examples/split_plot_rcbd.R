@@ -190,5 +190,16 @@ sep(50)
        if(p_value < 0.05) print(LSD.test(model.i,'TrtmtB')) else print('Treatment effect not significant, thus no LSD is performed')
        })
       }
+  #(b)Comparisons among main plot levels within a subplot level
+  SP_levels<-c(1:4)
+  for (i in SP_levels) {
+    with(subset(my.data, TrtmtB == SP_levels[i]), {
+      print(paste('TrtmtB =', SP_levels[i]))
+      model.i <-aov(Yield ~ Block + SeedLotA)
+      print(summary(model.i))
+      p_value <- summary(model.i)[[1]][["Pr(>F)"]][2]
+      if(p_value < 0.05) print(LSD.test(model.i,'SeedLotA')) else print('Treatment effect not significant, thus no LSD is performed')
+    })
+  }
 #-----------------------------------------------------------------------------#
 sep(50)
