@@ -164,7 +164,8 @@ sep(50)
 #LSD.test(model.tmp, 'SeedLotA', alpha=alpha, console=TRUE) #This happens to give the same mean separations as line169, 
               #but uses wrong LSD value, and it gives wrong conf intervals..
 ####Means comparisons####
-#(1)If the interaction between main plot * subplot is NOT significant, do 1a & 1b:
+#(1)If the interaction between main-plot * subplot is NOT significant AND the main-plot or sub-plot 
+  #effect is sig in ANOVA, do 1a & 1b:
   #(a)Comparisons among main plot levels
    MP_comparison<-LSD.test(my.data$Yield, my.data$SeedLotA, DFerror = mp_df,
                         MSerror = mp_error)
