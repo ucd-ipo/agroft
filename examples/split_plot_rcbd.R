@@ -164,7 +164,7 @@ sep(50)
 #LSD.test(model.tmp, 'SeedLotA', alpha=alpha, console=TRUE) #This happens to give the same mean separations as line169, 
               #but uses wrong LSD value, and it gives wrong conf intervals..
 ####Means comparisons####
-#(1)If the interaction between main plot * subplot is NOT significant, do both:
+#(1)If the interaction between main plot * subplot is NOT significant, do 1a & 1b:
   #(a)Comparisons among main plot levels
    MP_comparison<-LSD.test(my.data$Yield, my.data$SeedLotA, DFerror = mp_df,
                         MSerror = mp_error)
@@ -175,5 +175,20 @@ sep(50)
     SP_comparison<-LSD.test(my.data$Yield, my.data$TrtmtB, DFerror = sp_df,
                             MSerror = sp_error)
     SP_comparison    
+  
+#(2)If interaction between main plot * subplot is significant, do:
+  #(a)Comparisons among subplot levels within a main plot level
+    #Using loops in R to cycle through levels of the main plot 
+    #note: there are 4 levels in this case, but it will need to be made generic
+    MP_levels<-c(1:4)
+    for (i in MP_levels) {
+      with(subset(my.data, SeedLotA == MP_levels[i]), {
+       print(paste('SeedLotA =', MP_levels[i]))
+       model.i <-aov(Yield ~ Block + TrtmtB)
+       print(summary(model.i))
+       p_value <- summary(model.i)[[1]][["Pr(>F)"]][2]
+       if(p_value < 0.05) print(LSD.test(model.i,'TrtmtB')) else print('Treatment effect not significant, thus no LSD is performed')
+       })
+      }
 #-----------------------------------------------------------------------------#
 sep(50)
