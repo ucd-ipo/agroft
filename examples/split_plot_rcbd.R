@@ -202,5 +202,8 @@ sep(50)
       if(p_value < 0.05) print(LSD.test(model.i,'SeedLotA')) else print('Treatment effect not significant, thus no LSD is performed')
     })
   }
+  #(c)Comparisons between subplot levels across different main plot levels
+  # Trying to figure out how to code for this. It's more complicated.
+
 #-----------------------------------------------------------------------------#
 sep(50)
