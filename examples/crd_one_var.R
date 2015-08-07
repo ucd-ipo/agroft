@@ -122,7 +122,7 @@ ggplot(merged_table,
   geom_errorbar(aes(ymax=lsd.trt.means+se, ymin=lsd.trt.means-se), 
                 width=0.0, size=0.5, color="black")  +
  geom_text(aes(label=lsd.letters,
-               y = lsd.trt.means + se/1.8, vjust=-2.5)) +
+               y = lsd.trt.means + se/1.8, vjust=-2.5), size=6) +
   labs(x = "Virus",   #should be customizable
        y = "Yield")  +  #should be customizable
   theme_bw()  +
