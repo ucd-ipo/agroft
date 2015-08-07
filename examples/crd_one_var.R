@@ -133,5 +133,6 @@ ggplot(merged_table,
         axis.title = element_text(face = "bold"),
         axis.title.y = element_text(vjust= 1.8),
         axis.title.x = element_text(vjust= -0.5),
-        panel.border = element_rect(colour="black")
+        panel.border = element_rect(colour="black"),
+        text = element_text(size=20) 
   )
