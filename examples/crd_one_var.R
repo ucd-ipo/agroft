@@ -116,7 +116,7 @@ merged_table <- merge(Data2,table1,by.x='virus',by.y='lsd.trt.names')
 library(ggplot2) 
 ggplot(merged_table, 
        aes(x = virus, y = lsd.trt.means, 
-           ymax=50, ymin=0.0))  + #note scale depends on dataset
+           ymax=1.25*lsd.trt.means, ymin=0.0))  + 
   geom_bar(stat="identity", fill="gray50",
            colour = "black", width = 0.7)  +
   geom_errorbar(aes(ymax=lsd.trt.means+se, ymin=lsd.trt.means-se), 
