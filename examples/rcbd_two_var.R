@@ -97,11 +97,11 @@ plot(model, c(1, 2))
 
 # Make sure the residuals are normal (this can also be seen in the Q-Q plot).
 cat('Shapiro-Wilk Normality Test\n')
-sep(50)
+sep(79)
 #------------------------------------------------------------------------------#
 shapiro.test(residuals(model))
 #------------------------------------------------------------------------------#
-sep(50)
+sep(79)
 
 # Run Levene's Test for a one-way ANOVA of each of the main factors.
 # TODO : clone is significant in Levene's test so transformation is necessary.
@@ -128,19 +128,19 @@ sep(79)
 # factors. In this case all factors, including interaction nitrogen:clone, are
 # significant.
 cat('ANOVA Table\n')
-sep(50)
+sep(79)
 #------------------------------------------------------------------------------#
 anova(model)
 #------------------------------------------------------------------------------#
-sep(50)
+sep(79)
 
 # Show the confidence intervals.
 cat('Confidence Intervals\n')
-sep(50)
+sep(79)
 #------------------------------------------------------------------------------#
 confint(model)
 #------------------------------------------------------------------------------#
-sep(50)
+sep(79)
 
 # Plot the mean yield with respect to each clone for each N level and vice
 # versa.
@@ -159,8 +159,8 @@ intxplot(yield ~ nitrogen, groups = clone, data=my.data, se=TRUE,
 # so we then see which levels of both clone and nitrogen are significant with
 # respect to each other using least significant difference.
 cat('Least Significant Difference\n')
-sep(50)
+sep(79)
 #------------------------------------------------------------------------------#
 LSD.test(model, c('clone', 'nitrogen'), console=TRUE)
 #------------------------------------------------------------------------------#
-sep(50)
+sep(79)
