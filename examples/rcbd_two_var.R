@@ -16,6 +16,8 @@
 library('agricolae')  # for LSD.test()
 library('car')  # for levenTest()
 library('HH')  # for intxplot()
+library('ggplot2')  # for ggplot(), etc.
+library('Rmisc')  # for summarySE()
 #-----------------------------------------------------------------------------#
 
 sep <- function(n){
@@ -43,49 +45,31 @@ my.data <- read.csv('rcbd_two_var.csv')
 my.data$block <- as.factor(my.data$block)
 #-----------------------------------------------------------------------------#
 
-##Testing various transformations for improving assumption tests ==> LOG-TRANSFORM was best##
-#Note, you must load data fresh each time any of the 3 transformations are run
-#(1) Create a sqrt-transformed variable
-my.data[,4]<-sqrt(my.data[,4])
-
-#(2) Create a log-transformed variable
-my.data[,4]<-log10(my.data[,4])
-
-#(3)----- Finding the exponent for a power transformation ---- #
-my.data$merged_treatment <- paste(clone, nitrogen, sep = "")
-as.factor(my.data$merged_treatment)
-str(my.data)
-means <- aggregate(my.data$yield, list(my.data$merged_treatment), mean)
-vars <- aggregate(my.data$yield, list(my.data$merged_treatment), var)
-logmeans <- log10(means$x)
-logvars <- log10(vars$x)
-power.mod<-lm(logvars ~ logmeans)
-summary<-summary(power.mod)
-#identify the slope
-summary$coefficients[2,1]
-#calculate the appropriate power of the transformation, where Power = 1 – (slope/2)
-power <- 1-(summary$coefficients[2,1])/2
-power
-#Create power-tranformed variable
-my.data$yield<-(my.data$yield)^(power)
+# Use a log10 transformation.
+#-----------------------------------------------------------------------------#
+my.data$log10.yield <- log10(my.data$yield)
+#-----------------------------------------------------------------------------#
 
 # Construct the model.
 #-----------------------------------------------------------------------------#
-model <- aov(yield ~ block + clone + nitrogen + clone:nitrogen, data=my.data)
+model <- aov(log10.yield ~ block + clone + nitrogen + clone:nitrogen,
+             data=my.data)
 #-----------------------------------------------------------------------------#
 
-# Create Box Plot of levels of treatments for each factor (in this case clone &
+# Create box plot of levels of treatments for each factor (in this case clone &
 # nitrogen levels).
 dev.new()
 #-----------------------------------------------------------------------------#
 par(mfrow = c(2, 1))
-boxplot(yield ~ clone, data = my.data,
+boxplot(log10.yield ~ clone, data = my.data,
         main = "Effect of clone on yield",
-        xlab = "Clone", ylab = "Yield (?)")
-boxplot(yield ~ nitrogen, data = my.data,
+        xlab = "Clone", ylab = "log10(Yield)")
+boxplot(log10.yield ~ nitrogen, data = my.data,
         main = "Effect of nitrogen on yield",
-        xlab = "Nitrogen Level", ylab = "Yield (?)")
+        xlab = "Nitrogen Level", ylab = "log10(Yield)")
 #-----------------------------------------------------------------------------#
+dev.copy(png, 'rcbd-two-var-box-plots.png')
+dev.off()
 
 # Plot two standard fit plots: residuals vs predicted, Normal Q-Q plot of the
 # residuals.
@@ -94,6 +78,8 @@ dev.new()
 par(mfrow = c(2, 1), oma = c(0, 0, 2, 0))
 plot(model, c(1, 2))
 #------------------------------------------------------------------------------#
+dev.copy(png, 'rcbd-two-var-fit-plots.png')
+dev.off()
 
 # Make sure the residuals are normal (this can also be seen in the Q-Q plot).
 cat('Shapiro-Wilk Normality Test\n')
@@ -113,13 +99,15 @@ leveneTest(yield ~ nitrogen, data=my.data)
 #------------------------------------------------------------------------------#
 sep(79)
 
-# Generate predicted values for Tukey 1-df Test
 # Perform a Tukey 1-df Test for Non-additivity
+# TODO : It may be necessary to use as.factor() on the factor variables if we
+# have to use lm() here, since squared.preds is continuous.
 cat("Tukey 1-df Test for Non-additivity\n")
 sep(79)
 #------------------------------------------------------------------------------#
-my.data$sq_preds <- predict(model)^2
-one.df.model <- lm(yield ~ clone + nitrogen + clone:nitrogen + block + sq_preds, my.data)
+my.data$squared.preds <- predict(model)^2
+one.df.model <- lm(log10.yield ~ clone + nitrogen + clone:nitrogen + block +
+                   squared.preds, my.data)
 anova(one.df.model)
 #------------------------------------------------------------------------------#
 sep(79)
@@ -144,16 +132,20 @@ sep(79)
 
 # Plot the mean yield with respect to each clone for each N level and vice
 # versa.
-# TODO : This call to par() is not making the intxplots subplots for some
-# reason.
 dev.new()
 #------------------------------------------------------------------------------#
-par(mfrow = c(2, 1))
-intxplot(yield ~ clone, groups = nitrogen, data=my.data, se=TRUE,
-         ylim=range(my.data$yield), offset.scale=500)
-intxplot(yield ~ nitrogen, groups = clone, data=my.data, se=TRUE,
-         ylim=range(my.data$yield), offset.scale=500)
+intxplot(log10.yield ~ clone, groups = nitrogen, data = my.data, se = TRUE,
+         ylim = range(my.data$log10.yield), offset.scale = 500)
 #------------------------------------------------------------------------------#
+dev.copy(png, 'rcbd-two-var-clone-int-plot.png')
+dev.off()
+dev.new()
+#------------------------------------------------------------------------------#
+intxplot(log10.yield ~ nitrogen, groups = clone, data = my.data, se = TRUE,
+         ylim = range(my.data$log10.yield), offset.scale = 500)
+#------------------------------------------------------------------------------#
+dev.copy(png, 'rcbd-two-var-nitrogen-int-plot.png')
+dev.off()
 
 # The ANOVA table shows that each variable and the interaction are significant,
 # so we then see which levels of both clone and nitrogen are significant with
@@ -161,6 +153,35 @@ intxplot(yield ~ nitrogen, groups = clone, data=my.data, se=TRUE,
 cat('Least Significant Difference\n')
 sep(79)
 #------------------------------------------------------------------------------#
-LSD.test(model, c('clone', 'nitrogen'), console=TRUE)
+lsd.results <- LSD.test(model, c('clone', 'nitrogen'), console = TRUE)
 #------------------------------------------------------------------------------#
 sep(79)
+
+# Create Post-hoc Bar Graph
+dev.new()
+#-----------------------------------------------------------------------------#
+summary.stats <- summarySE(data = my.data, "log10.yield",
+                           groupvars = c("clone", "nitrogen"))
+summary.stats$trt <- apply(summary.stats[ , c("clone", "nitrogen")], 1, paste,
+                           collapse = ":")
+merged.table <- merge(summary.stats, lsd.results$groups, by = 'trt')
+ggplot(merged.table, aes(x = trt, y = means, ymax = 1.5)) +
+  geom_bar(stat = "identity", fill = "gray50", colour = "black", width = 0.7) +
+  geom_errorbar(aes(ymax = means + se, ymin = means - se), width = 0.0,
+                size = 0.5, color = "black") +
+  geom_text(aes(label = M, y = means + se / 1.8, vjust = -2.5), size = 6) +
+  labs(x = "Treatment", y = "log10(Yield)") +
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_line(colour = "grey80"),
+        plot.title = element_text(size = rel(1.5),
+                                  face = "bold", vjust = 1.5),
+        axis.title = element_text(face = "bold"),
+        axis.title.y = element_text(vjust= 1.8),
+        axis.title.x = element_text(vjust= -0.5),
+        panel.border = element_rect(colour = "black"),
+        text = element_text(size = 20)
+  )
+#-----------------------------------------------------------------------------#
+dev.copy(png, 'rcbd-two-var-clone-bar-graph.png')
+dev.off()
