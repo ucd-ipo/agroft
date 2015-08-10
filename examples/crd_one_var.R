@@ -102,7 +102,7 @@ ggplot(merged.table, aes(x = virus, y = means, ymax = 50, ymin = 0.0)) +
   geom_bar(stat = "identity", fill = "gray50", colour = "black", width = 0.7) +
   geom_errorbar(aes(ymax = means + se, ymin = means - se), width = 0.0,
                 size = 0.5, color = "black") +
-  geom_text(aes(label=M, y = means + se / 1.8, vjust=-2.5)) +
+  geom_text(aes(label=M, y = means + se / 1.8, vjust=-2.5), size = 6) +
   labs(x = "Virus", y = "Yield") +
   theme_bw() +
   theme(panel.grid.major.x = element_blank(),
@@ -112,6 +112,7 @@ ggplot(merged.table, aes(x = virus, y = means, ymax = 50, ymin = 0.0)) +
         axis.title = element_text(face = "bold"),
         axis.title.y = element_text(vjust= 1.8),
         axis.title.x = element_text(vjust= -0.5),
-        panel.border = element_rect(colour="black")
+        panel.border = element_rect(colour="black"),
+        text = element_text(size=20)
   )
 #-----------------------------------------------------------------------------#
