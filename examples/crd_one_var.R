@@ -43,8 +43,10 @@ model <- aov(yield ~ virus, data = my.data)
 dev.new()
 #-----------------------------------------------------------------------------#
 boxplot(yield ~ virus, data = my.data, main = "Effect of virus on yield",
-        xlab = "virus", ylab = "yield (?)")
+        xlab = "virus", ylab = "yield")
 #-----------------------------------------------------------------------------#
+dev.copy(png, 'crd-one-var-box-plots.png')
+dev.off()
 
 # Plot two standard fit plots: residuals vs predicted and Normal Q-Q plot of the
 # residuals.
@@ -53,6 +55,8 @@ dev.new()
 par(mfrow = c(2, 1), oma = c(0, 0, 2, 0))  # plots as subplots of single graph
 plot(model, which = c(1, 2))
 #-----------------------------------------------------------------------------#
+dev.copy(png, 'crd-one-var-fit-plots.png')
+dev.off()
 
 # Make sure the residuals are normal (this can also be seen in the Q-Q plot).
 cat('Shapiro-Wilk Normality Test\n')
@@ -68,9 +72,6 @@ sep(79)
 #-----------------------------------------------------------------------------#
 leveneTest(yield ~ virus, data = my.data)
 #-----------------------------------------------------------------------------#
-sep(79)
-
-#------------------------------------------------------------------------------#
 sep(79)
 
 # Print the ANOVA table of the fit. The user should will have to note the
@@ -95,14 +96,14 @@ sep(79)
 # Create Post-hoc Bar Graph
 #-----------------------------------------------------------------------------#
 summary.stats <- summarySE(data = my.data, "yield", groupvars = "virus")
-merged.table <- merge(summary.stats, lsd.results$groups, by.x='virus',
-                      by.y='trt')
+merged.table <- merge(summary.stats, lsd.results$groups, by.x = 'virus',
+                      by.y = 'trt')
 dev.new()
 ggplot(merged.table, aes(x = virus, y = means, ymax = 50, ymin = 0.0)) +
   geom_bar(stat = "identity", fill = "gray50", colour = "black", width = 0.7) +
   geom_errorbar(aes(ymax = means + se, ymin = means - se), width = 0.0,
                 size = 0.5, color = "black") +
-  geom_text(aes(label=M, y = means + se / 1.8, vjust=-2.5), size = 6) +
+  geom_text(aes(label = M, y = means + se / 1.8, vjust = -2.5), size = 6) +
   labs(x = "Virus", y = "Yield") +
   theme_bw() +
   theme(panel.grid.major.x = element_blank(),
@@ -112,7 +113,9 @@ ggplot(merged.table, aes(x = virus, y = means, ymax = 50, ymin = 0.0)) +
         axis.title = element_text(face = "bold"),
         axis.title.y = element_text(vjust= 1.8),
         axis.title.x = element_text(vjust= -0.5),
-        panel.border = element_rect(colour="black"),
-        text = element_text(size=20)
+        panel.border = element_rect(colour = "black"),
+        text = element_text(size = 20)
   )
 #-----------------------------------------------------------------------------#
+dev.copy(png, 'crd-one-var-bar-graph.png')
+dev.off()
