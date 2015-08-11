@@ -52,16 +52,16 @@ dev.new()
 par(mfrow = c(2, 1), oma = c(0, 0, 2, 0))  # plots as subplots of single graph
 plot(model, which = c(1, 2))
 #-----------------------------------------------------------------------------#
-dev.copy(png, 'rcbd-one-var-fit-plots.png')
-dev.off()
+invisible(dev.copy(png, 'rcbd-one-var-fit-plots.png'))
+invisible(dev.off())
 
 # Plot a kernel density plot of the residuals.
 dev.new()
 #-----------------------------------------------------------------------------#
 plot(density(residuals(model)))
 #-----------------------------------------------------------------------------#
-dev.copy(png, 'rcbd-one-var-density-plot.png')
-dev.off()
+invisible(dev.copy(png, 'rcbd-one-var-density-plot.png'))
+invisible(dev.off())
 
 # Create Box Plot of treatments
 dev.new()
@@ -70,8 +70,8 @@ boxplot(Yield ~ Treatment, data = my.data,
         main = "Effect of wheat variety on yield",
         xlab = "Wheat cultivar", ylab = "Yield (ton/ha)")
 #-----------------------------------------------------------------------------#
-dev.copy(png, 'rcbd-one-var-box-plot.png')
-dev.off()
+invisible(dev.copy(png, 'rcbd-one-var-box-plot.png'))
+invisible(dev.off())
 
 # Perform a Shapiro-Wilk test for normality of residuals
 cat('Shapiro-Wilk Normality Test\n')
@@ -131,5 +131,5 @@ ggplot(merged.table, aes(x = Treatment, y = means,)) +
         text = element_text(size = 20)
   )
 #-----------------------------------------------------------------------------#
-dev.copy(png, 'rcbd-one-var-bar-graph.png')
-dev.off()
+invisible(dev.copy(png, 'rcbd-one-var-bar-graph.png'))
+invisible(dev.off())
