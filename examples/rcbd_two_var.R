@@ -68,8 +68,8 @@ boxplot(log10.yield ~ nitrogen, data = my.data,
         main = "Effect of nitrogen on yield",
         xlab = "Nitrogen Level", ylab = "log10(Yield)")
 #-----------------------------------------------------------------------------#
-dev.copy(png, 'rcbd-two-var-box-plots.png')
-dev.off()
+invisible(dev.copy(png, 'rcbd-two-var-box-plots.png'))
+invisible(dev.off())
 
 # Plot two standard fit plots: residuals vs predicted, Normal Q-Q plot of the
 # residuals.
@@ -78,8 +78,8 @@ dev.new()
 par(mfrow = c(2, 1), oma = c(0, 0, 2, 0))
 plot(model, c(1, 2))
 #------------------------------------------------------------------------------#
-dev.copy(png, 'rcbd-two-var-fit-plots.png')
-dev.off()
+invisible(dev.copy(png, 'rcbd-two-var-fit-plots.png'))
+invisible(dev.off())
 
 # Make sure the residuals are normal (this can also be seen in the Q-Q plot).
 cat('Shapiro-Wilk Normality Test\n')
@@ -137,15 +137,15 @@ dev.new()
 intxplot(log10.yield ~ clone, groups = nitrogen, data = my.data, se = TRUE,
          ylim = range(my.data$log10.yield), offset.scale = 500)
 #------------------------------------------------------------------------------#
-dev.copy(png, 'rcbd-two-var-clone-int-plot.png')
-dev.off()
+invisible(dev.copy(png, 'rcbd-two-var-clone-int-plot.png'))
+invisible(dev.off())
 dev.new()
 #------------------------------------------------------------------------------#
 intxplot(log10.yield ~ nitrogen, groups = clone, data = my.data, se = TRUE,
          ylim = range(my.data$log10.yield), offset.scale = 500)
 #------------------------------------------------------------------------------#
-dev.copy(png, 'rcbd-two-var-nitrogen-int-plot.png')
-dev.off()
+invisible(dev.copy(png, 'rcbd-two-var-nitrogen-int-plot.png'))
+invisible(dev.off())
 
 # The ANOVA table shows that each variable and the interaction are significant,
 # so we then see which levels of both clone and nitrogen are significant with
@@ -183,5 +183,5 @@ ggplot(merged.table, aes(x = trt, y = means, ymax = 1.5)) +
         text = element_text(size = 20)
   )
 #-----------------------------------------------------------------------------#
-dev.copy(png, 'rcbd-two-var-clone-bar-graph.png')
-dev.off()
+invisible(dev.copy(png, 'rcbd-two-var-clone-bar-graph.png'))
+invisible(dev.off())
