@@ -56,18 +56,11 @@ my.data$Yield <- sqrt(my.data$Yield)
 my.data$Yield <- log10(my.data$Yield)
 
 #(3)----- Finding the exponent for a power transformation ---- #
-my.data$merged_treatment <- paste(my.data$SeedLotA, my.data$TrtmtB, sep = "-")
-#as.factor(my.data$merged_treatment)
-means <- aggregate(my.data$Yield, list(my.data$merged_treatment), mean)
-vars <- aggregate(my.data$Yield, list(my.data$merged_treatment), var)
-logmeans <- log10(means$x)
-logvars <- log10(vars$x)
-power.mod <- lm(logvars ~ logmeans)
-summary <- summary(power.mod)
-# calculate the appropriate power of the transformation, where Power = 1 – (slope/2)
-power <- 1 - summary$coefficients[2,1] / 2
-# Create power-transformed variable
-my.data$Yield <- (my.data$Yield)^(power)
+mean.data <- aggregate(Yield ~ SeedLotA + TrtmtB, data = my.data, function(x)
+                       c(logmean=log10(mean(x)), logvar=log10(var(x))))
+power.model <- lm(logvar ~ logmean, data = as.data.frame(mean.data$Yield))
+power <- 1 - summary(power.model)$coefficients[2, 1] / 2
+my.data$Yield <- my.data$Yield^power
 
 # This is the standard model for a split plot RCBD.
 # NOTE : I'm getting this warning message:
