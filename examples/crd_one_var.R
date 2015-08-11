@@ -45,8 +45,8 @@ dev.new()
 boxplot(yield ~ virus, data = my.data, main = "Effect of virus on yield",
         xlab = "virus", ylab = "yield")
 #-----------------------------------------------------------------------------#
-dev.copy(png, 'crd-one-var-box-plots.png')
-dev.off()
+invisible(dev.copy(png, 'crd-one-var-box-plots.png'))
+invisible(dev.off())
 
 # Plot two standard fit plots: residuals vs predicted and Normal Q-Q plot of the
 # residuals.
@@ -55,8 +55,8 @@ dev.new()
 par(mfrow = c(2, 1), oma = c(0, 0, 2, 0))  # plots as subplots of single graph
 plot(model, which = c(1, 2))
 #-----------------------------------------------------------------------------#
-dev.copy(png, 'crd-one-var-fit-plots.png')
-dev.off()
+invisible(dev.copy(png, 'crd-one-var-fit-plots.png'))
+invisible(dev.off())
 
 # Make sure the residuals are normal (this can also be seen in the Q-Q plot).
 cat('Shapiro-Wilk Normality Test\n')
@@ -117,5 +117,5 @@ ggplot(merged.table, aes(x = virus, y = means, ymax = 50, ymin = 0.0)) +
         text = element_text(size = 20)
   )
 #-----------------------------------------------------------------------------#
-dev.copy(png, 'crd-one-var-bar-graph.png')
-dev.off()
+invisible(dev.copy(png, 'crd-one-var-bar-graph.png'))
+invisible(dev.off())
