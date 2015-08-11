@@ -36,8 +36,8 @@ dev.new()
 plot(formula = rate ~ year, data = my.data)
 abline(model)
 #-----------------------------------------------------------------------------#
-dev.copy(png, 'lin-reg-scatter-plot.png')
-dev.off()
+invisible(dev.copy(png, 'lin-reg-scatter-plot.png'))
+invisible(dev.off())
 
 # Plot two standard fit plots: residuals vs predicted, Normal Q-Q plot of the
 # residuals.
@@ -46,8 +46,8 @@ dev.new()
 par(mfrow = c(2, 1), oma = c(0, 0, 2, 0))
 plot(model, c(1, 2))
 #------------------------------------------------------------------------------#
-dev.copy(png, 'lin-reg-fit-plots.png')
-dev.off()
+invisible(dev.copy(png, 'lin-reg-fit-plots.png'))
+invisible(dev.off())
 
 # Make sure the residuals are normal (this can also be seen in the Q-Q plot).
 cat('Shapiro-Wilk Normality Test\n')
