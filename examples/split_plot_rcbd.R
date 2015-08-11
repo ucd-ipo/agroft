@@ -84,8 +84,8 @@ dev.new()
 par(mfrow = c(2, 1), oma = c(0, 0, 2, 0))
 plot(model.tmp, which = c(1, 2))
 #-----------------------------------------------------------------------------#
-dev.copy(png, 'split-plot-rcbd-fit-plots.png')
-dev.off()
+invisible(dev.copy(png, 'split-plot-rcbd-fit-plots.png'))
+invisible(dev.off())
 
 # Do not do the Shapiro-Wilk Normality Test because it is not straight forward
 # for a split-plot design.
@@ -127,16 +127,16 @@ dev.new()
 intxplot(Yield ~ SeedLotA, groups = TrtmtB, data = my.data, se = TRUE,
          ylim = range(my.data$Yield), offset.scale = 500)
 #-----------------------------------------------------------------------------#
-dev.copy(png, 'split-plot-rcbd-main-plot-interaction-plot.png')
-dev.off()
+invisible(dev.copy(png, 'split-plot-rcbd-main-plot-interaction-plot.png'))
+invisible(dev.off())
 
 dev.new()
 #-----------------------------------------------------------------------------#
 intxplot(Yield ~ TrtmtB, groups = SeedLotA, data = my.data, se = TRUE,
          ylim = range(my.data$Yield), offset.scale = 500)
 #-----------------------------------------------------------------------------#
-dev.copy(png, 'split-plot-rcbd-split-plot-interaction-plot.png')
-dev.off()
+invisible(dev.copy(png, 'split-plot-rcbd-split-plot-interaction-plot.png'))
+invisible(dev.off())
 
 # If the interaction between main-plot : subplot is NOT significant AND the
 # main-plot or sub-plot effect is sig in ANOVA, do the following.
