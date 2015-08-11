@@ -35,7 +35,7 @@ my.data$Year <- as.factor(my.data$Year)
 cat('Linear mixed effect model results\n')
 sep(79)
 #-----------------------------------------------------------------------------#
-model <- lme(fixed = Yield ~ Treatment, random = ~1|Block/Year, data = my.data)
+model <- lme(fixed = Yield ~ Treatment, random = ~1|Year/Block, data = my.data)
 summary(model)
 #-----------------------------------------------------------------------------#
 sep(79)
