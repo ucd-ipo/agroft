@@ -10,15 +10,12 @@
 # [2] http://www.personal.psu.edu/mar36/stat_461/split_plot/split_plot.html
 # [3] http://www.unh.edu/halelab/BIOL933/schedule.htm
 #
-# TODO : Maybe I should use the `data('plots')` from the agricolae package
-# instead?
-#
 # NOTE : The code that will be shown to the user in the app is bounded by these
 # separators: #------------#.
 
 # Load the necessary libraries.
 #-----------------------------------------------------------------------------#
-library('agricolae')
+library('agricolae')  # for LSD.test()
 library('car')  # for leveneTest()
 library('HH')  # for intxplot()
 #-----------------------------------------------------------------------------#
