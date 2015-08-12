@@ -1,16 +1,17 @@
 inst.pkgs <- installed.packages()[,'Package']
 
 need.pkgs <- c('shiny',
-              'shinyAce',
-              'shinyBS',
-              'knitr',
-              'gridExtra',
-              'agricolae',
-              'lattice',
-              'effects',
-              'lsmeans',
-          #    'readxl',
-              'devtools')
+               'shinyAce',
+               'shinyBS',
+               'knitr',
+               'gridExtra',
+               'agricolae',
+               'lattice',
+               'effects',
+               'lsmeans',
+               #'readxl',
+               'devtools',
+               'yaml')
 
 if(!all(need.pkgs %in% inst.pkgs)){
   cat(paste('Not all the required packages are installed.\n\nPress escape to',
