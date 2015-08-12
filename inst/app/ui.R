@@ -5,7 +5,10 @@ library(shinyAce)
 library(shinyBS)
 library(yaml)
 
-help.text <- yaml.load_file('help-text.yaml')
+# The shinyBS popovers can't handle line returns in the strings so a special
+# handler is needed.
+str.handler <- function(x) { gsub("[\r\n]", "", x) }
+help.text <- yaml.load_file('help-text.yaml', handlers = list(str = str.handler))
 
 # Load Data Tab
 load.data.editor <- aceEditor('code_used_read',
