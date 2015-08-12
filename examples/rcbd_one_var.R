@@ -55,14 +55,6 @@ plot(model, which = c(1, 2))
 invisible(dev.copy(png, 'rcbd-one-var-fit-plots.png'))
 invisible(dev.off())
 
-# Plot a kernel density plot of the residuals.
-dev.new()
-#-----------------------------------------------------------------------------#
-plot(density(residuals(model)))
-#-----------------------------------------------------------------------------#
-invisible(dev.copy(png, 'rcbd-one-var-density-plot.png'))
-invisible(dev.off())
-
 # Create Box Plot of treatments
 dev.new()
 #-----------------------------------------------------------------------------#
