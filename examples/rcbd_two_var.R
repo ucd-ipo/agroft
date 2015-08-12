@@ -122,14 +122,6 @@ anova(model)
 #------------------------------------------------------------------------------#
 sep(79)
 
-# Show the confidence intervals.
-cat('Confidence Intervals\n')
-sep(79)
-#------------------------------------------------------------------------------#
-confint(model)
-#------------------------------------------------------------------------------#
-sep(79)
-
 # Plot the mean yield with respect to each clone for each N level and vice
 # versa.
 dev.new()
