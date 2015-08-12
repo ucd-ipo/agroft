@@ -42,7 +42,7 @@ load.data.side.panel <- sidebarPanel(
                                     trigger='hover'),
                           bsPopover('code_used_read',
                                     title='Load data R code',
-                                    content=help.text$editor.popover.content,
+                                    content=help.text$load.data.explanation,
                                     placement='top',
                                     trigger='click')
                           )
@@ -73,7 +73,7 @@ var.type.collapse <- bsCollapsePanel(
                        bsModal('var_type_info',
                                title='Variable type info',
                                trigger='variable_type_button',
-                               h5(help.text$text))
+                               h5(help.text$var.type.info))
                        )
 
 anal.type.collapse <- bsCollapsePanel(
@@ -85,10 +85,10 @@ anal.type.collapse <- bsCollapsePanel(
                         bsModal('analysis_info_content',
                                 trigger='analysis_info_button',
                                 title='Information on analysis types',
-                                h5(help.text$text.0), br(),
-                                h5(help.text$text.1), br(),
-                                h5(help.text$text.2), br(),
-                                h5(help.text$text.3)
+                                h5(help.text$t.test.explanation), br(),
+                                h5(help.text$anova.explanation), br(),
+                                h5(help.text$lm.explanation), br(),
+                                h5(help.text$rcbd.explanation)
                                 )
                         )
 
@@ -112,22 +112,22 @@ dep.var.collapse <- bsCollapsePanel(
                       bsModal('glm_dv_info_content',
                               title='Dependent variable information',
                               trigger='glm_dv_info_button',
-                              h5(help.text$text.4), br(),
-                              h5(help.text$text.5), br(),
-                              h5(help.text$text.6)
+                              h5(help.text$continuous.explanation), br(),
+                              h5(help.text$dichotomous.explanation), br(),
+                              h5(help.text$count.explanation)
                               ),
                       bsModal('ttest_dv_info_content',
                               title='Dependent variable information',
                               trigger='ttest_dv_info_button',
-                              h5(help.text$text.7)),
+                              h5(help.text$t.test.dv)),
                       bsModal('aov_dv_info_content',
                               title='Dependent variable information',
                               trigger='aov_dv_info_button',
-                              h5(help.text$text.8)),
+                              h5(help.text$anova.dv)),
                       bsModal('rcbd_dv_info_content',
                               title='Dependent variable information',
                               trigger='rcbd_dv_info_button',
-                              h5(help.text$text.9))
+                              h5(help.text$rcbd.dv))
                        )
 
 ind.var.collapse <- bsCollapsePanel(
@@ -141,7 +141,7 @@ ind.var.collapse <- bsCollapsePanel(
                       bsModal('iv_info_content',
                               title='Information on independent variables',
                               trigger='select_iv_info',
-                              h5(help.text$text.10))
+                              h5(help.text$ind.var.explanation))
                       )
 
 interactions.collapse <- bsCollapsePanel('5. Interactions',
@@ -176,7 +176,7 @@ data.analysis.tab <- tabPanel('2. Data analysis',
                                               trigger='hover'),
                                     bsPopover('code_used_model',
                                               title='Analysis R code',
-                                              content=help.text$content.0,
+                                              content=help.text$analysis.code.explanation,
                                               placement='bottom',
                                               trigger='click'),
                                     uiOutput('fit_output'),
@@ -186,7 +186,7 @@ data.analysis.tab <- tabPanel('2. Data analysis',
                                               trigger='hover'),
                                     bsPopover('fit_output',
                                               title='Standard output',
-                                              help.text$content.1,
+                                              help.text$fit.explanation,
                                               placement='left',
                                               trigger='click'))
                                   )
