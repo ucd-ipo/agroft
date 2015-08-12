@@ -59,13 +59,19 @@ load.data.tab <- tabPanel('1. Load data',
                             )
                           )
 
+###############################################################################
 # Data Analysis Tab
+###############################################################################
+
+# In this panel the user selects 1 of 9 experimental design options from a
+# dropdown list. The choice is stored in input$exp.design. Data must be loaded
+# first for the panel to function.
 experiment.design.panel <-
   bsCollapsePanel(
     '1. Experimental Design',
     id = 'experiment_design_panel',
-    h5('Choose an experiment design that matches your data.'),
-    uiOutput('select_design'),
+    h5('Choose an experimental design that matches your data.'),
+    uiOutput('select.design'),
     bsButton('exp_design_info_button',
              "Experimental Design Information"),
     bsModal('exp_design_info_content',
@@ -75,21 +81,58 @@ experiment.design.panel <-
            )
   )
 
-var.type.collapse <- bsCollapsePanel(
-                       '1. Variable types',
-                       id='variable_type_panel',
-                       h5('Indicate your variable types below'),
-                       h6(paste('We have made guesses at the variable types ',
-                                'in your data, but change the variable types ',
-                                'below if they are incorrect.', sep='')),
-                       uiOutput('var_types_select'),
-                       bsButton('variable_type_button',
-                                'Information on variable types'),
-                       bsModal('var_type_info',
-                               title='Variable type info',
-                               trigger='variable_type_button',
-                               h5(help.text$var.type.info))
-                       )
+# The user can adjust whether variables are continuous or factors.
+# TODO : I don't think there is any use in this panel. Since we use `aov`
+# instead of `lm`, all of the variables on the right hand side of the model are
+# consider factors by default.
+var.type.collapse <-
+  bsCollapsePanel(
+    '2. Variable types',
+    id='variable_type_panel',
+    h5('Indicate your variable types below'),
+    h6(paste('We have made guesses at the variable types ',
+             'in your data, but change the variable types ',
+              'below if they are incorrect.', sep='')),
+    uiOutput('var_types_select'),
+    bsButton('variable_type_button',
+             'Information on variable types'),
+    bsModal('var_type_info',
+            title='Variable type info',
+            trigger='variable_type_button',
+            h5(help.text$var.type.info))
+  )
+
+# In this panel, the user selects one of the columns from their data set to be
+# the dependent variable. The choice is stored in input$dependent.variable. The
+# experimental design must be chosen first.
+dependent.panel <-
+  bsCollapsePanel(
+    "3. Dependent Variable",
+    id='select_dependent_variable_panel',
+    uiOutput('select.dependent'),
+    bsButton('dependent_info_button',
+             "Dependent Variable Information"),
+    bsModal('dependent_info_content',
+            trigger='dependent_info_button',
+            title='Information on Dependent Variable Choice',
+            h5(help.text$dependent.variable.info)
+           )
+  )
+
+# In this panel the user selects the independent variables. Depending on which
+# experimental design is chosen, different selection boxes appear.
+independent.panel <-
+  bsCollapsePanel(
+    '4. Independent variables',
+    id='select_independent_variable_panel',
+    uiOutput('select.independent'),
+    bsButton('select_iv_info',
+             'Independent variable info'),
+    bsModal('iv_info_content',
+            title='Information on independent variables',
+            trigger='select_iv_info',
+            h5(help.text$ind.var.explanation))
+  )
 
 anal.type.collapse <- bsCollapsePanel(
                         '2. Type of analysis',
@@ -107,57 +150,6 @@ anal.type.collapse <- bsCollapsePanel(
                                 )
                         )
 
-dep.var.collapse <- bsCollapsePanel(
-                      "3. Dependent variable",
-                      id='select_variables_panel',
-                      uiOutput('select_dv'),
-                      uiOutput('select_dv_type'),
-                      conditionalPanel("input.analysis=='t.test'",
-                                       bsButton('ttest_dv_info_button',
-                                                'More info')),
-                      conditionalPanel("input.analysis=='aov'",
-                                       bsButton('aov_dv_info_button',
-                                                'More info')),
-                      conditionalPanel("input.analysis=='glm'",
-                                       bsButton('glm_dv_info_button',
-                                                'More info')),
-                      conditionalPanel("input.analysis=='rcbd'",
-                                       bsButton('rcbd_dv_info_button',
-                                                'More info')),
-                      bsModal('glm_dv_info_content',
-                              title='Dependent variable information',
-                              trigger='glm_dv_info_button',
-                              h5(help.text$continuous.explanation), br(),
-                              h5(help.text$dichotomous.explanation), br(),
-                              h5(help.text$count.explanation)
-                              ),
-                      bsModal('ttest_dv_info_content',
-                              title='Dependent variable information',
-                              trigger='ttest_dv_info_button',
-                              h5(help.text$t.test.dv)),
-                      bsModal('aov_dv_info_content',
-                              title='Dependent variable information',
-                              trigger='aov_dv_info_button',
-                              h5(help.text$anova.dv)),
-                      bsModal('rcbd_dv_info_content',
-                              title='Dependent variable information',
-                              trigger='rcbd_dv_info_button',
-                              h5(help.text$rcbd.dv))
-                       )
-
-ind.var.collapse <- bsCollapsePanel(
-                      '4. Independent variables',
-                      id='iv_info_panel',
-                      uiOutput('select_block'),
-                      uiOutput('select_treatment'),
-                      uiOutput('select_iv'),
-                      bsButton('select_iv_info',
-                               'Independent variable info'),
-                      bsModal('iv_info_content',
-                              title='Information on independent variables',
-                              trigger='select_iv_info',
-                              h5(help.text$ind.var.explanation))
-                      )
 
 interactions.collapse <- bsCollapsePanel('5. Interactions',
                                          uiOutput('select_interactions'))
@@ -177,9 +169,9 @@ data.analysis.tab <- tabPanel('2. Data analysis',
                                     id='main_collapse_panel',
                                     experiment.design.panel,
                                     var.type.collapse,
+                                    dependent.panel,
+                                    independent.panel,
                                     anal.type.collapse,
-                                    dep.var.collapse,
-                                    ind.var.collapse,
                                     interactions.collapse,
                                     model.check.collapse
                                     ),

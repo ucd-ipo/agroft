@@ -84,3 +84,5 @@ fit.explanation : >
   looks like anova(model.fit).
 exp.design.types : >
   Placeholder for experimental design type explanations.
+dependent.variable.info : >
+  Placeholder for dependent variable choice explanation.

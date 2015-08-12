@@ -148,11 +148,11 @@ shinyServer(function(input, output, session){
                'Split-Plot Randomized Complete Block Design' = 'SPRCBD')
   # TODO : Add in the two designs with random effects.
 
-  output$select_design <- renderUI({
+  output$select.design <- renderUI({
     if(is.null(LoadData())){
-      h4('Please upload or select data.')
+      h4('Please upload or select data first.')
     } else {
-      selectInput('exp_design',
+      selectInput('exp.design',
                   'Select Your Experimental Design',
                   choices = choices,
                   selected = NULL)
@@ -177,15 +177,101 @@ shinyServer(function(input, output, session){
   })
 
 ##### UI element for selecting the dependent variable ############
-  output$select_dv <- renderUI({
-    if(length(input$analysis)==0){return(NULL)}
-    # don't return dv selection if they haven't selected an analysis
-    # otherwise, select a DV
-    # choices are all the variables in LoadData()
-    selectInput('dv',
-                'Select your dependent variable',
-                choices=names(LoadData()),
-                selected=NULL)
+
+  output$select.dependent <- renderUI({
+    if (is.null(input$exp.design)) {
+      h4('Please select an experimental design first.')
+      input$dependent.variable = NULL
+    } else {
+      selectInput('dependent.variable',
+                  'Select a dependent variable:',
+                  choices = names(LoadData()),
+                  selected = NULL)
+    }
+  })
+
+# UI element for selecting in independent variables.
+
+  output$select.independent <- renderUI({
+    if (is.null(input$dependent.variable)) {
+      return(NULL)
+    } else {
+      all.col.names <- names(ConvertData())
+      choices = all.col.names[!all.col.names %in% input$dependent.variable]
+      if (input$exp.design == 'LR') {
+        selectInput('independent.variable',
+                    'Select a single continous independent variable:',
+                     choices = choices,
+                     selected = NULL)
+      } else if (input$exp.design == 'CRD1') {
+        selectInput('independent.variable.one',
+                    'Select a single independent factor variable:',
+                     choices = choices,
+                     selected = NULL)
+      } else if (input$exp.design == 'CRD2') {
+        input1 <- selectInput('independent.variable.one',
+                    'Select the first independent factor variable:',
+                     choices = choices,
+                     selected = NULL)
+        input2 <- selectInput('independent.variable.two',
+                    'Select the second independent factor variable:',
+                     choices = choices,
+                     selected = NULL)
+        return(list(input1, input2))
+      } else if (input$exp.design == 'RCBD1') {
+        input1 <- selectInput('independent.variable.one',
+                    'Select the first independent factor variable:',
+                     choices = choices,
+                     selected = NULL)
+        input2 <- selectInput('independent.variable.blk',
+                    'Select the blocking factor variable:',
+                     choices = choices,
+                     selected = NULL)
+        return(list(input1, input2))
+      } else if (input$exp.design == 'RCBD2') {
+        input1 <- selectInput('independent.variable.one',
+                    'Select the first independent factor variable:',
+                     choices = choices,
+                     selected = NULL)
+        input2 <- selectInput('independent.variable.two',
+                    'Select the second independent factor variable:',
+                     choices = choices,
+                     selected = NULL)
+        input3 <- selectInput('independent.variable.blk',
+                    'Select the blocking factor variable:',
+                     choices = choices,
+                     selected = NULL)
+        return(list(input1, input2, input3))
+      } else if (input$exp.design == 'SPCRD') {
+        input1 <- selectInput('independent.variable.main.plot',
+                    'Select the main plot treatment:',
+                     choices = choices,
+                     selected = NULL)
+        input2 <- selectInput('independent.variable.sub.plot',
+                    'Select the sub plot treatment:',
+                     choices = choices,
+                     selected = NULL)
+        input3 <- selectInput('independent.variable.rep',
+                    'Select the repetition:',
+                     choices = choices,
+                     selected = NULL)
+        return(list(input1, input2, input3))
+      } else if (input$exp.design == 'SPRCBD') {
+        input1 <- selectInput('independent.variable.main.plot',
+                    'Select the main plot treatment:',
+                     choices = choices,
+                     selected = NULL)
+        input2 <- selectInput('independent.variable.sub.plot',
+                    'Select the sub plot treatment:',
+                     choices = choices,
+                     selected = NULL)
+        input3 <- selectInput('independent.variable.blk',
+                    'Select the blocking factor variable:',
+                     choices = choices,
+                     selected = NULL)
+        return(list(input1, input2, input3))
+      }
+    }
   })
 
 ##### UI element for selecting the independent variable(s) #########
@@ -305,6 +391,7 @@ ivs <- reactive({
       # "as." in front of it to create the function call we'll use. then convert
       # that variable type and return the raw.data with the converted variables. Call
       # it raw.data so it doensn't get mixed up with LoadData()
+      print(var_type)
       raw.data[,i] <- eval(call(paste0('as.', var_type), raw.data[,i]))
     }
     return(raw.data)
