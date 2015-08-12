@@ -66,10 +66,10 @@ load.data.tab <- tabPanel('1. Load data',
 # In this panel the user selects 1 of 9 experimental design options from a
 # dropdown list. The choice is stored in input$exp.design. Data must be loaded
 # first for the panel to function.
-experiment.design.panel <-
+experimental.design.panel <-
   bsCollapsePanel(
     '1. Experimental Design',
-    id = 'experiment_design_panel',
+    id = 'experimental_design_panel',
     h5('Choose an experimental design that matches your data.'),
     uiOutput('select.design'),
     bsButton('exp_design_info_button',
@@ -85,7 +85,7 @@ experiment.design.panel <-
 # TODO : I don't think there is any use in this panel. Since we use `aov`
 # instead of `lm`, all of the variables on the right hand side of the model are
 # consider factors by default.
-var.type.collapse <-
+variable.type.panel <-
   bsCollapsePanel(
     '2. Variable types',
     id='variable_type_panel',
@@ -134,6 +134,8 @@ independent.panel <-
             h5(help.text$ind.var.explanation))
   )
 
+# In this panel, the user can select a type of transformation to apply to the
+# dependent variable.
 transformation.panel <-
   bsCollapsePanel(
     '5. Transformations',
@@ -144,72 +146,51 @@ transformation.panel <-
                 selected = 'None')
   )
 
-anal.type.collapse <- bsCollapsePanel(
-                        '2. Type of analysis',
-                        id='select_analysis_panel',
-                        uiOutput('select_analysis'),
-                        bsButton('analysis_info_button',
-                                 "Analysis information"),
-                        bsModal('analysis_info_content',
-                                trigger='analysis_info_button',
-                                title='Information on analysis types',
-                                h5(help.text$t.test.explanation), br(),
-                                h5(help.text$anova.explanation), br(),
-                                h5(help.text$lm.explanation), br(),
-                                h5(help.text$rcbd.explanation)
-                                )
-                        )
-
-
-interactions.collapse <- bsCollapsePanel('5. Interactions',
-                                         uiOutput('select_interactions'))
-
-model.check.collapse <- bsCollapsePanel('6. Model check')
-
-data.anal.editor <- aceEditor('code_used_model', value='# code to run analysis',
+analysis.editor <- aceEditor('code_used_model', value='# code to run analysis',
                               mode='r', wordWrap=TRUE, readOnly=TRUE,
                               height='150px')
 
-data.analysis.tab <- tabPanel('2. Data analysis',
-                              sidebarLayout(
-                                sidebarPanel(
-                                  bsCollapse(
-                                    multiple=FALSE,
-                                    open='variable_type_panel',
-                                    id='main_collapse_panel',
-                                    experiment.design.panel,
-                                    var.type.collapse,
-                                    dependent.panel,
-                                    independent.panel,
-                                    transformation.panel,
-                                    anal.type.collapse,
-                                    interactions.collapse,
-                                    model.check.collapse
-                                    ),
-                                  uiOutput('action_button')),
-                                  mainPanel(
-                                    data.anal.editor,
-                                    bsTooltip('code_used_model',
-                                              'Click for more information',
-                                              placement='top',
-                                              trigger='hover'),
-                                    bsPopover('code_used_model',
-                                              title='Analysis R code',
-                                              content=help.text$analysis.code.explanation,
-                                              placement='bottom',
-                                              trigger='click'),
-                                    uiOutput('fit_output'),
-                                    bsTooltip('fit_output',
-                                              'Click for more information',
-                                              placement='top',
-                                              trigger='hover'),
-                                    bsPopover('fit_output',
-                                              title='Standard output',
-                                              help.text$fit.explanation,
-                                              placement='left',
-                                              trigger='click'))
-                                  )
-                              )
+data.analysis.tab <-
+  tabPanel(
+    '2. Analysis',
+    sidebarLayout(
+      sidebarPanel(
+        bsCollapse(
+          multiple = FALSE,
+          open = 'experimental_design_panel',
+          id = 'main_collapse_panel',
+          experimental.design.panel,
+          variable.type.panel,
+          dependent.panel,
+          independent.panel,
+          transformation.panel
+          ),
+        actionButton('run_analysis', 'Run analysis')
+      ),
+      mainPanel(
+        analysis.editor,
+        bsTooltip('code_used_model',
+                  'Click for more information',
+                  placement = 'top',
+                  trigger = 'hover'),
+        bsPopover('code_used_model',
+                  title = 'Analysis R code',
+                  content = help.text$analysis.code.explanation,
+                  placement = 'bottom',
+                  trigger = 'click'),
+        uiOutput('fit_output'),
+        bsTooltip('fit_output',
+                  'Click for more information',
+                  placement = 'top',
+                  trigger = 'hover'),
+        bsPopover('fit_output',
+                  title = 'Standard output',
+                  help.text$fit.explanation,
+                  placement = 'left',
+                  trigger = 'click')
+      )
+    )
+  )
 
 # Post-hoc Tests Tab
 posthoc.tab <- tabPanel('3. Post-hoc tests',
@@ -246,9 +227,9 @@ help.tab <- navbarMenu('Help',
 # UI
 shinyUI(
   navbarPage(
-    title='AIP Analysis Interface',
-    windowTitle='AIP Analysis Interface',
-    position='fixed-top',
+    title = 'Agricultural Field Trial Statistics Package',
+    windowTitle = 'Agricultural Field Trial Statistics Package',
+    position = 'fixed-top',
     load.data.tab,
     data.analysis.tab,
     posthoc.tab,

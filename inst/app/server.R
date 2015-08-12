@@ -545,23 +545,6 @@ ivs <- reactive({
       verbatimTextOutput('fit_summary')
   })
 
-##### UI element - the "run analysis" button ################################
-  output$action_button <- renderUI({
-    actionButton('run_analysis', 'Run analysis')
-  })
-
-##### model check #############################################################
-
-# this hasn't been implimented in the UI yet
-output$pois <- renderPrint({
-  if(is.pois(ConvertData()[input$dv])){
-    h3(paste('Your dependent variable may be poisson distributed. Consider ',
-             'running a generalized linear model and selecting "count" where ',
-             'asked "What type of data is your dependent variable?" See the ',
-             'help tab on data analysis for more information.', sep=''))
-  }
-})
-
 ##### the code for reading in the data ###################################
   read_code <- reactive({
     if(length(input$data_file)==0 && !input$use_sample_data){return(NULL)}
