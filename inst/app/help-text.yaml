@@ -82,3 +82,5 @@ fit.explanation : >
   ANOVA or GLM analysis, first assign your desired test to an object such as
   "model.fit" and then print the test results using a function anova(). This
   looks like anova(model.fit).
+exp.design.types : >
+  Placeholder for experimental design type explanations.

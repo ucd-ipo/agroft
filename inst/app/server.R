@@ -137,6 +137,28 @@ shinyServer(function(input, output, session){
 ##### display the data on the "upload data" tab ################
   output$data_table <- renderDataTable({LoadData()})
 
+##### UI element for selecting the desired experimental design ############
+
+  choices <- c('Two Continous Variables' = 'LR',
+               'Completely Randomized Design (CRD) with One Treatment' = 'CRD1',
+               'Completely Randomized Design (CRD) with Two Treatments' = 'CRD2',
+               'Randomized Complete Block Design (RCBD) with One Treatment' = 'RCBD1',
+               'Randomized Complete Block Design (RCBD) with Two Treatments' = 'RCBD2',
+               'Split-Plot Completely Randomized Design' = 'SPCRD',
+               'Split-Plot Randomized Complete Block Design' = 'SPRCBD')
+  # TODO : Add in the two designs with random effects.
+
+  output$select_design <- renderUI({
+    if(is.null(LoadData())){
+      h4('Please upload or select data.')
+    } else {
+      selectInput('exp_design',
+                  'Select Your Experimental Design',
+                  choices = choices,
+                  selected = NULL)
+    }
+  })
+
 ##### UI element for selecting the desired analysis ############
   output$select_analysis <- renderUI({
     # if the data reactive expression is NULL, tell them up upload their data,

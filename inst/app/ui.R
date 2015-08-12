@@ -60,6 +60,21 @@ load.data.tab <- tabPanel('1. Load data',
                           )
 
 # Data Analysis Tab
+experiment.design.panel <-
+  bsCollapsePanel(
+    '1. Experimental Design',
+    id = 'experiment_design_panel',
+    h5('Choose an experiment design that matches your data.'),
+    uiOutput('select_design'),
+    bsButton('exp_design_info_button',
+             "Experimental Design Information"),
+    bsModal('exp_design_info_content',
+            trigger='exp_design_info_button',
+            title='Information On Experimental Design Types',
+            h5(help.text$exp.design.types)
+           )
+  )
+
 var.type.collapse <- bsCollapsePanel(
                        '1. Variable types',
                        id='variable_type_panel',
@@ -160,6 +175,7 @@ data.analysis.tab <- tabPanel('2. Data analysis',
                                     multiple=FALSE,
                                     open='variable_type_panel',
                                     id='main_collapse_panel',
+                                    experiment.design.panel,
                                     var.type.collapse,
                                     anal.type.collapse,
                                     dep.var.collapse,
