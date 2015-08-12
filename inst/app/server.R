@@ -193,6 +193,8 @@ shinyServer(function(input, output, session){
 # UI element for selecting in independent variables.
 
   output$select.independent <- renderUI({
+    # TODO : This should check that the variable type panel has been run,
+    # otherwise `ConvertData()` will fail.
     if (is.null(input$dependent.variable)) {
       return(NULL)
     } else {

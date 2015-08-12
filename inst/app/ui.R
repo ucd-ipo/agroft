@@ -134,6 +134,16 @@ independent.panel <-
             h5(help.text$ind.var.explanation))
   )
 
+transformation.panel <-
+  bsCollapsePanel(
+    '5. Transformations',
+    id = 'transformations_panel',
+    selectInput('transformation',
+                'Select a transformation for the dependent variable:',
+                choices = c('None', 'Power', 'Logarithmic', 'Square Root'),
+                selected = 'None')
+  )
+
 anal.type.collapse <- bsCollapsePanel(
                         '2. Type of analysis',
                         id='select_analysis_panel',
@@ -171,6 +181,7 @@ data.analysis.tab <- tabPanel('2. Data analysis',
                                     var.type.collapse,
                                     dependent.panel,
                                     independent.panel,
+                                    transformation.panel,
                                     anal.type.collapse,
                                     interactions.collapse,
                                     model.check.collapse
