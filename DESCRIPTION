@@ -13,7 +13,8 @@ Enhances: shiny (>= 0.11),
   lattice,
   effects,
   lsmeans,
-  devtools
+  devtools,
+  yaml
 Description: Package for running the USAID AIP data analysis interface
 License: BSD_3_clause
 URL: http://epakag.ucdavis.edu/
