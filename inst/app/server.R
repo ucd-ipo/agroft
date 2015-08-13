@@ -399,6 +399,24 @@ shinyServer(function(input, output, session){
     return(form)
   })
 
+  GenerateFormulaWithoutError <- reactive({
+    left.side <- paste(TransformedDepVarColName(), '~')
+    if (input$exp.design == 'SPCRD') {
+      right.side <- paste0(input$independent.variable.one, ' + ',
+                           input$independent.variable.two, ' + ',
+                           input$independent.variable.one, ':',
+                           input$independent.variable.two)
+    } else if (input$exp.design == 'SPRCBD') {
+      right.side <- paste0(input$independent.variable.one, ' + ',
+                           input$independent.variable.two, ' + ',
+                           input$independent.variable.one, ':',
+                           input$independent.variable.two, ' + ',
+                           input$independent.variable.blk)
+    }
+    form <- paste(left.side, right.side)
+    return(form)
+  })
+
 ##### run the analysis, assign to reactive object "fit" ##############
 
   GetFitCall <- reactive({
@@ -478,12 +496,23 @@ shinyServer(function(input, output, session){
       verbatimTextOutput('fit_summary')
   })
 
+  ModelFitWithoutError <- reactive({
+    input$run_analysis
+    isolate(exp.design <- input$exp.design)
+    if (exp.design %in% c('SPCRD', 'SPRCBD')) {
+      my.data <- AddTransformationColumns()
+      model.fit <- aov(formula = as.formula(GenerateFormulaWithoutError()),
+                       data = my.data)
+    } else {
+      model.fit <- EvalFit()
+    }
+    return(model.fit)
+  })
+
   output$plot.residuals.vs.fitted <- renderPlot({
     input$run_analysis
-    model.fit <- EvalFit()
-    # TODO : This fails with the split plot models, need to use the model
-    # without the Error() term for these plots.
-    plot(model.fit)
+    model.fit <- ModelFitWithoutError()
+    plot(model.fit, which = 1)
  })
 
   output$residuals.vs.fitted.plot <- renderUI({
@@ -492,7 +521,7 @@ shinyServer(function(input, output, session){
 
   output$plot.kernel.density <- renderPlot({
     input$run_analysis
-    model.fit <- EvalFit()
+    model.fit <- ModelFitWithoutError()
     plot(density(residuals(model.fit)))
  })
 
