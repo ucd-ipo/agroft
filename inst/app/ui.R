@@ -180,6 +180,10 @@ data.analysis.tab <-
                   trigger = 'click'),
         h2('Model Fit Summary'),
         uiOutput('fit_output'),
+        h2('Residuals vs Fitted'),
+        uiOutput('residuals.vs.fitted.plot'),
+        h2('Kernel Density of the Residuals'),
+        uiOutput('kernel.density.plot'),
         bsTooltip('fit_output',
                   'Click for more information',
                   placement = 'top',
@@ -201,16 +205,8 @@ posthoc.tab <- tabPanel('3. Post-hoc tests',
                           )
                         )
 
-# Plots Tabs
-plot.tabs <- navbarMenu('4. Plots',
-                        tabPanel('Histograms', uiOutput('hists')),
-                        tabPanel('Effect plots',
-                                 actionButton('update.plots', 'Update plots'),
-                                 uiOutput('plots'))
-                        )
-
 # Report Tab
-report.tab <- tabPanel('5. Report',
+report.tab <- tabPanel('4. Report',
                        sidebarLayout(
                          sidebarPanel(downloadButton('download_report')),
                          mainPanel()
@@ -234,7 +230,6 @@ shinyUI(
     load.data.tab,
     data.analysis.tab,
     posthoc.tab,
-    plot.tabs,
     report.tab,
     help.tab
     )

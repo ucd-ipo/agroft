@@ -435,10 +435,10 @@ shinyServer(function(input, output, session){
 
     isolate({
       my.data <- AddTransformationColumns()
-      x <- eval(GetFitCall())
+      model.fit <- eval(GetFitCall())
     })
 
-    return(x)
+    return(model.fit)
 
     })
 
@@ -478,6 +478,28 @@ shinyServer(function(input, output, session){
       verbatimTextOutput('fit_summary')
   })
 
+  output$plot.residuals.vs.fitted <- renderPlot({
+    input$run_analysis
+    model.fit <- EvalFit()
+    # TODO : This fails with the split plot models, need to use the model
+    # without the Error() term for these plots.
+    plot(model.fit)
+ })
+
+  output$residuals.vs.fitted.plot <- renderUI({
+   plotOutput('plot.residuals.vs.fitted')
+  })
+
+  output$plot.kernel.density <- renderPlot({
+    input$run_analysis
+    model.fit <- EvalFit()
+    plot(density(residuals(model.fit)))
+ })
+
+  output$kernel.density.plot <- renderUI({
+   plotOutput('plot.kernel.density')
+  })
+
 ##### the code for reading in the data ###################################
   read_code <- reactive({
     if(length(input$data_file)==0 && !input$use_sample_data){return(NULL)}
@@ -504,15 +526,51 @@ shinyServer(function(input, output, session){
     if (input$run_analysis==0) {
       return(NULL)
     } else {
+
+      # code for converting columns to factors
       factor.idx <- which(sapply(ConvertData(), is.factor))
       if (length(factor.idx) > 0) {
         factor.names <- names(ConvertData()[factor.idx])
         code <- paste0('my.data$', factor.names, ' <- as.factor(my.data$',
                         factor.names, ')', collapse='\n')
-        code <- paste0('# convert categorical variables to factors\n', code)
+        code <- paste0('# convert categorical variables to factors\n', code,
+                       '\n\n')
       }
 
-      code <- paste0(code, '\n\n# fit the model\n')
+      # code for the transformation
+      dep.var <- input$dependent.variable
+      if (input$transformation == 'Power') {
+        code <- paste0(code, '# transform the dependent variable\n')
+        if (input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
+          code <- paste0(code, 'mean.data <- aggregate(', dep.var, ' ~ ',
+                         input$independent.variable.one,
+                         ', data = my.data, function(x) ',
+                         'c(logmean=log10(mean(x)), logvar=log10(var(x))))\n')
+        } else {
+          code <- paste0(code, 'mean.data <- aggregate(', dep.var, ' ~ ',
+                         input$independent.variable.one, ' + ',
+                         input$independent.variable.two,
+                         ', data = my.data, function(x) ',
+                         'c(logmean=log10(mean(x)), logvar=log10(var(x))))\n')
+        }
+        code <- paste0(code,
+                       'power.fit <- lm(logvar ~ logmean, ',
+                       'data = as.data.frame(mean.data$', dep.var, '))\n',
+                       'power <- 1 - summary(power.fit)$coefficients[2, 1] / 2\n',
+                       'my.data$', dep.var, '.pow <- my.data$', dep.var,
+                       '^power\n\n')
+      } else if (input$transformation == 'Logarithmic') {
+        code <- paste0(code, '# transform the dependent variable\nmy.data$',
+                       input$dependent.variable, '.log10 <- log10(my.data$',
+                       input$dependent.variable, ')\n\n')
+      } else if (input$transformation == 'Square Root') {
+        code <- paste0(code, '# transform the dependent variable\nmy.data$',
+                       input$dependent.variable, '.sqrt <- sqrt(my.data$',
+                       input$dependent.variable, ')\n\n')
+      }
+
+      # code for the model fit and summary
+      code <- paste0(code, '# fit the model\n')
       code <- paste0(code, 'model.fit <- ', GetFitExpr())
       code <- paste0(code, '\n\n# print summary table\nsummary(model.fit)')
 
