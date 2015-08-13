@@ -53,7 +53,6 @@ load.data.tab <- tabPanel('1. Load data',
                             load.data.side.panel,
                             mainPanel(
                               h4('Loaded Data'),
-                              #verbatimTextOutput('debug'),
                               dataTableOutput('data_table')
                               )
                             )
@@ -168,6 +167,7 @@ data.analysis.tab <-
         actionButton('run_analysis', 'Run analysis')
       ),
       mainPanel(
+        verbatimTextOutput('debug'),
         analysis.editor,
         bsTooltip('code_used_model',
                   'Click for more information',
@@ -178,6 +178,7 @@ data.analysis.tab <-
                   content = help.text$analysis.code.explanation,
                   placement = 'bottom',
                   trigger = 'click'),
+        h2('Model Fit Summary'),
         uiOutput('fit_output'),
         bsTooltip('fit_output',
                   'Click for more information',
