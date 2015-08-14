@@ -672,14 +672,13 @@ shinyServer(function(input, output, session){
         factor.names <- names(ConvertData()[factor.idx])
         code <- paste0('my.data$', factor.names, ' <- as.factor(my.data$',
                         factor.names, ')', collapse='\n')
-        code <- paste0('# convert categorical variables to factors\n', code,
-                       '\n\n')
+        code <- paste0('# convert categorical variables to factors\n', code)
       }
 
       # code for the transformation
       dep.var <- input$dependent.variable
       if (input$transformation == 'Power') {
-        code <- paste0(code, '# transform the dependent variable\n')
+        code <- paste0(code, '\n\n# transform the dependent variable\n')
         if (input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
           code <- paste0(code, 'mean.data <- aggregate(', dep.var, ' ~ ',
                          input$independent.variable.one)
@@ -695,26 +694,26 @@ shinyServer(function(input, output, session){
                        'data = as.data.frame(mean.data$', dep.var, '))\n',
                        'power <- 1 - summary(power.fit)$coefficients[2, 1] / 2\n',
                        'my.data$', dep.var, '.pow <- my.data$', dep.var,
-                       '^power\n\n')
+                       '^power')
       } else if (input$transformation == 'Logarithmic') {
         code <- paste0(code, '# transform the dependent variable\nmy.data$',
                        input$dependent.variable, '.log10 <- log10(my.data$',
-                       input$dependent.variable, ')\n\n')
+                       input$dependent.variable, ')')
       } else if (input$transformation == 'Square Root') {
         code <- paste0(code, '# transform the dependent variable\nmy.data$',
                        input$dependent.variable, '.sqrt <- sqrt(my.data$',
-                       input$dependent.variable, ')\n\n')
+                       input$dependent.variable, ')')
       }
 
       # code for the model fit and summary
-      code <- paste0(code, '# fit the model\n')
+      code <- paste0(code, '\n\n# fit the model\n')
       code <- paste0(code, 'model.fit <- ', GetFitExpr())
-      code <- paste0(code, '\n\n# print summary table\nsummary(model.fit)\n\n')
+      code <- paste0(code, '\n\n# print summary table\nsummary(model.fit)')
 
       # code for the assumptions tests
       if (!input$exp.design %in% c('SPCRD', 'SPRCBD')) {
         code <- paste0(code,
-                       '# assumptions tests\nshapiro.test(residuals(fit))\n\n')
+                       '\n\n# assumptions tests\nshapiro.test(residuals(fit))')
       }
 
       return(code)
