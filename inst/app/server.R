@@ -332,6 +332,16 @@ shinyServer(function(input, output, session){
     return(power)
   })
 
+  output$exponent <- renderUI({
+    if (input$transformation == 'Power') {
+      header <- h2('Exponent from Power Transformation')
+      text <- p(as.character(ComputeExponent()))
+      return(list(header, text))
+    } else {
+      return(NULL)
+    }
+    })
+
   AddTransformationColumns <- reactive({
     # Returns the converted data frame with three new columns for the three
     # transformations.

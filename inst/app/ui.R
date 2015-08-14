@@ -178,6 +178,7 @@ data.analysis.tab <-
                   content = help.text$analysis.code.explanation,
                   placement = 'bottom',
                   trigger = 'click'),
+        uiOutput('exponent'),
         h2('Model Fit Summary'),
         uiOutput('fit_output'),
         h2('Residuals vs Fitted'),
