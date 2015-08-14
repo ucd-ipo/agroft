@@ -338,22 +338,6 @@ shinyServer(function(input, output, session){
     }
     })
 
-  AddTransformationColumns <- reactive({
-    # Returns the converted data frame with three new columns for the three
-    # transformations.
-    data <- ConvertData()
-    dep.var <- input$dependent.variable
-    dep.var.col <- data[[dep.var]]
-    if (input$transformation == 'Power') {
-      data[[paste0(dep.var, '.pow')]] <- dep.var.col^ComputeExponent()
-    } else if (input$transformation == 'Logarithmic') {
-      data[[paste0(dep.var, '.log10')]] <- log10(dep.var.col)
-    } else if (input$transformation == 'Square Root') {
-      data[[paste0(dep.var, '.sqrt')]] <- sqrt(dep.var.col)
-    }
-    return(data)
-  })
-
   TransformedDepVarColName <- function() {
     dep.var <- input$dependent.variable
     choices = c('None' = dep.var,
@@ -362,6 +346,23 @@ shinyServer(function(input, output, session){
                 'Square Root' = paste0(dep.var, '.sqrt'))
     return(choices[[input$transformation]])
   }
+
+  AddTransformationColumns <- reactive({
+    # Returns the converted data frame with three new columns for the three
+    # transformations.
+    data <- ConvertData()
+    dep.var <- input$dependent.variable
+    trans.dep.var <- TransformedDepVarColName()
+    dep.var.col <- data[[dep.var]]
+    if (input$transformation == 'Power') {
+      data[[trans.dep.var]] <- dep.var.col^ComputeExponent()
+    } else if (input$transformation == 'Logarithmic') {
+      data[[trans.dep.var]] <- log10(dep.var.col)
+    } else if (input$transformation == 'Square Root') {
+      data[[trans.dep.var]] <- sqrt(dep.var.col)
+    }
+    return(data)
+  })
 
   GenerateFormula <- reactive({
     left.side <- paste(TransformedDepVarColName(), '~')
@@ -544,6 +545,46 @@ shinyServer(function(input, output, session){
     if (input$exp.design == 'LR') {
       list(h2('Best Fit'),
            plotOutput('plot.best.fit'))
+    } else {
+      return(NULL)
+    }
+  })
+
+  # TODO : Should the boxplots have the dependent var or the transformed
+  # dependent var as the Y axis?
+  output$plot.boxplot.one <- renderPlot({
+    input$run_analysis
+    if (input$exp.design != 'LR') {
+      my.data <- AddTransformationColumns()
+      f1 <- paste0(input$dependent.variable, ' ~ ',
+                   input$independent.variable.one)
+      boxplot(as.formula(f1), data = my.data,
+              main = paste0("Effect of ", input$independent.variable.one,
+                            " on ", input$dependent.variable),
+              xlab = input$independent.variable.one,
+              ylab = input$dependent.variable)
+    }
+  })
+
+  output$plot.boxplot.two <- renderPlot({
+    input$run_analysis
+    if (!input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
+      my.data <- AddTransformationColumns()
+      f2 <- paste0(input$dependent.variable, ' ~ ',
+                   input$independent.variable.two)
+      boxplot(as.formula(f2), data = my.data,
+              main = paste0("Effect of ", input$independent.variable.two,
+                            " on ", input$dependent.variable),
+              xlab = input$independent.variable.two,
+              ylab = input$dependent.variable)
+    }
+  })
+
+  output$boxplot.plot <- renderUI({
+    if (input$exp.design != 'LR') {
+      list(h2('Effects Box Plots'),
+           plotOutput('plot.boxplot.one'),
+           plotOutput('plot.boxplot.two'))
     } else {
       return(NULL)
     }

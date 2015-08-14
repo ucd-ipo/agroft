@@ -195,7 +195,8 @@ data.analysis.tab <-
                   trigger = 'click'),
         uiOutput('residuals.vs.fitted.plot'),
         uiOutput('kernel.density.plot'),
-        uiOutput('best.fit.plot')
+        uiOutput('best.fit.plot'),
+        uiOutput('boxplot.plot')
       )
     )
   )
