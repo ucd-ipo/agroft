@@ -1,12 +1,14 @@
-# aip-analysis - An analysis interface for the Agriculture Innovation Project
+# Agricultural Field Trial Statistics Package
+
+An analysis interface for the Agriculture Innovation Project
 
 ## Installation
 
-The AIP Shiny app has been built into a package and the development version is
+This Shiny app has been built into a package and the development version is
 hosted on Github. Currently, it can be installed using the `devtools` R
 package.
 
-Install devtools and Shiny R packages:
+Install devtools and the Shiny R packages:
 
 ```R
 > install.packages('devtools')
@@ -16,11 +18,11 @@ Install devtools and Shiny R packages:
 Now install and load the development version of the app with:
 
 ```R
-> devtools::install_github('ikkyle/aip-analysis')
+> devtools::install_github('ucd-ipo/aip-analysis')
 > library('AIP')
 ```
 
-Get the other dendencies by initializing the app:
+Get all of the remaining dependencies by initializing the app:
 
 ```R
 > initialize_AIP()
