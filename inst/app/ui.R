@@ -182,7 +182,6 @@ data.analysis.tab <-
                   placement = 'bottom',
                   trigger = 'click'),
         uiOutput('exponent'),
-        h2('Model Fit Summary'),
         uiOutput('fit_output'),
         bsTooltip('fit_output',
                   'Click for more information',
@@ -196,7 +195,8 @@ data.analysis.tab <-
         uiOutput('residuals.vs.fitted.plot'),
         uiOutput('kernel.density.plot'),
         uiOutput('best.fit.plot'),
-        uiOutput('boxplot.plot')
+        uiOutput('boxplot.plot'),
+        uiOutput('shapiro.wilk.results')
       )
     )
   )

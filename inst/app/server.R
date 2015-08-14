@@ -477,8 +477,6 @@ shinyServer(function(input, output, session){
 
 ##### the fit summary for analysis ###################################
 ### print anova table for all linear models
-# TODO : This code should be shown to the user, otherwise the table output in
-# the app doesn't match the code shown above it.
   output$fit_summary <- renderPrint({
 
     # Run every time the "Run Analysis" button is pressed.
@@ -492,8 +490,37 @@ shinyServer(function(input, output, session){
 
 ##### UI element for fit_summary object ####################################
   output$fit_output <- renderUI({
-    if(is.null(input$run_analysis) || input$run_analysis==0){return(NULL)}
-      verbatimTextOutput('fit_summary')
+    if(is.null(input$run_analysis) || input$run_analysis==0) {
+      return(NULL)
+    } else {
+      list(h2('Model Fit Summary'),
+           verbatimTextOutput('fit_summary'))
+    }
+  })
+
+  output$shapiro.wilk.results.text <- renderPrint({
+
+    # Run every time the "Run Analysis" button is pressed.
+    input$run_analysis
+
+    if (!input$exp.design %in% c('SPCRD', 'SPRCBD')) {
+      fit <- EvalFit()
+      return(shapiro.test(residuals(fit)))
+    }
+
+  })
+
+  output$shapiro.wilk.results <- renderUI({
+    if(is.null(input$run_analysis) || input$run_analysis==0) {
+      return(NULL)
+    } else {
+      if (!input$exp.design %in% c('SPCRD', 'SPRCBD')) {
+        list(h2('Shapiro-Wilk Normality Test Results'),
+             verbatimTextOutput('shapiro.wilk.results.text'))
+      } else {
+        return(NULL)
+      }
+    }
   })
 
   ModelFitWithoutError <- reactive({
@@ -513,22 +540,30 @@ shinyServer(function(input, output, session){
     input$run_analysis
     model.fit <- ModelFitWithoutError()
     plot(model.fit, which = 1)
- })
+  })
 
   output$residuals.vs.fitted.plot <- renderUI({
+    if (is.null(input$run_analysis) || input$run_analysis == 0) {
+      return(NULL)
+    } else {
     list(h2('Residuals vs Fitted'),
          plotOutput('plot.residuals.vs.fitted'))
+    }
   })
 
   output$plot.kernel.density <- renderPlot({
     input$run_analysis
     model.fit <- ModelFitWithoutError()
     plot(density(residuals(model.fit)))
- })
+  })
 
   output$kernel.density.plot <- renderUI({
+    if (is.null(input$run_analysis) || input$run_analysis == 0) {
+      return(NULL)
+    } else {
     list(h2('Kernel Density of the Residuals'),
          plotOutput('plot.kernel.density'))
+    }
   })
 
   output$plot.best.fit <- renderPlot({
@@ -539,14 +574,18 @@ shinyServer(function(input, output, session){
     plot(formula = as.formula(f), data = my.data)
     model.fit <- ModelFitWithoutError()
     abline(model.fit)
- })
+  })
 
   output$best.fit.plot <- renderUI({
-    if (input$exp.design == 'LR') {
-      list(h2('Best Fit'),
-           plotOutput('plot.best.fit'))
-    } else {
+    if (is.null(input$run_analysis) || input$run_analysis == 0) {
       return(NULL)
+    } else {
+      if (input$exp.design == 'LR') {
+        list(h2('Best Fit'),
+             plotOutput('plot.best.fit'))
+      } else {
+        return(NULL)
+      }
     }
   })
 
@@ -581,12 +620,23 @@ shinyServer(function(input, output, session){
   })
 
   output$boxplot.plot <- renderUI({
-    if (input$exp.design != 'LR') {
-      list(h2('Effects Box Plots'),
-           plotOutput('plot.boxplot.one'),
-           plotOutput('plot.boxplot.two'))
-    } else {
+    input$run_analysis
+    if (is.null(input$run_analysis) || input$run_analysis == 0) {
       return(NULL)
+    } else {
+      if (input$exp.design != 'LR') {
+        if (!input$exp.design %in% c('CRD1', 'RCBD1')) {
+          elements <- list(h2('Effects Box Plots'),
+                           plotOutput('plot.boxplot.one'),
+                           plotOutput('plot.boxplot.two'))
+        } else {
+          elements <- list(h2('Effects Box Plots'),
+                           plotOutput('plot.boxplot.one'))
+        }
+        return(elements)
+      } else {
+        return(NULL)
+      }
     }
   })
 
@@ -632,17 +682,15 @@ shinyServer(function(input, output, session){
         code <- paste0(code, '# transform the dependent variable\n')
         if (input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
           code <- paste0(code, 'mean.data <- aggregate(', dep.var, ' ~ ',
-                         input$independent.variable.one,
-                         ', data = my.data, function(x) ',
-                         'c(logmean=log10(mean(x)), logvar=log10(var(x))))\n')
+                         input$independent.variable.one)
         } else {
           code <- paste0(code, 'mean.data <- aggregate(', dep.var, ' ~ ',
                          input$independent.variable.one, ' + ',
-                         input$independent.variable.two,
-                         ', data = my.data, function(x) ',
-                         'c(logmean=log10(mean(x)), logvar=log10(var(x))))\n')
+                         input$independent.variable.two)
         }
         code <- paste0(code,
+                       ', data = my.data, function(x) ',
+                       'c(logmean=log10(mean(x)), logvar=log10(var(x))))\n',
                        'power.fit <- lm(logvar ~ logmean, ',
                        'data = as.data.frame(mean.data$', dep.var, '))\n',
                        'power <- 1 - summary(power.fit)$coefficients[2, 1] / 2\n',
@@ -661,7 +709,13 @@ shinyServer(function(input, output, session){
       # code for the model fit and summary
       code <- paste0(code, '# fit the model\n')
       code <- paste0(code, 'model.fit <- ', GetFitExpr())
-      code <- paste0(code, '\n\n# print summary table\nsummary(model.fit)')
+      code <- paste0(code, '\n\n# print summary table\nsummary(model.fit)\n\n')
+
+      # code for the assumptions tests
+      if (!input$exp.design %in% c('SPCRD', 'SPRCBD')) {
+        code <- paste0(code,
+                       '# assumptions tests\nshapiro.test(residuals(fit))\n\n')
+      }
 
       return(code)
     }
