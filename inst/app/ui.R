@@ -84,6 +84,9 @@ experimental.design.panel <-
 # TODO : I don't think there is any use in this panel. Since we use `aov`
 # instead of `lm`, all of the variables on the right hand side of the model are
 # consider factors by default.
+# TODO : If this panel is kept, maybe it should go below the dependent and
+# independent variable selections so you only have to choose the variable type
+# for the variables used in the analysis.
 variable.type.panel <-
   bsCollapsePanel(
     '2. Variable types',
@@ -181,10 +184,6 @@ data.analysis.tab <-
         uiOutput('exponent'),
         h2('Model Fit Summary'),
         uiOutput('fit_output'),
-        h2('Residuals vs Fitted'),
-        uiOutput('residuals.vs.fitted.plot'),
-        h2('Kernel Density of the Residuals'),
-        uiOutput('kernel.density.plot'),
         bsTooltip('fit_output',
                   'Click for more information',
                   placement = 'top',
@@ -193,7 +192,10 @@ data.analysis.tab <-
                   title = 'Standard output',
                   help.text$fit.explanation,
                   placement = 'left',
-                  trigger = 'click')
+                  trigger = 'click'),
+        uiOutput('residuals.vs.fitted.plot'),
+        uiOutput('kernel.density.plot'),
+        uiOutput('best.fit.plot')
       )
     )
   )

@@ -515,7 +515,8 @@ shinyServer(function(input, output, session){
  })
 
   output$residuals.vs.fitted.plot <- renderUI({
-   plotOutput('plot.residuals.vs.fitted')
+    list(h2('Residuals vs Fitted'),
+         plotOutput('plot.residuals.vs.fitted'))
   })
 
   output$plot.kernel.density <- renderPlot({
@@ -525,7 +526,27 @@ shinyServer(function(input, output, session){
  })
 
   output$kernel.density.plot <- renderUI({
-   plotOutput('plot.kernel.density')
+    list(h2('Kernel Density of the Residuals'),
+         plotOutput('plot.kernel.density'))
+  })
+
+  output$plot.best.fit <- renderPlot({
+    input$run_analysis
+    f <- paste0(input$dependent.variable, ' ~ ',
+                input$independent.variable.one)
+    my.data <- AddTransformationColumns()
+    plot(formula = as.formula(f), data = my.data)
+    model.fit <- ModelFitWithoutError()
+    abline(model.fit)
+ })
+
+  output$best.fit.plot <- renderUI({
+    if (input$exp.design == 'LR') {
+      list(h2('Best Fit'),
+           plotOutput('plot.best.fit'))
+    } else {
+      return(NULL)
+    }
   })
 
 ##### the code for reading in the data ###################################
