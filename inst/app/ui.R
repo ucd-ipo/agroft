@@ -182,12 +182,12 @@ data.analysis.tab <-
                   placement = 'bottom',
                   trigger = 'click'),
         uiOutput('exponent'),
-        uiOutput('fit_output'),
-        bsTooltip('fit_output',
+        uiOutput('fit.summary'),
+        bsTooltip('fit.summary',
                   'Click for more information',
                   placement = 'top',
                   trigger = 'hover'),
-        bsPopover('fit_output',
+        bsPopover('fit.summary',
                   title = 'Standard output',
                   help.text$fit.explanation,
                   placement = 'left',
@@ -196,7 +196,8 @@ data.analysis.tab <-
         uiOutput('kernel.density.plot'),
         uiOutput('best.fit.plot'),
         uiOutput('boxplot.plot'),
-        uiOutput('shapiro.wilk.results')
+        uiOutput('shapiro.wilk.results'),
+        uiOutput('levene.results')
       )
     )
   )

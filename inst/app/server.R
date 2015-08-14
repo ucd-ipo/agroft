@@ -24,6 +24,8 @@ library(shiny) # the main web app javascript engine
 # for displaying R code - pull from github until the correct version is on CRAN
 library(shinyAce)
 
+library(car)  # for leveneTest()
+
 library(lattice) # for plotting, the main dependency of plot_effects function
 
 library(gridExtra) # for arranging plots in the plots/Effect plots tab
@@ -434,8 +436,8 @@ shinyServer(function(input, output, session){
     isolate({
 
       fit <- call('aov',
-                  formula=as.formula(GenerateFormula()),
-                  data=as.name('my.data'))
+                  formula = as.formula(GenerateFormula()),
+                  data = as.name('my.data'))
 
       # santizes the call (from global.R)
       fit <- strip.args(fit)
@@ -476,42 +478,32 @@ shinyServer(function(input, output, session){
   })
 
 ##### the fit summary for analysis ###################################
-### print anova table for all linear models
-  output$fit_summary <- renderPrint({
 
-    # Run every time the "Run Analysis" button is pressed.
+  output$fit.summary.text <- renderPrint({
     input$run_analysis
-
-    isolate({fit_summary <- summary(EvalFit())})
-
-    return(fit_summary)
-
+    isolate({fit.summary <- summary(EvalFit())})
+    return(fit.summary)
   })
 
-##### UI element for fit_summary object ####################################
-  output$fit_output <- renderUI({
-    if(is.null(input$run_analysis) || input$run_analysis==0) {
+  output$fit.summary <- renderUI({
+    if(is.null(input$run_analysis) || input$run_analysis == 0) {
       return(NULL)
     } else {
       list(h2('Model Fit Summary'),
-           verbatimTextOutput('fit_summary'))
+           verbatimTextOutput('fit.summary.text'))
     }
   })
 
   output$shapiro.wilk.results.text <- renderPrint({
-
-    # Run every time the "Run Analysis" button is pressed.
     input$run_analysis
-
     if (!input$exp.design %in% c('SPCRD', 'SPRCBD')) {
-      fit <- EvalFit()
+      isolate({fit <- EvalFit()})
       return(shapiro.test(residuals(fit)))
     }
-
   })
 
   output$shapiro.wilk.results <- renderUI({
-    if(is.null(input$run_analysis) || input$run_analysis==0) {
+    if(is.null(input$run_analysis) || input$run_analysis == 0) {
       return(NULL)
     } else {
       if (!input$exp.design %in% c('SPCRD', 'SPRCBD')) {
@@ -520,6 +512,38 @@ shinyServer(function(input, output, session){
       } else {
         return(NULL)
       }
+    }
+  })
+
+  GenerateIndividualFormulas <- reactive({
+    if (input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
+      f <- paste0(input$dependent.variable, ' ~ ',
+                  input$independent.variable.one)
+      return(list(as.formula(f)))
+    } else {
+      f1 <- paste0(input$dependent.variable, ' ~ ',
+                   input$independent.variable.one)
+      f2 <- paste0(input$dependent.variable, ' ~ ',
+                   input$independent.variable.two)
+      return(list(as.formula(f1), as.formula(f2)))
+    }
+  })
+
+  output$levene.results.text <- renderPrint({
+    input$run_analysis
+    isolate({
+      formulas <- GenerateIndividualFormulas()
+      my.data <- AddTransformationColumns()
+    })
+    return(lapply(formulas, leveneTest, data = my.data))
+  })
+
+  output$levene.results <- renderUI({
+    if(is.null(input$run_analysis) || input$run_analysis == 0) {
+      return(NULL)
+    } else {
+      list(h2("Levene's Test for Homogeneity of Variance"),
+           verbatimTextOutput('levene.results.text'))
     }
   })
 
@@ -715,6 +739,11 @@ shinyServer(function(input, output, session){
         code <- paste0(code,
                        '\n\n# assumptions tests\nshapiro.test(residuals(fit))')
       }
+
+      formulas <- GenerateIndividualFormulas()
+      levene.calls <- paste0('leveneTest(', formulas, ', data = my.data)',
+                             collapse = '\n')
+      code <- paste0(code, "\n\n# Levene's Test\nlibrary(car)\n", levene.calls)
 
       return(code)
     }
