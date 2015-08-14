@@ -304,14 +304,12 @@ shinyServer(function(input, output, session){
       # "as." in front of it to create the function call we'll use. then convert
       # that variable type and return the raw.data with the converted variables. Call
       # it raw.data so it doensn't get mixed up with LoadData()
-      print(var_type)
       raw.data[,i] <- eval(call(paste0('as.', var_type), raw.data[,i]))
     }
     return(raw.data)
   })
 
   ComputeExponent <- reactive({
-    cat('in ComputeExponent\n')
     # Returns the exponent numeric to be used in the power transformation.
     if (input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
       form = paste(input$dependent.variable, '~',
@@ -321,14 +319,12 @@ shinyServer(function(input, output, session){
                    input$independent.variable.one, '+',
                    input$independent.variable.two)
     }
-    print(form)
     mean.data <- aggregate(as.formula(form), data = ConvertData(),
                            function(x) c(logmean = log10(mean(x)),
                                          logvar = log10(var(x))))
     power.fit <- lm(logvar ~ logmean,
                     data = as.data.frame(mean.data[[input$dependent.variable]]))
     power <- 1 - summary(power.fit)$coefficients[2, 1] / 2
-    print(power)
     return(power)
   })
 
@@ -345,7 +341,6 @@ shinyServer(function(input, output, session){
   AddTransformationColumns <- reactive({
     # Returns the converted data frame with three new columns for the three
     # transformations.
-    print('in AddTransformationColumns')
     data <- ConvertData()
     dep.var <- input$dependent.variable
     dep.var.col <- data[[dep.var]]
@@ -360,7 +355,6 @@ shinyServer(function(input, output, session){
   })
 
   TransformedDepVarColName <- function() {
-    print('in TransformedDepVarColName')
     dep.var <- input$dependent.variable
     choices = c('None' = dep.var,
                 'Power' = paste0(dep.var, '.pow'),
@@ -370,7 +364,6 @@ shinyServer(function(input, output, session){
   }
 
   GenerateFormula <- reactive({
-    print('in GenerateFormula')
     left.side <- paste(TransformedDepVarColName(), '~')
     if (input$exp.design %in% c('LR', 'CRD1')) {
       right.side <- input$independent.variable.one
@@ -405,7 +398,6 @@ shinyServer(function(input, output, session){
                            input$independent.variable.blk, ')')
     }
     form <- paste(left.side, right.side)
-    print(form)
     return(form)
   })
 
@@ -430,7 +422,6 @@ shinyServer(function(input, output, session){
 ##### run the analysis, assign to reactive object "fit" ##############
 
   GetFitCall <- reactive({
-    print('in GetFitCall')
     # Returns the call used to run the analysis.
 
     # The following line forces this reactive expression to take a dependency on
@@ -455,7 +446,6 @@ shinyServer(function(input, output, session){
     })
 
   EvalFit <- reactive({
-    print('in EvalFit')
     # Returns the fit model.
 
     # Run every time the "Run Analysis" button is pressed.
@@ -471,7 +461,6 @@ shinyServer(function(input, output, session){
     })
 
   GetFitExpr <- reactive({
-    print('in GetFitExpr')
     # Returns the char of the expression used to evaluate the fit.
 
     # Run every time the "Run Analysis" button is pressed.
@@ -561,7 +550,6 @@ shinyServer(function(input, output, session){
 
 ##### return the code used to run the model ##############################
   mcode <- reactive({
-    print('in mcode')
     if (input$run_analysis==0) {
       return(NULL)
     } else {
