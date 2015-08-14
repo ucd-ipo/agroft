@@ -105,7 +105,7 @@ shinyServer(function(input, output, session){
     eval(call('data', input$sample_data_buttons, package='agricolae',
               envir=environment()))
 
-    # set "dat" to the GetLoadCall object
+    # set "data" to the GetLoadCall object
     # remeber that GetLoadCall is either NULL, the call to read.csv, or the name of
     # the dataset the user wants.
     # if we eval NULL, data is set to NULL, if we eval read.csv, we get the
@@ -130,112 +130,133 @@ shinyServer(function(input, output, session){
     } else {
       l <- 'library(agricolae)  # load "agricolae" package for the sample data'
       l <- paste0(l, '\ndata("',input$sample_data_buttons,  '")')
-      l <- paste0(l, '\n', 'my_data <- ', input$sample_data_buttons)
+      l <- paste0(l, '\n', 'my.data <- ', input$sample_data_buttons)
     }
     })
 
 ##### display the data on the "upload data" tab ################
   output$data_table <- renderDataTable({LoadData()})
 
-##### UI element for selecting the desired analysis ############
-  output$select_analysis <- renderUI({
-    # if the data reactive expression is NULL, tell them up upload their data,
-    # otherwise give them options for tests to run
+##### UI element for selecting the desired experimental design ############
+
+  output$select.design <- renderUI({
     if(is.null(LoadData())){
-      h4('please upload data first')
+      h4('Please upload or select data first.')
     } else {
-    selectInput('analysis',
-                'Select your statistical model',
-                choices=c('t-test'='t.test',
-                          'ANOVA'='aov',
-                          'Linear or Generalized Linear Model'='glm',
-                          'Randomized Complete Block Design'='rcbd'),
-                selected=NULL)
+      choices <- c('Two Continous Variables' = 'LR',
+                   'Completely Randomized Design (CRD) with One Treatment' = 'CRD1',
+                   'Completely Randomized Design (CRD) with Two Treatments' = 'CRD2',
+                   'Randomized Complete Block Design (RCBD) with One Treatment' = 'RCBD1',
+                   'Randomized Complete Block Design (RCBD) with Two Treatments' = 'RCBD2',
+                   'Split-Plot Completely Randomized Design' = 'SPCRD',
+                   'Split-Plot Randomized Complete Block Design' = 'SPRCBD')
+      # TODO : Add in the two designs with random effects.
+
+      selectInput('exp.design',
+                  'Select Your Experimental Design',
+                  choices = choices,
+                  selected = NULL)
     }
   })
 
 ##### UI element for selecting the dependent variable ############
-  output$select_dv <- renderUI({
-    if(length(input$analysis)==0){return(NULL)}
-    # don't return dv selection if they haven't selected an analysis
-    # otherwise, select a DV
-    # choices are all the variables in LoadData()
-    selectInput('dv',
-                'Select your dependent variable',
-                choices=names(LoadData()),
-                selected=NULL)
-  })
 
-##### UI element for selecting the independent variable(s) #########
-
-# if they are running a RCBD, ask them for their block variable
-output$select_block <- renderUI({
-    if(length(input$dv)==0 || input$analysis !='rcbd'){return(NULL)}
-      selectInput('block',
-                  'Select your block variable',
-                  # remove the DV from the options
-                  choices=names(ConvertData())[!names(ConvertData()) %in% input$dv],
-                  multiple=FALSE, # only one block variable allowed
-                  selected=NULL)
-  })
-
-# if they are running RCBD, ask them for treatment variable
-output$select_treatment <- renderUI({
-  if(length(input$dv)==0 || input$analysis != 'rcbd'){return(NULL)}
-  selectInput('treatment',
-              'Select your treatment variable',
-              # remove DV and block from their options
-              choices=names(ConvertData())[!names(ConvertData()) %in% c(input$dv, input$block)],
-              # only one treatment variable allowed, other IVs can be added with
-              # the input$iv input
-              multiple=FALSE,
-              selected=NULL)
-})
-
-# select the IV
-output$select_iv <- renderUI({
-  if(length(input$dv)==0){return(NULL)}
-  # change the input text depending on input$analysis
-  # rcbd is set to "Select any other independent variables" because you can
-  # already select the block and treatment in the inputs specific to those
-  # variables
-  selectInput('iv',
-              switch(input$analysis,
-                     aov='Select your independent variable(s)',
-                     t.test='Select your grouping variable',
-                     glm='Select your independent variables(s)',
-                     rcbd='Select any other independent variables'),
-              choices=names(ConvertData())[!names(ConvertData()) %in% c(input$dv,
-                                                          input$treatment,
-                                                          input$block)],
-              # only allow multiple if you aren't using a t-test
-              multiple=input$analysis != 't.test')
-})
-
-# list of IVs being used for use in constructing the formula if you have a DV
-ivs <- reactive({
-  if(length(input$dv) == 1){
-    if(input$analysis=='rcbd'){
-      return(c(input$block, input$treatment, ifelse(is.null(input$iv), NA, input$iv)))
-    } else if(input$analysis %in% c('aov', 't.test', 'glm')){
-      return(input$iv)
+  output$select.dependent <- renderUI({
+    if (is.null(input$exp.design)) {
+      h4('Please select an experimental design first.')
+      input$dependent.variable = NULL
+    } else {
+      selectInput('dependent.variable',
+                  'Select a dependent variable:',
+                  choices = names(LoadData()),
+                  selected = NULL)
     }
-  } else {
-    return(NULL)
-  }
-})
+  })
 
-##### UI element for selecting the DV type ##########################
-# if they are using a GLM, select the dist family to be put in the family
-# argument of glm
-  output$select_dv_type <- renderUI({
-    if(length(input$dv)==0 || input$analysis != 'glm'){return(NULL)}
-    selectInput('dv_type',
-                'What type of data is your dependent variable?',
-                choices=c('continuous'='gaussian',
-                          'dichotomous (binary)'='binomial',
-                          'count' = 'poisson'),
-                selected='gaussian')
+# UI element for selecting in independent variables.
+
+  output$select.independent <- renderUI({
+    # TODO : This should check that the variable type panel has been run,
+    # otherwise `ConvertData()` will fail.
+    if (is.null(input$dependent.variable)) {
+      return(NULL)
+    } else {
+      all.col.names <- names(ConvertData())
+      choices = all.col.names[!(all.col.names %in% input$dependent.variable)]
+      if (input$exp.design == 'LR') {
+        selectInput('independent.variable.one',
+                    'Select a single continous independent variable:',
+                     choices = choices,
+                     selected = NULL)
+      } else if (input$exp.design == 'CRD1') {
+        selectInput('independent.variable.one',
+                    'Select a single independent factor variable:',
+                     choices = choices,
+                     selected = NULL)
+      } else if (input$exp.design == 'CRD2') {
+        input1 <- selectInput('independent.variable.one',
+                    'Select the first independent factor variable:',
+                     choices = choices,
+                     selected = NULL)
+        input2 <- selectInput('independent.variable.two',
+                    'Select the second independent factor variable:',
+                     choices = choices,
+                     selected = NULL)
+        return(list(input1, input2))
+      } else if (input$exp.design == 'RCBD1') {
+        input1 <- selectInput('independent.variable.one',
+                    'Select the first independent factor variable:',
+                     choices = choices,
+                     selected = NULL)
+        input2 <- selectInput('independent.variable.blk',
+                    'Select the blocking factor variable:',
+                     choices = choices,
+                     selected = NULL)
+        return(list(input1, input2))
+      } else if (input$exp.design == 'RCBD2') {
+        input1 <- selectInput('independent.variable.one',
+                    'Select the first independent factor variable:',
+                     choices = choices,
+                     selected = NULL)
+        input2 <- selectInput('independent.variable.two',
+                    'Select the second independent factor variable:',
+                     choices = choices,
+                     selected = NULL)
+        input3 <- selectInput('independent.variable.blk',
+                    'Select the blocking factor variable:',
+                     choices = choices,
+                     selected = NULL)
+        return(list(input1, input2, input3))
+      } else if (input$exp.design == 'SPCRD') {
+        input1 <- selectInput('independent.variable.one',
+                    'Select the main plot treatment:',
+                     choices = choices,
+                     selected = NULL)
+        input2 <- selectInput('independent.variable.two',
+                    'Select the sub plot treatment:',
+                     choices = choices,
+                     selected = NULL)
+        input3 <- selectInput('independent.variable.blk',
+                    'Select the repetition:',
+                     choices = choices,
+                     selected = NULL)
+        return(list(input1, input2, input3))
+      } else if (input$exp.design == 'SPRCBD') {
+        input1 <- selectInput('independent.variable.one',
+                    'Select the main plot treatment:',
+                     choices = choices,
+                     selected = NULL)
+        input2 <- selectInput('independent.variable.two',
+                    'Select the sub plot treatment:',
+                     choices = choices,
+                     selected = NULL)
+        input3 <- selectInput('independent.variable.blk',
+                    'Select the blocking factor variable:',
+                     choices = choices,
+                     selected = NULL)
+        return(list(input1, input2, input3))
+      }
+    }
   })
 
 ##### select variable types #####################################
@@ -288,57 +309,115 @@ ivs <- reactive({
     return(raw.data)
   })
 
-##### select the interactions  ################################
-# TukeyHSD or multcomp::glht
-  output$select_interactions <- renderUI({
-
-    if(input$analysis=='t.test'){
-      return(h4('Interactions not available for t-tests'))
+  ComputeExponent <- reactive({
+    # Returns the exponent numeric to be used in the power transformation.
+    if (input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
+      form = paste(input$dependent.variable, '~',
+                   input$independent.variable.one)
+    } else {
+      form = paste(input$dependent.variable, '~',
+                   input$independent.variable.one, '+',
+                   input$independent.variable.two)
     }
-    # this is kind of crazy. It creates every possible combination of IVs and then
-    # gets all the uniqe combos
-    ch <- expand.grid(var1=ivs(), var2=ivs())
-    ch <- ch[which(ch$var1 != ch$var2), ]
-    ch <- apply(ch, 2, c)
-    ch2 <- list()
-    for(i in 1:nrow(ch)){
-      ch2[[i]] <- ch[i, ]
-    }
-    for(i in seq_along(ch2)){
-      ch2[[i]] <- sort(ch2[[i]])
-    }
-    ch2 <- data.frame(ch2)
-    names(ch2) <- paste('var', 1:ncol(ch2))
-    ch2 <- as.data.frame(t(ch2))
-    # I made this weird separator so it doesn't conflict with any other separators
-    # that might be in their variable names. Later it gets substituted out and
-    # replaced with "&" for the dropdown box
-    ch2$int <- paste(ch2$var2, ch2$var1, sep='.___.___.')
-    ch2 <- unlist(subset(ch2, !duplicated(int), select='int'))
-    ch2 <- unname(gsub('.___.___.', ' & ', ch2, fixed=TRUE))
-    names(ch2) <- ch2
-    ch2 <- gsub('&','*', ch2)
-
-    if(input$analysis == 't.test'){return(NULL)}
-    selectInput('interaction_input',
-                       label=NULL,
-                       choices=ch2,
-                multiple=TRUE)
+    mean.data <- aggregate(as.formula(form), data = ConvertData(),
+                           function(x) c(logmean = log10(mean(x)),
+                                         logvar = log10(var(x))))
+    power.fit <- lm(logvar ~ logmean,
+                    data = as.data.frame(mean.data[[input$dependent.variable]]))
+    power <- 1 - summary(power.fit)$coefficients[2, 1] / 2
+    return(power)
   })
 
-##### create the formula for analysis ##########################
-# This uses the paste_na function from global.R to create the formula, joining
-# all the main and interaction effects
-# dv : dependent variable
-# invs: independent variables
-  GenerateFormula <- reactive({
-    int <- paste0(input$interaction_input, collapse=' + ')
-    int <- ifelse(is.null(input$interaction_input), NA, int)
-    main <- paste0(ivs(), collapse=' + ')
-    eff <- paste_na(main, int, sep=' + ')
-
-    paste0(input$dv, ' ~ ', eff)
+  output$exponent <- renderUI({
+    if (input$transformation == 'Power') {
+      header <- h2('Exponent from Power Transformation')
+      text <- p(as.character(ComputeExponent()))
+      return(list(header, text))
+    } else {
+      return(NULL)
+    }
     })
+
+  AddTransformationColumns <- reactive({
+    # Returns the converted data frame with three new columns for the three
+    # transformations.
+    data <- ConvertData()
+    dep.var <- input$dependent.variable
+    dep.var.col <- data[[dep.var]]
+    if (input$transformation == 'Power') {
+      data[[paste0(dep.var, '.pow')]] <- dep.var.col^ComputeExponent()
+    } else if (input$transformation == 'Logarithmic') {
+      data[[paste0(dep.var, '.log10')]] <- log10(dep.var.col)
+    } else if (input$transformation == 'Square Root') {
+      data[[paste0(dep.var, '.sqrt')]] <- sqrt(dep.var.col)
+    }
+    return(data)
+  })
+
+  TransformedDepVarColName <- function() {
+    dep.var <- input$dependent.variable
+    choices = c('None' = dep.var,
+                'Power' = paste0(dep.var, '.pow'),
+                'Logarithmic' = paste0(dep.var, '.log10'),
+                'Square Root' = paste0(dep.var, '.sqrt'))
+    return(choices[[input$transformation]])
+  }
+
+  GenerateFormula <- reactive({
+    left.side <- paste(TransformedDepVarColName(), '~')
+    if (input$exp.design %in% c('LR', 'CRD1')) {
+      right.side <- input$independent.variable.one
+    } else if (input$exp.design == 'CRD2') {
+      right.side <- paste0(input$independent.variable.one, ' + ',
+                           input$independent.variable.two, ' + ',
+                           input$independent.variable.one, ':',
+                           input$independent.variable.two)
+    } else if (input$exp.design == 'RCBD1') {
+      right.side <- paste0(input$independent.variable.one, ' + ',
+                           input$independent.variable.blk)
+    } else if (input$exp.design == 'RCBD2') {
+      right.side <- paste0(input$independent.variable.one, ' + ',
+                           input$independent.variable.two, ' + ',
+                           input$independent.variable.one, ':',
+                           input$independent.variable.two, ' + ',
+                           input$independent.variable.blk)
+    } else if (input$exp.design == 'SPCRD') {
+      right.side <- paste0(input$independent.variable.one, ' + ',
+                           input$independent.variable.two, ' + ',
+                           input$independent.variable.one, ':',
+                           input$independent.variable.two, ' + Error(',
+                           input$independent.variable.one, ':',
+                           input$independent.variable.blk, ')')
+    } else if (input$exp.design == 'SPRCBD') {
+      right.side <- paste0(input$independent.variable.one, ' + ',
+                           input$independent.variable.two, ' + ',
+                           input$independent.variable.one, ':',
+                           input$independent.variable.two, ' + ',
+                           input$independent.variable.blk, ' + Error(',
+                           input$independent.variable.one, ':',
+                           input$independent.variable.blk, ')')
+    }
+    form <- paste(left.side, right.side)
+    return(form)
+  })
+
+  GenerateFormulaWithoutError <- reactive({
+    left.side <- paste(TransformedDepVarColName(), '~')
+    if (input$exp.design == 'SPCRD') {
+      right.side <- paste0(input$independent.variable.one, ' + ',
+                           input$independent.variable.two, ' + ',
+                           input$independent.variable.one, ':',
+                           input$independent.variable.two)
+    } else if (input$exp.design == 'SPRCBD') {
+      right.side <- paste0(input$independent.variable.one, ' + ',
+                           input$independent.variable.two, ' + ',
+                           input$independent.variable.one, ':',
+                           input$independent.variable.two, ' + ',
+                           input$independent.variable.blk)
+    }
+    form <- paste(left.side, right.side)
+    return(form)
+  })
 
 ##### run the analysis, assign to reactive object "fit" ##############
 
@@ -353,14 +432,9 @@ ivs <- reactive({
     # variables inside the isolated expression.
     isolate({
 
-      if(!is.character(input$analysis)){
-        return(NULL)
-      }
-
-      fit <- call(input$analysis,
+      fit <- call('aov',
                   formula=as.formula(GenerateFormula()),
-                  family=input$dv_type,
-                  data=as.name('my_data'))
+                  data=as.name('my.data'))
 
       # santizes the call (from global.R)
       fit <- strip.args(fit)
@@ -378,11 +452,11 @@ ivs <- reactive({
     input$run_analysis
 
     isolate({
-      my_data <- ConvertData()
-      x <- eval(GetFitCall())
+      my.data <- AddTransformationColumns()
+      model.fit <- eval(GetFitCall())
     })
 
-    return(x)
+    return(model.fit)
 
     })
 
@@ -406,23 +480,10 @@ ivs <- reactive({
 # the app doesn't match the code shown above it.
   output$fit_summary <- renderPrint({
 
-    analysis <- isolate(input$analysis)
-
     # Run every time the "Run Analysis" button is pressed.
     input$run_analysis
 
-    if(analysis=='t.test'){
-      fit_summary <- isolate(EvalFit())
-    } else {
-      isolate({
-        # See:
-        # https://stat.ethz.ch/R-manual/R-devel/library/stats/html/anova.glm.html
-        # for an explanation of the `test` argument.
-        tst = ifelse((input$analysis=='glm' & input$dv_type=='gaussian') |
-                     input$analysis=='aov', 'F', 'LRT')
-        fit_summary <- anova(EvalFit(), test=tst)
-      })
-    }
+    isolate({fit_summary <- summary(EvalFit())})
 
     return(fit_summary)
 
@@ -434,22 +495,38 @@ ivs <- reactive({
       verbatimTextOutput('fit_summary')
   })
 
-##### UI element - the "run analysis" button ################################
-  output$action_button <- renderUI({
-    actionButton('run_analysis', 'Run analysis')
+  ModelFitWithoutError <- reactive({
+    input$run_analysis
+    isolate(exp.design <- input$exp.design)
+    if (exp.design %in% c('SPCRD', 'SPRCBD')) {
+      my.data <- AddTransformationColumns()
+      model.fit <- aov(formula = as.formula(GenerateFormulaWithoutError()),
+                       data = my.data)
+    } else {
+      model.fit <- EvalFit()
+    }
+    return(model.fit)
   })
 
-##### model check #############################################################
+  output$plot.residuals.vs.fitted <- renderPlot({
+    input$run_analysis
+    model.fit <- ModelFitWithoutError()
+    plot(model.fit, which = 1)
+ })
 
-# this hasn't been implimented in the UI yet
-output$pois <- renderPrint({
-  if(is.pois(ConvertData()[input$dv])){
-    h3(paste('Your dependent variable may be poisson distributed. Consider ',
-             'running a generalized linear model and selecting "count" where ',
-             'asked "What type of data is your dependent variable?" See the ',
-             'help tab on data analysis for more information.', sep=''))
-  }
-})
+  output$residuals.vs.fitted.plot <- renderUI({
+   plotOutput('plot.residuals.vs.fitted')
+  })
+
+  output$plot.kernel.density <- renderPlot({
+    input$run_analysis
+    model.fit <- ModelFitWithoutError()
+    plot(density(residuals(model.fit)))
+ })
+
+  output$kernel.density.plot <- renderUI({
+   plotOutput('plot.kernel.density')
+  })
 
 ##### the code for reading in the data ###################################
   read_code <- reactive({
@@ -458,7 +535,7 @@ output$pois <- renderPrint({
     filestr <- gsub('(?<=file \\= ").*(?="\\))',
                     input$data_file$name, perl=TRUE,
                     GetSimpleLoadExpr())
-    filestr <- paste0('my_data <- ', filestr)
+    filestr <- paste0('my.data <- ', filestr)
     } else {
       filestr <- GetSimpleLoadExpr()
     }
@@ -472,28 +549,60 @@ output$pois <- renderPrint({
   })
 
 ##### return the code used to run the model ##############################
- mcode <- reactive({
-   if(is.null(input$analysis) || input$run_analysis==0){return(NULL)}
-    mcode <- paste0('model.fit <- ', GetFitExpr())
+  mcode <- reactive({
+    if (input$run_analysis==0) {
+      return(NULL)
+    } else {
 
-   mcode <- paste(mcode, sep='', collapse='')
-   mcode <- gsub('(\\, )', ',\n\t\t\t', mcode)
+      # code for converting columns to factors
+      factor.idx <- which(sapply(ConvertData(), is.factor))
+      if (length(factor.idx) > 0) {
+        factor.names <- names(ConvertData()[factor.idx])
+        code <- paste0('my.data$', factor.names, ' <- as.factor(my.data$',
+                        factor.names, ')', collapse='\n')
+        code <- paste0('# convert categorical variables to factors\n', code,
+                       '\n\n')
+      }
 
-   # recode the analysis name
-   analysis.name <- c('aov'='ANOVA', 'glm'='(generalized) linear model',
-                      't.test'='t-test')[input$analysis]
+      # code for the transformation
+      dep.var <- input$dependent.variable
+      if (input$transformation == 'Power') {
+        code <- paste0(code, '# transform the dependent variable\n')
+        if (input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
+          code <- paste0(code, 'mean.data <- aggregate(', dep.var, ' ~ ',
+                         input$independent.variable.one,
+                         ', data = my.data, function(x) ',
+                         'c(logmean=log10(mean(x)), logvar=log10(var(x))))\n')
+        } else {
+          code <- paste0(code, 'mean.data <- aggregate(', dep.var, ' ~ ',
+                         input$independent.variable.one, ' + ',
+                         input$independent.variable.two,
+                         ', data = my.data, function(x) ',
+                         'c(logmean=log10(mean(x)), logvar=log10(var(x))))\n')
+        }
+        code <- paste0(code,
+                       'power.fit <- lm(logvar ~ logmean, ',
+                       'data = as.data.frame(mean.data$', dep.var, '))\n',
+                       'power <- 1 - summary(power.fit)$coefficients[2, 1] / 2\n',
+                       'my.data$', dep.var, '.pow <- my.data$', dep.var,
+                       '^power\n\n')
+      } else if (input$transformation == 'Logarithmic') {
+        code <- paste0(code, '# transform the dependent variable\nmy.data$',
+                       input$dependent.variable, '.log10 <- log10(my.data$',
+                       input$dependent.variable, ')\n\n')
+      } else if (input$transformation == 'Square Root') {
+        code <- paste0(code, '# transform the dependent variable\nmy.data$',
+                       input$dependent.variable, '.sqrt <- sqrt(my.data$',
+                       input$dependent.variable, ')\n\n')
+      }
 
-   factor.ind <- which(sapply(ConvertData(), is.factor))
-    if(length(factor.ind)>0){
-      factor.name <- names(ConvertData()[factor.ind])
+      # code for the model fit and summary
+      code <- paste0(code, '# fit the model\n')
+      code <- paste0(code, 'model.fit <- ', GetFitExpr())
+      code <- paste0(code, '\n\n# print summary table\nsummary(model.fit)')
 
-      fcode <- paste0('my_data$', factor.name, ' <- as.factor(my_data$',
-                      factor.name, ')', collapse='\n')
-      mcode <- paste0('# convert categorical variables to factors\n',
-                      fcode, '\n\n# run ', analysis.name,'\n',
-                      mcode)
+      return(code)
     }
-   return(mcode)
   })
 
 ##### update the editor to display code used ##############################
@@ -513,13 +622,13 @@ output$pois <- renderPrint({
     coeff.ind <- row.names(anova(EvalFit()))[which(!row.names(anova((EvalFit()))) %in% c('NULL', 'Residuals'))]
    ef <- vector('list', length(coeff.ind))
    names(ef) <- coeff.ind
-   assign('my_data', ConvertData(), env=.GlobalEnv)
+   assign('my.data', ConvertData(), env=.GlobalEnv)
    assign('.fit', EvalFit(), env=.GlobalEnv)
    for(i in names(ef)){
      ef[[i]] <- effect(i, .fit)
    }
    remove('.fit', env=.GlobalEnv)
-   remove('my_data', envir=.GlobalEnv)
+   remove('my.data', envir=.GlobalEnv)
    return(ef)
  })
 
