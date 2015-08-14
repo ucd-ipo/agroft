@@ -2,6 +2,12 @@
 
 An analysis interface for the Agriculture Innovation Project
 
+## Demo
+
+A demo of the app can be accessed here:
+
+https://moorepants.shinyapps.io/aftsp
+
 ## Installation
 
 This Shiny app has been built into a package and the development version is
