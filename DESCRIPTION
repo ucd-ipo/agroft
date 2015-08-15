@@ -1,21 +1,19 @@
 Package: AIP
 Version: 0.1
 Date: 2015-02-20
-Title: USAID AIP Analysis Interface
-Author: Ian K. Kyle
-Maintainer: Ian K. Kyle <ikkyle@ucdavis.edu>
+Title: Agricultural Field Trial Statistics Package
+Authors@R: c(
+    person("Ian", "Kyle", email = "ikkyle@ucdavis.edu", role = c("cre", "aut")),
+    person("Jason", "Moore", email = "moorepants@gmail.com", role = "aut"))
 Enhances: shiny (>= 0.11),
   shinyAce (>= 0.2-1),
   shinyBS (>= 0.50),
   knitr (>= 1.8),
-  gridExtra,
   agricolae,
-  lattice,
-  effects,
-  lsmeans,
+  car,
   devtools,
   yaml
-Description: Package for running the USAID AIP data analysis interface
+Description: Package for supporting the USAID agricultural analysis training.
 License: BSD_3_clause
-URL: http://epakag.ucdavis.edu/
-BugReports: ikkyle@ucdavis.edu
+URL: https://github.com/ucd-ipo/aip-analysis
+BugReports: https://github.com/ucd-ipo/aip-analysis/issues

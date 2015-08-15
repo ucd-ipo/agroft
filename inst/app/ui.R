@@ -1,8 +1,8 @@
 source('pkg_check.R')
 
 library(shiny)
-library(shinyAce)
 library(shinyBS)
+library(shinyAce)
 library(yaml)
 
 # The shinyBS popovers can't handle line returns in the strings so a special

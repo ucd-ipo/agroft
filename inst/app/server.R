@@ -4,37 +4,7 @@
 # too. Required versions can be found in the AIP package DESCRIPTION file
 source('pkg_check.R')
 
-# for loading dynamic reports. I don't use rmarkdown because that requires that
-# pandoc be installed which is a whole different ballgame. knitr doesn't require
-# dependencies like that
-library(knitr)
-
-# analysis intrepretation functions like glht and lsmeans will be useful for
-# intrepriting interactions
-library(lsmeans)
-
-# for creating the "eff" object to pass to plot_effects (in the app working
-# directory, sourced in global.R)
-library(effects)
-
-library(agricolae) # for datasets
-
-library(shiny) # the main web app javascript engine
-
-# for displaying R code - pull from github until the correct version is on CRAN
-library(shinyAce)
-
-library(car)  # for leveneTest()
-
-library(lattice) # for plotting, the main dependency of plot_effects function
-
-library(gridExtra) # for arranging plots in the plots/Effect plots tab
-
-# for reading in excel files, uncomment once on CRAN. For now it is on github
-# only. It is a package that has no Java dependencies (only c++), so once
-# binaries are on CRAN, anyone can install it (no JRE required!) and the app can
-# have functionality to read in excel files.
-#library(readxl)
+library(shiny)
 
 # http://spark.rstudio.com/johnharrison/shinyBS-Demo/, vers. 0.5 should be on
 # CRAN soon, that is the version we need. Once it is up there, change the code
@@ -43,15 +13,29 @@ library(gridExtra) # for arranging plots in the plots/Effect plots tab
 # modals, collapse panels, and tool tips.
 library(shinyBS)
 
-# install github packages via:
-# devtools::install_github("ebailey78/shinyBS", ref = "shinyBS3")
-# devtools::install_github("trestletech/shinyAce")
+# for displaying R code - pull from github until the correct version is on CRAN
+library(shinyAce)
+
+# for reading in excel files, uncomment once on CRAN. For now it is on github
+# only. It is a package that has no Java dependencies (only c++), so once
+# binaries are on CRAN, anyone can install it (no JRE required!) and the app can
+# have functionality to read in excel files.
+#library(readxl)
+
+library(agricolae) # for datasets
+
+library(car)  # for leveneTest()
+
+# for loading dynamic reports. I don't use rmarkdown because that requires that
+# pandoc be installed which is a whole different ballgame. knitr doesn't require
+# dependencies like that
+library(knitr)
 
 shinyServer(function(input, output, session){
 
   # for debugging. Uncomment the verbatimTextOutput under main panel in the UI
   # script to see the contents of this. Useful for seeing what the objects you
-  # are crating actually look like rather than what you think/want them to look
+  # are crafting actually look like rather than what you think/want them to look
   # like.
   output$debug <- renderText({GenerateFormula()})
 
@@ -756,93 +740,20 @@ shinyServer(function(input, output, session){
                     readOnly=TRUE, wordWrap=TRUE)
   })
 
-##### generate plots from the effects package ###############################
- ef <- reactive({
-    input$update_plots
-    if(input$analysis=='t.test'){
-      return(NULL)
-    }
-    #browser()
-    coeff.ind <- row.names(anova(EvalFit()))[which(!row.names(anova((EvalFit()))) %in% c('NULL', 'Residuals'))]
-   ef <- vector('list', length(coeff.ind))
-   names(ef) <- coeff.ind
-   assign('my.data', ConvertData(), env=.GlobalEnv)
-   assign('.fit', EvalFit(), env=.GlobalEnv)
-   for(i in names(ef)){
-     ef[[i]] <- effect(i, .fit)
-   }
-   remove('.fit', env=.GlobalEnv)
-   remove('my.data', envir=.GlobalEnv)
-   return(ef)
- })
-
-##### server element - generate the plots ######################################
- output$effect_plots <- renderPlot({
-   if(input$analysis=='t.test'){
-     return(NULL)
-   }
-   # right now it uses the default plot method (plot.eff), but the
-   # plot_effects.R is a somewhat more flexible version of plot.eff that I wrote
-   # and can be used if needed. It isn't documented but I can add documentation
-   # for that function eventually. It should probably be moved into the AIP/R
-   # directory so it is a function exported in the AIP package rather than
-   # sourcing the function from the app wd.
-   # actually, plot_effects might not be needed because John Fox recently edited
-   # the function in effects to fix the main issue I had a problem with. So the
-   # newest version should be fine.
-   ps <- lapply(ef(), plot, ci.style='bars', multiline=TRUE,
-                colors=rep('black', length(ef())))
-   for(i in seq_along(ps)){
-     class(ps[[i]]) <- 'trellis'
-   }
-   p <- do.call(arrangeGrob,
-                c(ps, ncol=2))
-   return(p)
- })
-
-##### UI element - print the plots ##########################################
- output$plots <- renderUI({
-   if(is.null(EvalFit())){
-     return(NULL)
-   }
-   if(input$analysis=='t.test'){
-     return(h4('Effect plots not available with t-tests'))
-   }
-   h <- (length(ef()) + 1) %/% 2
-   plotOutput('effect_plots',
-              height=h * 450)
- })
-
-##### Histograms #############################################################
-output$histograms <- renderPlot({
-  varinds <- which(sapply(ConvertData(), is.numeric2))
-  par(mfrow=c((length(varinds) + 1) %/% 2, 2))
-  for(i in names(ConvertData())[varinds]){
-    hist(ConvertData()[,i], main=i, xlab='')
-  }
-  })
-
-output$hists <- renderUI({
-  if(is.null(ConvertData())){return(NULL)}
-  h <- (length(which(sapply(ConvertData(), is.numeric2))) + 1) %/% 2
-  plotOutput('histograms',
-             height=h *450)
-})
-
 ##### Download report #####################################################
-output$download_report <- downloadHandler(
-  filename = function() {
-    paste0(input$analysis, '_analysis_report_', Sys.Date(),'.html')
-  },
-  content = function(file) {
-    src <- normalizePath('report.Rmd')
+  output$download_report <- downloadHandler(
+    filename = function() {
+      paste0(input$analysis, '_analysis_report_', Sys.Date(),'.html')
+    },
+    content = function(file) {
+      src <- normalizePath('report.Rmd')
 
-    file.copy(src, 'report.Rmd')
+      file.copy(src, 'report.Rmd')
 
-    out <- knit2html('report.Rmd',
-                     output=paste0(input$analysis, '_analysis_report_', Sys.Date(),'.html'))
-    file.rename(out, file)
-  }
-)
+      out <- knit2html('report.Rmd',
+                       output=paste0(input$analysis, '_analysis_report_', Sys.Date(),'.html'))
+      file.rename(out, file)
+    }
+  )
 
 })

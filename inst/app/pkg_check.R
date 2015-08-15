@@ -1,16 +1,13 @@
 inst.pkgs <- installed.packages()[,'Package']
 
 need.pkgs <- c('shiny',
-               'shinyAce',
                'shinyBS',
-               'knitr',
-               'gridExtra',
-               'agricolae',
-               'lattice',
-               'effects',
-               'lsmeans',
+               'shinyAce',
                #'readxl',
+               'agricolae',
+               'car',
                'devtools',
+               'knitr',
                'yaml')
 
 if(!all(need.pkgs %in% inst.pkgs)){
