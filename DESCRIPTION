@@ -3,17 +3,18 @@ Version: 0.1
 Date: 2015-02-20
 Title: Agricultural Field Trial Statistics Package
 Authors@R: c(
-    person("Ian", "Kyle", email = "ikkyle@ucdavis.edu", role = c("cre", "aut")),
-    person("Jason", "Moore", email = "moorepants@gmail.com", role = "aut"))
-Enhances: shiny (>= 0.11),
-  shinyAce (>= 0.2-1),
-  shinyBS (>= 0.50),
-  knitr (>= 1.8),
-  agricolae,
-  car,
-  devtools,
-  yaml
-Description: Package for supporting the USAID agricultural analysis training.
+  person("Ian", "Kyle", email = "ikkyle@ucdavis.edu", role = c("cre", "aut")),
+  person("Jason", "Moore", email = "moorepants@gmail.com", role = "aut"))
+Imports:
+  shiny (>= 0.12),
+  shinyAce (>= 0.2),
+  shinyBS (>= 0.61),
+  knitr (>= 1.9),
+  agricolae (>= 1.2),
+  car (>= 2.0),
+  devtools (>= 1.7.0),
+  yaml (>= 2.1.13)
+Description: Package for supporting the USAID agricultural data analysis training.
 License: BSD_3_clause
 URL: https://github.com/ucd-ipo/aip-analysis
 BugReports: https://github.com/ucd-ipo/aip-analysis/issues
