@@ -28,6 +28,14 @@ initialize_AIP <- function(){
     install.packages('car', repos="http://cran.rstudio.com/")
   }
 
+  if(!require(car, quietly=TRUE)){
+    install.packages('yaml', repos="http://cran.rstudio.com/")
+  }
+
+  if(!require(car, quietly=TRUE)){
+    install.packages('xtable', repos="http://cran.rstudio.com/")
+  }
+
 #   if(!require(readxl, quietly=TRUE)){
 #     install.packages("readxl", repos="http://cran.rstudio.com/")
 #   }

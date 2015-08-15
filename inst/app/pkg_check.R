@@ -8,11 +8,13 @@ need.pkgs <- c('shiny',
                'car',
                'devtools',
                'knitr',
-               'yaml')
+               'yaml',
+               'xtable')
 
-if(!all(need.pkgs %in% inst.pkgs)){
-  cat(paste('Not all the required packages are installed.\n\nPress escape to',
-            'exit the app and  run initialise_AIP() to install dependencies',
-            sep=''))
-  stop()
+for (pkg in need.pkgs) {
+  if (!pkg %in% inst.pkgs) {
+    cat(paste0(pkg, ' is not installed.\n\nPress escape to',
+            'exit the app and run initialise_AIP() to install dependencies.'))
+    stop()
+  }
 }

@@ -3,6 +3,13 @@
 # directory, "AIP/inst/app") so that it checks the required version is installed
 # too. Required versions can be found in the AIP package DESCRIPTION file
 source('pkg_check.R')
+# This should eventually be removed, but it is require if the above script is
+# expected to pass when the app is deployed to shinyapps.io. The service scans
+# the app files for library() and require() calls and installs the dependencies,
+# but the pkg_check.R script is expecting devtools to be installed so that
+# initialize_AIP() can be run. The only hold up is the shinyAce package which
+# doesn't have the latest version on CRAN.
+library(devtools)
 
 library(shiny)
 
