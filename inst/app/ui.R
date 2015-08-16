@@ -197,7 +197,8 @@ data.analysis.tab <-
         uiOutput('best.fit.plot'),
         uiOutput('boxplot.plot'),
         uiOutput('shapiro.wilk.results'),
-        uiOutput('levene.results')
+        uiOutput('levene.results'),
+        uiOutput('tukey.results')
       )
     )
   )

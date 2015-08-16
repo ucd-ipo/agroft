@@ -396,21 +396,15 @@ shinyServer(function(input, output, session){
   })
 
   GenerateFormulaWithoutError <- reactive({
-    left.side <- paste(TransformedDepVarColName(), '~')
-    if (input$exp.design == 'SPCRD') {
-      right.side <- paste0(input$independent.variable.one, ' + ',
-                           input$independent.variable.two, ' + ',
-                           input$independent.variable.one, ':',
-                           input$independent.variable.two)
-    } else if (input$exp.design == 'SPRCBD') {
-      right.side <- paste0(input$independent.variable.one, ' + ',
-                           input$independent.variable.two, ' + ',
-                           input$independent.variable.one, ':',
-                           input$independent.variable.two, ' + ',
-                           input$independent.variable.blk)
+    f <- GenerateFormula()
+    if (input$exp.design %in% c('SPCRD', 'SPRCBD')) {
+      f <- gsub(' \\+ Error\\(.*:.*)', '', f)
     }
-    form <- paste(left.side, right.side)
-    return(form)
+    return(f)
+  })
+
+  GenerateTukeyFormula <- reactive({
+      return(paste0(GenerateFormulaWithoutError(), ' + YP.SQ'))
   })
 
 ##### run the analysis, assign to reactive object "fit" ##############
@@ -487,6 +481,8 @@ shinyServer(function(input, output, session){
 
   output$shapiro.wilk.results.text <- renderPrint({
     input$run_analysis
+    # NOTE : We don't do the Shapiro-Wilk test for the split plot designs
+    # because it isn't straight forward to implement.
     if (!input$exp.design %in% c('SPCRD', 'SPRCBD')) {
       isolate({fit <- EvalFit()})
       return(shapiro.test(residuals(fit)))
@@ -507,14 +503,15 @@ shinyServer(function(input, output, session){
   })
 
   GenerateIndividualFormulas <- reactive({
+    dep.var <- TransformedDepVarColName()
     if (input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
-      f <- paste0(input$dependent.variable, ' ~ ',
+      f <- paste0(dep.var, ' ~ ',
                   input$independent.variable.one)
       return(list(as.formula(f)))
     } else {
-      f1 <- paste0(input$dependent.variable, ' ~ ',
+      f1 <- paste0(dep.var, ' ~ ',
                    input$independent.variable.one)
-      f2 <- paste0(input$dependent.variable, ' ~ ',
+      f2 <- paste0(dep.var, ' ~ ',
                    input$independent.variable.two)
       return(list(as.formula(f1), as.formula(f2)))
     }
@@ -535,6 +532,33 @@ shinyServer(function(input, output, session){
     } else {
       list(h2("Levene's Test for Homogeneity of Variance"),
            verbatimTextOutput('levene.results.text'))
+    }
+  })
+
+  output$tukey.results.text <- renderPrint({
+    input$run_analysis
+    isolate({
+      # TODO : Check to make sure this is what I'm supposed to use for the split
+      # plot results.
+      fit <- ModelFitWithoutError()
+      my.data <- AddTransformationColumns()
+      my.data$YP.SQ <- predict(fit)^2
+      f <- GenerateTukeyFormula()
+      tukey.one.df.fit <- lm(formula = as.formula(f), data = my.data)
+    })
+    return(summary(tukey.one.df.fit))
+  })
+
+  output$tukey.results <- renderUI({
+    if(is.null(input$run_analysis) || input$run_analysis == 0) {
+      return(NULL)
+    } else {
+      if (!input$exp.design %in% c('LR', 'CRD1')) {
+        list(h2("Tukey's Test"),
+             verbatimTextOutput('tukey.results.text'))
+      } else {
+        return(NULL)
+      }
     }
   })
 
@@ -735,6 +759,14 @@ shinyServer(function(input, output, session){
       levene.calls <- paste0('leveneTest(', formulas, ', data = my.data)',
                              collapse = '\n')
       code <- paste0(code, "\n\n# Levene's Test\nlibrary(car)\n", levene.calls)
+
+      if (!input$exp.design %in% c('LR', 'CRD1')) {
+        code <- paste0(code, "\n\n# Tukey's One DoF Test\n",
+                       "my.data$YP.SQ <- predict(model.fit)^2\n",
+                       "tukey.one.df.fit <- lm(formula = ",
+                       GenerateTukeyFormula(),
+                       ", data = my.data)\nsummary(tukey.one.df.fit)")
+      }
 
       return(code)
     }
