@@ -628,33 +628,33 @@ shinyServer(function(input, output, session){
     }
   })
 
-  # TODO : Should the boxplots have the dependent var or the transformed
-  # dependent var as the Y axis?
   output$plot.boxplot.one <- renderPlot({
     input$run_analysis
+    dep.var <- TransformedDepVarColName()
     if (input$exp.design != 'LR') {
       my.data <- AddTransformationColumns()
-      f1 <- paste0(input$dependent.variable, ' ~ ',
+      f1 <- paste0(dep.var, ' ~ ',
                    input$independent.variable.one)
       boxplot(as.formula(f1), data = my.data,
               main = paste0("Effect of ", input$independent.variable.one,
-                            " on ", input$dependent.variable),
+                            " on ", dep.var),
               xlab = input$independent.variable.one,
-              ylab = input$dependent.variable)
+              ylab = dep.var)
     }
   })
 
   output$plot.boxplot.two <- renderPlot({
     input$run_analysis
+    dep.var <- TransformedDepVarColName()
     if (!input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
       my.data <- AddTransformationColumns()
-      f2 <- paste0(input$dependent.variable, ' ~ ',
+      f2 <- paste0(dep.var, ' ~ ',
                    input$independent.variable.two)
       boxplot(as.formula(f2), data = my.data,
               main = paste0("Effect of ", input$independent.variable.two,
-                            " on ", input$dependent.variable),
+                            " on ", dep.var),
               xlab = input$independent.variable.two,
-              ylab = input$dependent.variable)
+              ylab = dep.var)
     }
   })
 
@@ -673,6 +673,51 @@ shinyServer(function(input, output, session){
                            plotOutput('plot.boxplot.one'))
         }
         return(elements)
+      } else {
+        return(NULL)
+      }
+    }
+  })
+
+  output$plot.interaction.one <- renderPlot({
+    input$run_analysis
+    isolate({
+      if (!input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
+        dep.var <- TransformedDepVarColName()
+        ind.var.one <- input$independent.variable.one
+        ind.var.two <- input$independent.variable.two
+        my.data <- AddTransformationColumns()
+        interaction.plot(my.data[[ind.var.one]], my.data[[ind.var.two]],
+                         my.data[[dep.var]], xlab = ind.var.one, trace.label =
+                         ind.var.two, ylab = dep.var)
+      }
+    })
+  })
+
+  output$plot.interaction.two <- renderPlot({
+    input$run_analysis
+    isolate({
+      if (!input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
+        dep.var <- TransformedDepVarColName()
+        ind.var.one <- input$independent.variable.one
+        ind.var.two <- input$independent.variable.two
+        my.data <- AddTransformationColumns()
+        interaction.plot(my.data[[ind.var.two]], my.data[[ind.var.one]],
+                         my.data[[dep.var]], xlab = ind.var.two, trace.label =
+                         ind.var.one, ylab = dep.var)
+      }
+    })
+  })
+
+  output$interaction.plot <- renderUI({
+    input$run_analysis
+    if (is.null(input$run_analysis) || input$run_analysis == 0) {
+      return(NULL)
+    } else {
+      if (!input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
+          return(list(h2('Interaction Plots'),
+                         plotOutput('plot.interaction.one'),
+                         plotOutput('plot.interaction.two')))
       } else {
         return(NULL)
       }
@@ -735,11 +780,11 @@ shinyServer(function(input, output, session){
                        'my.data$', dep.var, '.pow <- my.data$', dep.var,
                        '^power')
       } else if (input$transformation == 'Logarithmic') {
-        code <- paste0(code, '# transform the dependent variable\nmy.data$',
+        code <- paste0(code, '\n\n# transform the dependent variable\nmy.data$',
                        input$dependent.variable, '.log10 <- log10(my.data$',
                        input$dependent.variable, ')')
       } else if (input$transformation == 'Square Root') {
-        code <- paste0(code, '# transform the dependent variable\nmy.data$',
+        code <- paste0(code, '\n\n# transform the dependent variable\nmy.data$',
                        input$dependent.variable, '.sqrt <- sqrt(my.data$',
                        input$dependent.variable, ')')
       }

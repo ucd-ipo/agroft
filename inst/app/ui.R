@@ -198,7 +198,8 @@ data.analysis.tab <-
         uiOutput('boxplot.plot'),
         uiOutput('shapiro.wilk.results'),
         uiOutput('levene.results'),
-        uiOutput('tukey.results')
+        uiOutput('tukey.results'),
+        uiOutput('interaction.plot')
       )
     )
   )
