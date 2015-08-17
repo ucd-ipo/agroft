@@ -30,12 +30,16 @@ library(agricolae) # for sample datasets and LSD.Test()
 
 library(car)  # for leveneTest()
 
+library('Rmisc')  # for summarySE()
+
+library('ggplot2')
+
 # for loading dynamic reports. I don't use rmarkdown because that requires that
 # pandoc be installed which is a whole different ballgame. knitr doesn't require
 # dependencies like that
 library(knitr)
 
-shinyServer(function(input, output, session){
+shinyServer( function(input, output, session) {
 
   # for debugging. Uncomment the verbatimTextOutput under main panel in the UI
   # script to see the contents of this. Useful for seeing what the objects you
@@ -840,6 +844,99 @@ shinyServer(function(input, output, session){
   #############################################################################
   # Post hoc tab
   #############################################################################
+
+  output$lsd.results <- renderUI({
+    input$run_post_hoc_analysis
+    if (is.null(input$run_post_hoc_analysis) || input$run_post_hoc_analysis == 0) {
+      return(NULL)
+    } else {
+      isolate({
+        dep.var <- TransformedDepVarColName()
+        ind.var.one <- input$independent.variable.one
+        ind.var.two <- input$independent.variable.two
+        my.data <- AddTransformationColumns()
+        fit <- EvalFit()
+      })
+      if (input$exp.design == 'LR') {
+        return(p('Post hoc tests are not run for simple linear regression.'))
+      } else if (input$exp.design %in% c('CRD1', 'RCBD1')) {
+        # NOTE : The "[1]" gets the first p-value so this relies on the order of
+        # the variables in the RCBD to always have the treatment first. It is a
+        # pain in the ass to detect the order and then extract. Why does R make
+        # this so difficult?
+        p.value <- summary(fit)[[1]]$'Pr(>F)'[1]
+        if (p.value < 0.05) {
+          output$lsd.results.text <- renderPrint({
+            LSD.test(fit, ind.var.one, console = TRUE)
+          })
+          lsd.results <- LSD.test(fit, ind.var.one)
+          summary.stats <- summarySE(data = my.data, dep.var, groupvars =
+                                     ind.var.one)
+          merged.table <- merge(summary.stats, lsd.results$groups,
+                                by.x = ind.var.one, by.y = "trt")
+          output$lsd.bar.plot <- renderPlot({
+            ggplot(merged.table, aes_string(x = ind.var.one, y = "means")) +
+            geom_bar(stat = "identity", fill = "gray50", colour = "black", width = 0.7) +
+            geom_errorbar(aes(ymax = means + se, ymin = means - se), width = 0.0,
+                size = 0.5, color = "black") +
+            geom_text(aes(label = M, y = means + se / 1.8, vjust = -2.5)) +
+            labs(x = ind.var.one, y = dep.var) +
+            theme_bw() +
+            theme(panel.grid.major.x = element_blank(),
+                  panel.grid.major.y = element_line(colour = "grey80"),
+                  plot.title = element_text(size = rel(1.5),
+                                            face = "bold", vjust = 1.5),
+                  axis.title = element_text(face = "bold"),
+                  axis.title.y = element_text(vjust= 1.8),
+                  axis.title.x = element_text(vjust= -0.5),
+                  panel.border = element_rect(colour = "black"),
+                  text = element_text(size = 20))
+          })
+          return(list(p(paste0(ind.var.one, ' is significant (alpha=0.05).')),
+                      verbatimTextOutput('lsd.results.text'),
+                      plotOutput('lsd.bar.plot')))
+        } else {
+          return(p(paste0(ind.var.one, ' is not significant.')))
+        }
+    } else if (input$exp.design %in% c('CRD2', 'RCBD2')) {
+      return(NULL)
+      #if interaction is significant
+        #if all independent variables are significant
+          #run single LSD test with both variables
+          #make single LSD bar chart
+        #else one independent variable is significant
+          #run LSD test on the single significant variable
+          #make single LSD bar chart
+        #else
+          #do not run LSD test
+          #do not make LSD car chart
+      #else interaction is not significant
+          #TODO : What happens here?
+    } else if (input$exp.design %in% c('SPCRD', 'SPRCBD')) {
+      #if interaction is significant
+        #if mainplot is significant
+          #LSD of main plot
+        #else if subplot is significant
+          #LSD of subplot
+        #else
+          #do not do LSD
+      #else interaction is not significant
+        #for level in main plot
+          #if subplot treatment is significant
+            #LSD of subset of data
+          #else
+            #do not do LSD
+        #for level in split plot
+          #if mainplot treatment is significant
+            #LSD of subset of data
+          #else
+            #do not do LSD
+        #TODO : Compare between subplot levels across  main plot levels
+      } else {
+        return(NULL)
+      }
+    }
+  })
 
   #############################################################################
   # Report tab
