@@ -13,11 +13,8 @@ library(devtools)
 
 library(shiny)
 
-# http://spark.rstudio.com/johnharrison/shinyBS-Demo/, vers. 0.5 should be on
-# CRAN soon, that is the version we need. Once it is up there, change the code
-# in initialize_AIP() to pull from CRAN instead. This package has bindings for
-# some cool twitter bootstrap UI stuff that shiny doesn't include. Includes the
-# modals, collapse panels, and tool tips.
+# This package has bindings for some cool twitter bootstrap UI stuff that shiny
+# doesn't include. Includes the modals, collapse panels, and tool tips.
 library(shinyBS)
 
 # for displaying R code - pull from github until the correct version is on CRAN
@@ -29,7 +26,7 @@ library(shinyAce)
 # have functionality to read in excel files.
 #library(readxl)
 
-library(agricolae) # for datasets
+library(agricolae) # for sample datasets and LSD.Test()
 
 library(car)  # for leveneTest()
 
@@ -46,23 +43,26 @@ shinyServer(function(input, output, session){
   # like.
   output$debug <- renderText({GenerateFormula()})
 
-##### server side element for reading in data ####################################
+  #############################################################################
+  # Load Data Tab
+  #############################################################################
+
   GetLoadCall <- reactive({
     # Returns one of three things:
-    # 1. language:call containing the read.csv unevaluated function call
-    # 2. symbol:name containing the name of the agricolae data set
+    # 1. call containing the read.csv unevaluated function call
+    # 2. name containing the name of the agricolae data set
     # 3. NULL
     # if no file has been uploaded or a file has been uploaded but it is of
     # length zero (i.e. corrupt or weird filetype) and the user hasn't selected
     # use sample data, then... make the reactive expression "GetLoadCall" NULL,
     # otherwise, do read in data things
-    if((is.null(input$data_file) || length(input$data_file)==0) &&
+    if ((is.null(input$data_file) || length(input$data_file) == 0) &&
        !input$use_sample_data) {
       return(NULL)
     } else {
       # if a data file has been uploaded and the user doesn't want to use sample
       # data...
-      if(length(input$data_file) > 0 && !input$use_sample_data){
+      if (length(input$data_file) > 0 && !input$use_sample_data) {
         # uncomment once readxl gets on CRAN
 #         readcall <- switch(file_ext(input$data_file$name),
 #                            'csv'='read.csv',
@@ -84,13 +84,10 @@ shinyServer(function(input, output, session){
     return(load.call)
   })
 
-##### Assign the data frame to the variable "data" by evaluating the call to
-##### load the data.
-
   LoadData <- reactive({
-    # Returns a list:data.frame with the appropriate data set or NULL.
+    # Returns a data.frame with the appropriate data set or NULL.
 
-    # TODO : This should only run if GetLoadCall returns a name:symbol.
+    # TODO : This should only run if GetLoadCall returns a name.
     # TODO : This should probably be in the GetLoadCall function.
     # The following loads the selected agricolae data set into the workspace,
     # regardless if the user selects "Use sample data instead". The name of the
@@ -109,30 +106,336 @@ shinyServer(function(input, output, session){
 
     return(data)
 
-    })
-
-##### Generate the code used to load the data ##########
+  })
 
   GetSimpleLoadExpr <- reactive({
-    # Returns a char containing the code an R user would use to load the data.
+    # Returns a character containing the code an R user would use to load the
+    # data.
 
     # if they aren't using sample data, deparse the call to get the character
     # represntation of the call, otherwise, construct it from scratch
-    if(!input$use_sample_data){
+    if (!input$use_sample_data) {
       return(deparse(GetLoadCall()))
     } else {
       l <- 'library(agricolae)  # load "agricolae" package for the sample data'
       l <- paste0(l, '\ndata("',input$sample_data_buttons,  '")')
       l <- paste0(l, '\n', 'my.data <- ', input$sample_data_buttons)
     }
-    })
+  })
 
-##### display the data on the "upload data" tab ################
+  ReadCode <- reactive({
+    if (length(input$data_file) == 0 && !input$use_sample_data) {
+      return(NULL)
+    }
+    if (!input$use_sample_data) {
+      filestr <- gsub('(?<=file \\= ").*(?="\\))',
+                      input$data_file$name, perl=TRUE,
+                      GetSimpleLoadExpr())
+      filestr <- paste0('my.data <- ', filestr)
+    } else {
+      filestr <- GetSimpleLoadExpr()
+    }
+    return(filestr)
+  })
+
+  observe({
+    # Updates the load code editor.
+    updateAceEditor(session, 'code_used_read', value=ReadCode(),
+                    readOnly=TRUE, wordWrap=TRUE)
+  })
+
   output$data_table <- renderDataTable({LoadData()})
 
-##### UI element for selecting the desired experimental design ############
+  #############################################################################
+  # Analysis Tab
+  #############################################################################
+
+  #---------------------------------------------------------------------------#
+  # Functions used to run the analyses.
+  #---------------------------------------------------------------------------#
+
+  ConvertData <- reactive({
+    # convert variables to their respective types
+    raw.data <- LoadData()
+    col.names <- names(raw.data)
+    for(i in 1:ncol(raw.data)){
+      # each input ID was apended "_recode" so for each column of the raw.data take
+      # that value and recode it to the correct value based on the input id.
+      var_type <- input[[paste0(col.names[i], '_recode')]]
+      # since the input value will be either numeric or factor, you can paste
+      # "as." in front of it to create the function call we'll use. then convert
+      # that variable type and return the raw.data with the converted variables. Call
+      # it raw.data so it doensn't get mixed up with LoadData()
+      raw.data[,i] <- eval(call(paste0('as.', var_type), raw.data[,i]))
+    }
+    return(raw.data)
+  })
+
+  ComputeExponent <- reactive({
+    # Returns the exponent numeric to be used in the power transformation.
+    if (input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
+      form = paste(input$dependent.variable, '~',
+                   input$independent.variable.one)
+    } else {
+      form = paste(input$dependent.variable, '~',
+                   input$independent.variable.one, '+',
+                   input$independent.variable.two)
+    }
+    mean.data <- aggregate(as.formula(form), data = ConvertData(),
+                           function(x) c(logmean = log10(mean(x)),
+                                         logvar = log10(var(x))))
+    power.fit <- lm(logvar ~ logmean,
+                    data = as.data.frame(mean.data[[input$dependent.variable]]))
+    power <- 1 - summary(power.fit)$coefficients[2, 1] / 2
+    return(power)
+  })
+
+  TransformedDepVarColName <- function() {
+    # Returns the transformed dependent variable name.
+    dep.var <- input$dependent.variable
+    choices = c('None' = dep.var,
+                'Power' = paste0(dep.var, '.pow'),
+                'Logarithmic' = paste0(dep.var, '.log10'),
+                'Square Root' = paste0(dep.var, '.sqrt'))
+    return(choices[[input$transformation]])
+  }
+
+  AddTransformationColumns <- reactive({
+    # Returns the converted data frame with three new columns for the three
+    # transformations.
+    data <- ConvertData()
+    dep.var <- input$dependent.variable
+    trans.dep.var <- TransformedDepVarColName()
+    dep.var.col <- data[[dep.var]]
+    if (input$transformation == 'Power') {
+      data[[trans.dep.var]] <- dep.var.col^ComputeExponent()
+    } else if (input$transformation == 'Logarithmic') {
+      data[[trans.dep.var]] <- log10(dep.var.col)
+    } else if (input$transformation == 'Square Root') {
+      data[[trans.dep.var]] <- sqrt(dep.var.col)
+    }
+    return(data)
+  })
+
+  GenerateFormula <- reactive({
+    left.side <- paste(TransformedDepVarColName(), '~')
+    if (input$exp.design %in% c('LR', 'CRD1')) {
+      right.side <- input$independent.variable.one
+    } else if (input$exp.design == 'CRD2') {
+      right.side <- paste0(input$independent.variable.one, ' + ',
+                           input$independent.variable.two, ' + ',
+                           input$independent.variable.one, ':',
+                           input$independent.variable.two)
+    } else if (input$exp.design == 'RCBD1') {
+      right.side <- paste0(input$independent.variable.one, ' + ',
+                           input$independent.variable.blk)
+    } else if (input$exp.design == 'RCBD2') {
+      right.side <- paste0(input$independent.variable.one, ' + ',
+                           input$independent.variable.two, ' + ',
+                           input$independent.variable.one, ':',
+                           input$independent.variable.two, ' + ',
+                           input$independent.variable.blk)
+    } else if (input$exp.design == 'SPCRD') {
+      right.side <- paste0(input$independent.variable.one, ' + ',
+                           input$independent.variable.two, ' + ',
+                           input$independent.variable.one, ':',
+                           input$independent.variable.two, ' + Error(',
+                           input$independent.variable.one, ':',
+                           input$independent.variable.blk, ')')
+    } else if (input$exp.design == 'SPRCBD') {
+      right.side <- paste0(input$independent.variable.one, ' + ',
+                           input$independent.variable.two, ' + ',
+                           input$independent.variable.one, ':',
+                           input$independent.variable.two, ' + ',
+                           input$independent.variable.blk, ' + Error(',
+                           input$independent.variable.one, ':',
+                           input$independent.variable.blk, ')')
+    }
+    form <- paste(left.side, right.side)
+    return(form)
+  })
+
+  GenerateFormulaWithoutError <- reactive({
+    f <- GenerateFormula()
+    if (input$exp.design %in% c('SPCRD', 'SPRCBD')) {
+      f <- gsub(' \\+ Error\\(.*:.*)', '', f)
+    }
+    return(f)
+  })
+
+  GetFitCall <- reactive({
+    # Returns the call used to run the analysis.
+
+    # The following line forces this reactive expression to take a dependency on
+    # the "Run Analysis" button. Thus this will run anytime it is clicked.
+    input$run_analysis
+
+    # isolate prevents this reactive expression from depending on any of the
+    # variables inside the isolated expression.
+    isolate({
+
+      fit <- call('aov',
+                  formula = as.formula(GenerateFormula()),
+                  data = as.name('my.data'))
+
+      # santizes the call (from global.R)
+      fit <- strip.args(fit)
+
+    })
+
+    return(fit)
+
+    })
+
+  EvalFit <- reactive({
+    # Returns the fit model.
+
+    # Run every time the "Run Analysis" button is pressed.
+    input$run_analysis
+
+    isolate({
+      my.data <- AddTransformationColumns()
+      model.fit <- eval(GetFitCall())
+    })
+
+    return(model.fit)
+
+    })
+
+  GetFitExpr <- reactive({
+    # Returns the char of the expression used to evaluate the fit.
+
+    # Run every time the "Run Analysis" button is pressed.
+    input$run_analysis
+
+    isolate({
+      x <- deparse(GetFitCall(), width.cutoff=500L)
+    })
+
+    return(x)
+
+  })
+
+  ModelFitWithoutError <- reactive({
+    # Returns the model fit from formulas with the  Error() term removed.
+    input$run_analysis
+    isolate(exp.design <- input$exp.design)
+    if (exp.design %in% c('SPCRD', 'SPRCBD')) {
+      my.data <- AddTransformationColumns()
+      model.fit <- aov(formula = as.formula(GenerateFormulaWithoutError()),
+                       data = my.data)
+    } else {
+      model.fit <- EvalFit()
+    }
+    return(model.fit)
+  })
+
+  GenerateIndividualFormulas <- reactive({
+    # Returns single variate formulas.
+    dep.var <- TransformedDepVarColName()
+    if (input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
+      f <- paste0(dep.var, ' ~ ',
+                  input$independent.variable.one)
+      return(list(as.formula(f)))
+    } else {
+      f1 <- paste0(dep.var, ' ~ ',
+                   input$independent.variable.one)
+      f2 <- paste0(dep.var, ' ~ ',
+                   input$independent.variable.two)
+      return(list(as.formula(f1), as.formula(f2)))
+    }
+  })
+
+  GenerateTukeyFormula <- reactive({
+      return(paste0(GenerateFormulaWithoutError(), ' + YP.SQ'))
+  })
+
+  GenerateAnalysisCode <- reactive({
+    # Returns the R code a user would type to run the analysis.
+    if (input$run_analysis==0) {
+      return(NULL)
+    } else {
+
+      # code for converting columns to factors
+      factor.idx <- which(sapply(ConvertData(), is.factor))
+      if (length(factor.idx) > 0) {
+        factor.names <- names(ConvertData()[factor.idx])
+        code <- paste0('my.data$', factor.names, ' <- as.factor(my.data$',
+                        factor.names, ')', collapse='\n')
+        code <- paste0('# convert categorical variables to factors\n', code)
+      }
+
+      # code for the transformation
+      dep.var <- input$dependent.variable
+      if (input$transformation == 'Power') {
+        code <- paste0(code, '\n\n# transform the dependent variable\n')
+        if (input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
+          code <- paste0(code, 'mean.data <- aggregate(', dep.var, ' ~ ',
+                         input$independent.variable.one)
+        } else {
+          code <- paste0(code, 'mean.data <- aggregate(', dep.var, ' ~ ',
+                         input$independent.variable.one, ' + ',
+                         input$independent.variable.two)
+        }
+        code <- paste0(code,
+                       ', data = my.data, function(x) ',
+                       'c(logmean=log10(mean(x)), logvar=log10(var(x))))\n',
+                       'power.fit <- lm(logvar ~ logmean, ',
+                       'data = as.data.frame(mean.data$', dep.var, '))\n',
+                       'power <- 1 - summary(power.fit)$coefficients[2, 1] / 2\n',
+                       'my.data$', dep.var, '.pow <- my.data$', dep.var,
+                       '^power')
+      } else if (input$transformation == 'Logarithmic') {
+        code <- paste0(code, '\n\n# transform the dependent variable\nmy.data$',
+                       input$dependent.variable, '.log10 <- log10(my.data$',
+                       input$dependent.variable, ')')
+      } else if (input$transformation == 'Square Root') {
+        code <- paste0(code, '\n\n# transform the dependent variable\nmy.data$',
+                       input$dependent.variable, '.sqrt <- sqrt(my.data$',
+                       input$dependent.variable, ')')
+      }
+
+      # code for the model fit and summary
+      code <- paste0(code, '\n\n# fit the model\n')
+      code <- paste0(code, 'model.fit <- ', GetFitExpr())
+      code <- paste0(code, '\n\n# print summary table\nsummary(model.fit)')
+
+      # code for the assumptions tests
+      if (!input$exp.design %in% c('SPCRD', 'SPRCBD')) {
+        code <- paste0(code,
+                       '\n\n# assumptions tests\nshapiro.test(residuals(fit))')
+      }
+
+      formulas <- GenerateIndividualFormulas()
+      levene.calls <- paste0('leveneTest(', formulas, ', data = my.data)',
+                             collapse = '\n')
+      code <- paste0(code, "\n\n# Levene's Test\nlibrary(car)\n", levene.calls)
+
+      if (!input$exp.design %in% c('LR', 'CRD1')) {
+        code <- paste0(code, "\n\n# Tukey's One DoF Test\n",
+                       "my.data$YP.SQ <- predict(model.fit)^2\n",
+                       "tukey.one.df.fit <- lm(formula = ",
+                       GenerateTukeyFormula(),
+                       ", data = my.data)\nsummary(tukey.one.df.fit)")
+      }
+
+      return(code)
+    }
+  })
+
+  observe({
+    # Updates the analysis code in the editor.
+    input$run_analysis
+    updateAceEditor(session, 'code_used_model', value=isolate(GenerateAnalysisCode()),
+                    readOnly=TRUE, wordWrap=TRUE)
+  })
+
+  #---------------------------------------------------------------------------#
+  # UI elements for the analysis tab side panel.
+  #---------------------------------------------------------------------------#
 
   output$select.design <- renderUI({
+    # Renders a dropdown for selecting the type of experimental design.
     if(is.null(LoadData())){
       h4('Please upload or select data first.')
     } else {
@@ -152,9 +455,9 @@ shinyServer(function(input, output, session){
     }
   })
 
-##### UI element for selecting the dependent variable ############
-
   output$select.dependent <- renderUI({
+    # Renders a dropdown for selecting the dependent variable from the loaded
+    # data.
     if (is.null(input$exp.design)) {
       h4('Please select an experimental design first.')
       input$dependent.variable = NULL
@@ -166,9 +469,8 @@ shinyServer(function(input, output, session){
     }
   })
 
-# UI element for selecting in independent variables.
-
   output$select.independent <- renderUI({
+    # Renders a number of dropdowns for selecting in independent variables.
     # TODO : This should check that the variable type panel has been run,
     # otherwise `ConvertData()` will fail.
     if (is.null(input$dependent.variable)) {
@@ -252,15 +554,14 @@ shinyServer(function(input, output, session){
     }
   })
 
-##### select variable types #####################################
-# prompt the user to select the class of each variable. The default selected
-# class is the one that R read the data in as.
   output$var_types_select <- renderUI({
+    # Renders a series of radio buttons for selecting a type for each varible:
+    # numeric or factor.
 
     raw.data <- LoadData()
     raw.data.col.names <- names(raw.data)
 
-    if(is.null(raw.data)){
+    if (is.null(raw.data)) {
       return(NULL)
     }
 
@@ -284,185 +585,9 @@ shinyServer(function(input, output, session){
     return(btns)
   })
 
-######## convert variables to their respective types ############
-
-  ConvertData <- reactive({
-    raw.data <- LoadData()
-    col.names <- names(raw.data)
-    for(i in 1:ncol(raw.data)){
-      # each input ID was apended "_recode" so for each column of the raw.data take
-      # that value and recode it to the correct value based on the input id.
-      var_type <- input[[paste0(col.names[i], '_recode')]]
-      # since the input value will be either numeric or factor, you can paste
-      # "as." in front of it to create the function call we'll use. then convert
-      # that variable type and return the raw.data with the converted variables. Call
-      # it raw.data so it doensn't get mixed up with LoadData()
-      raw.data[,i] <- eval(call(paste0('as.', var_type), raw.data[,i]))
-    }
-    return(raw.data)
-  })
-
-  ComputeExponent <- reactive({
-    # Returns the exponent numeric to be used in the power transformation.
-    if (input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
-      form = paste(input$dependent.variable, '~',
-                   input$independent.variable.one)
-    } else {
-      form = paste(input$dependent.variable, '~',
-                   input$independent.variable.one, '+',
-                   input$independent.variable.two)
-    }
-    mean.data <- aggregate(as.formula(form), data = ConvertData(),
-                           function(x) c(logmean = log10(mean(x)),
-                                         logvar = log10(var(x))))
-    power.fit <- lm(logvar ~ logmean,
-                    data = as.data.frame(mean.data[[input$dependent.variable]]))
-    power <- 1 - summary(power.fit)$coefficients[2, 1] / 2
-    return(power)
-  })
-
-  output$exponent <- renderUI({
-    if (input$transformation == 'Power') {
-      header <- h2('Exponent from Power Transformation')
-      text <- p(as.character(ComputeExponent()))
-      return(list(header, text))
-    } else {
-      return(NULL)
-    }
-    })
-
-  TransformedDepVarColName <- function() {
-    dep.var <- input$dependent.variable
-    choices = c('None' = dep.var,
-                'Power' = paste0(dep.var, '.pow'),
-                'Logarithmic' = paste0(dep.var, '.log10'),
-                'Square Root' = paste0(dep.var, '.sqrt'))
-    return(choices[[input$transformation]])
-  }
-
-  AddTransformationColumns <- reactive({
-    # Returns the converted data frame with three new columns for the three
-    # transformations.
-    data <- ConvertData()
-    dep.var <- input$dependent.variable
-    trans.dep.var <- TransformedDepVarColName()
-    dep.var.col <- data[[dep.var]]
-    if (input$transformation == 'Power') {
-      data[[trans.dep.var]] <- dep.var.col^ComputeExponent()
-    } else if (input$transformation == 'Logarithmic') {
-      data[[trans.dep.var]] <- log10(dep.var.col)
-    } else if (input$transformation == 'Square Root') {
-      data[[trans.dep.var]] <- sqrt(dep.var.col)
-    }
-    return(data)
-  })
-
-  GenerateFormula <- reactive({
-    left.side <- paste(TransformedDepVarColName(), '~')
-    if (input$exp.design %in% c('LR', 'CRD1')) {
-      right.side <- input$independent.variable.one
-    } else if (input$exp.design == 'CRD2') {
-      right.side <- paste0(input$independent.variable.one, ' + ',
-                           input$independent.variable.two, ' + ',
-                           input$independent.variable.one, ':',
-                           input$independent.variable.two)
-    } else if (input$exp.design == 'RCBD1') {
-      right.side <- paste0(input$independent.variable.one, ' + ',
-                           input$independent.variable.blk)
-    } else if (input$exp.design == 'RCBD2') {
-      right.side <- paste0(input$independent.variable.one, ' + ',
-                           input$independent.variable.two, ' + ',
-                           input$independent.variable.one, ':',
-                           input$independent.variable.two, ' + ',
-                           input$independent.variable.blk)
-    } else if (input$exp.design == 'SPCRD') {
-      right.side <- paste0(input$independent.variable.one, ' + ',
-                           input$independent.variable.two, ' + ',
-                           input$independent.variable.one, ':',
-                           input$independent.variable.two, ' + Error(',
-                           input$independent.variable.one, ':',
-                           input$independent.variable.blk, ')')
-    } else if (input$exp.design == 'SPRCBD') {
-      right.side <- paste0(input$independent.variable.one, ' + ',
-                           input$independent.variable.two, ' + ',
-                           input$independent.variable.one, ':',
-                           input$independent.variable.two, ' + ',
-                           input$independent.variable.blk, ' + Error(',
-                           input$independent.variable.one, ':',
-                           input$independent.variable.blk, ')')
-    }
-    form <- paste(left.side, right.side)
-    return(form)
-  })
-
-  GenerateFormulaWithoutError <- reactive({
-    f <- GenerateFormula()
-    if (input$exp.design %in% c('SPCRD', 'SPRCBD')) {
-      f <- gsub(' \\+ Error\\(.*:.*)', '', f)
-    }
-    return(f)
-  })
-
-  GenerateTukeyFormula <- reactive({
-      return(paste0(GenerateFormulaWithoutError(), ' + YP.SQ'))
-  })
-
-##### run the analysis, assign to reactive object "fit" ##############
-
-  GetFitCall <- reactive({
-    # Returns the call used to run the analysis.
-
-    # The following line forces this reactive expression to take a dependency on
-    # the "Run Analysis" button. Thus this will run anytime it is clicked.
-    input$run_analysis
-
-    # isolate prevents this reactive expression from depending on any of the
-    # variables inside the isolated expression.
-    isolate({
-
-      fit <- call('aov',
-                  formula = as.formula(GenerateFormula()),
-                  data = as.name('my.data'))
-
-      # santizes the call (from global.R)
-      fit <- strip.args(fit)
-
-    })
-
-    return(fit)
-
-    })
-
-  EvalFit <- reactive({
-    # Returns the fit model.
-
-    # Run every time the "Run Analysis" button is pressed.
-    input$run_analysis
-
-    isolate({
-      my.data <- AddTransformationColumns()
-      model.fit <- eval(GetFitCall())
-    })
-
-    return(model.fit)
-
-    })
-
-  GetFitExpr <- reactive({
-    # Returns the char of the expression used to evaluate the fit.
-
-    # Run every time the "Run Analysis" button is pressed.
-    input$run_analysis
-
-    isolate({
-      x <- deparse(GetFitCall(), width.cutoff=500L)
-    })
-
-    return(x)
-
-  })
-
-##### the fit summary for analysis ###################################
+  #---------------------------------------------------------------------------#
+  # UI elements for the analysis tab main panel.
+  #---------------------------------------------------------------------------#
 
   output$fit.summary.text <- renderPrint({
     input$run_analysis
@@ -476,6 +601,17 @@ shinyServer(function(input, output, session){
     } else {
       list(h2('Model Fit Summary'),
            verbatimTextOutput('fit.summary.text'))
+    }
+  })
+
+  output$exponent <- renderUI({
+    # Renders a paragraph tag with the computed exponent value.
+    if (input$transformation == 'Power') {
+      header <- h2('Exponent from Power Transformation')
+      text <- p(as.character(ComputeExponent()))
+      return(list(header, text))
+    } else {
+      return(NULL)
     }
   })
 
@@ -499,21 +635,6 @@ shinyServer(function(input, output, session){
       } else {
         return(NULL)
       }
-    }
-  })
-
-  GenerateIndividualFormulas <- reactive({
-    dep.var <- TransformedDepVarColName()
-    if (input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
-      f <- paste0(dep.var, ' ~ ',
-                  input$independent.variable.one)
-      return(list(as.formula(f)))
-    } else {
-      f1 <- paste0(dep.var, ' ~ ',
-                   input$independent.variable.one)
-      f2 <- paste0(dep.var, ' ~ ',
-                   input$independent.variable.two)
-      return(list(as.formula(f1), as.formula(f2)))
     }
   })
 
@@ -560,19 +681,6 @@ shinyServer(function(input, output, session){
         return(NULL)
       }
     }
-  })
-
-  ModelFitWithoutError <- reactive({
-    input$run_analysis
-    isolate(exp.design <- input$exp.design)
-    if (exp.design %in% c('SPCRD', 'SPRCBD')) {
-      my.data <- AddTransformationColumns()
-      model.fit <- aov(formula = as.formula(GenerateFormulaWithoutError()),
-                       data = my.data)
-    } else {
-      model.fit <- EvalFit()
-    }
-    return(model.fit)
   })
 
   output$plot.residuals.vs.fitted <- renderPlot({
@@ -724,107 +832,14 @@ shinyServer(function(input, output, session){
     }
   })
 
-##### the code for reading in the data ###################################
-  read_code <- reactive({
-    if(length(input$data_file)==0 && !input$use_sample_data){return(NULL)}
-    if(!input$use_sample_data){
-    filestr <- gsub('(?<=file \\= ").*(?="\\))',
-                    input$data_file$name, perl=TRUE,
-                    GetSimpleLoadExpr())
-    filestr <- paste0('my.data <- ', filestr)
-    } else {
-      filestr <- GetSimpleLoadExpr()
-    }
-    return(filestr)
-  })
+  #############################################################################
+  # Post hoc tab
+  #############################################################################
 
-##### UI update for the reading in code display ##########################
-  observe({
-    updateAceEditor(session, 'code_used_read', value=read_code(),
-                    readOnly=TRUE, wordWrap=TRUE)
-  })
+  #############################################################################
+  # Report tab
+  #############################################################################
 
-##### return the code used to run the model ##############################
-  mcode <- reactive({
-    if (input$run_analysis==0) {
-      return(NULL)
-    } else {
-
-      # code for converting columns to factors
-      factor.idx <- which(sapply(ConvertData(), is.factor))
-      if (length(factor.idx) > 0) {
-        factor.names <- names(ConvertData()[factor.idx])
-        code <- paste0('my.data$', factor.names, ' <- as.factor(my.data$',
-                        factor.names, ')', collapse='\n')
-        code <- paste0('# convert categorical variables to factors\n', code)
-      }
-
-      # code for the transformation
-      dep.var <- input$dependent.variable
-      if (input$transformation == 'Power') {
-        code <- paste0(code, '\n\n# transform the dependent variable\n')
-        if (input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
-          code <- paste0(code, 'mean.data <- aggregate(', dep.var, ' ~ ',
-                         input$independent.variable.one)
-        } else {
-          code <- paste0(code, 'mean.data <- aggregate(', dep.var, ' ~ ',
-                         input$independent.variable.one, ' + ',
-                         input$independent.variable.two)
-        }
-        code <- paste0(code,
-                       ', data = my.data, function(x) ',
-                       'c(logmean=log10(mean(x)), logvar=log10(var(x))))\n',
-                       'power.fit <- lm(logvar ~ logmean, ',
-                       'data = as.data.frame(mean.data$', dep.var, '))\n',
-                       'power <- 1 - summary(power.fit)$coefficients[2, 1] / 2\n',
-                       'my.data$', dep.var, '.pow <- my.data$', dep.var,
-                       '^power')
-      } else if (input$transformation == 'Logarithmic') {
-        code <- paste0(code, '\n\n# transform the dependent variable\nmy.data$',
-                       input$dependent.variable, '.log10 <- log10(my.data$',
-                       input$dependent.variable, ')')
-      } else if (input$transformation == 'Square Root') {
-        code <- paste0(code, '\n\n# transform the dependent variable\nmy.data$',
-                       input$dependent.variable, '.sqrt <- sqrt(my.data$',
-                       input$dependent.variable, ')')
-      }
-
-      # code for the model fit and summary
-      code <- paste0(code, '\n\n# fit the model\n')
-      code <- paste0(code, 'model.fit <- ', GetFitExpr())
-      code <- paste0(code, '\n\n# print summary table\nsummary(model.fit)')
-
-      # code for the assumptions tests
-      if (!input$exp.design %in% c('SPCRD', 'SPRCBD')) {
-        code <- paste0(code,
-                       '\n\n# assumptions tests\nshapiro.test(residuals(fit))')
-      }
-
-      formulas <- GenerateIndividualFormulas()
-      levene.calls <- paste0('leveneTest(', formulas, ', data = my.data)',
-                             collapse = '\n')
-      code <- paste0(code, "\n\n# Levene's Test\nlibrary(car)\n", levene.calls)
-
-      if (!input$exp.design %in% c('LR', 'CRD1')) {
-        code <- paste0(code, "\n\n# Tukey's One DoF Test\n",
-                       "my.data$YP.SQ <- predict(model.fit)^2\n",
-                       "tukey.one.df.fit <- lm(formula = ",
-                       GenerateTukeyFormula(),
-                       ", data = my.data)\nsummary(tukey.one.df.fit)")
-      }
-
-      return(code)
-    }
-  })
-
-##### update the editor to display code used ##############################
-  observe({
-    input$run_analysis
-    updateAceEditor(session, 'code_used_model', value=isolate(mcode()),
-                    readOnly=TRUE, wordWrap=TRUE)
-  })
-
-##### Download report #####################################################
   output$download_report <- downloadHandler(
     filename = function() {
       paste0(input$analysis, '_analysis_report_', Sys.Date(),'.html')
