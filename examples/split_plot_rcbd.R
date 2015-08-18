@@ -44,7 +44,7 @@ my.data$Block <- as.factor(my.data$Block)
 my.data$TrtmtB <- as.factor(my.data$TrtmtB)
 #-----------------------------------------------------------------------------#
 
-# TODO : Is this triple transformation necessary?
+# TODO : Is this triple transformation necessary? LOL, I didn't mean it to be a triple transform
 ##Testing various transformations for improving assumption tests##
 #(1) Create a sqrt-transformed variable
 my.data$Yield <- sqrt(my.data$Yield)
