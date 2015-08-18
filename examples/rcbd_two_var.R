@@ -94,8 +94,8 @@ sep(79)
 cat("Levene's Test\n")
 sep(79)
 #------------------------------------------------------------------------------#
-leveneTest(yield ~ clone, data=my.data)
-leveneTest(yield ~ nitrogen, data=my.data)
+leveneTest(log10.yield ~ clone, data=my.data)
+leveneTest(log10.yield ~ nitrogen, data=my.data)
 #------------------------------------------------------------------------------#
 sep(79)
 
