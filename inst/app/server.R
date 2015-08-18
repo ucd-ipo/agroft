@@ -845,6 +845,37 @@ shinyServer( function(input, output, session) {
   # Post hoc tab
   #############################################################################
 
+  MakePostHocPlot <- function(data, fit, dep.var, ind.var) {
+    lsd.results <- LSD.test(fit, ind.var)
+    summary.stats <- summarySE(data = data, dep.var, groupvars = ind.var)
+    if (length(ind.var) == 2) {
+      summary.stats$trt <- apply(summary.stats[ , ind.var], 1, paste,
+                                 collapse = ":")
+      x.label = paste(ind.var, collapse = ":")
+    } else {
+      summary.stats$trt <- summary.stats[[ind.var]]
+      x.label = ind.var
+    }
+    merged.table <- merge(summary.stats, lsd.results$groups, by = "trt")
+    ggplot(merged.table, aes(x = trt, y = means, ymin = 0,
+                             ymax = 1.35 * max(means))) +
+    geom_bar(stat = "identity", fill = "gray50", colour = "black", width = 0.7) +
+    geom_errorbar(aes(ymax = means + se, ymin = means - se), width = 0.0,
+        size = 0.5, color = "black") +
+    geom_text(aes(label = M, y = means + se / 1.8, vjust = -2.5)) +
+    labs(x = x.label, y = dep.var) +
+    theme_bw() +
+    theme(panel.grid.major.x = element_blank(),
+          panel.grid.major.y = element_line(colour = "grey80"),
+          plot.title = element_text(size = rel(1.5),
+                                    face = "bold", vjust = 1.5),
+          axis.title = element_text(face = "bold"),
+          axis.title.y = element_text(vjust= 1.8),
+          axis.title.x = element_text(vjust= -0.5),
+          panel.border = element_rect(colour = "black"),
+          text = element_text(size = 20))
+  }
+
   output$lsd.results <- renderUI({
     input$run_post_hoc_analysis
     if (is.null(input$run_post_hoc_analysis) || input$run_post_hoc_analysis == 0) {
@@ -854,12 +885,14 @@ shinyServer( function(input, output, session) {
         dep.var <- TransformedDepVarColName()
         ind.var.one <- input$independent.variable.one
         ind.var.two <- input$independent.variable.two
+        ind.vars <- c(ind.var.one, ind.var.two)
         my.data <- AddTransformationColumns()
         fit <- EvalFit()
+        exp.design <- input$exp.design
       })
-      if (input$exp.design == 'LR') {
+      if (exp.design == 'LR') {
         return(p('Post hoc tests are not run for simple linear regression.'))
-      } else if (input$exp.design %in% c('CRD1', 'RCBD1')) {
+      } else if (exp.design %in% c('CRD1', 'RCBD1')) {
         # NOTE : The "[1]" gets the first p-value so this relies on the order of
         # the variables in the RCBD to always have the treatment first. It is a
         # pain in the ass to detect the order and then extract. Why does R make
@@ -867,52 +900,74 @@ shinyServer( function(input, output, session) {
         p.value <- summary(fit)[[1]]$'Pr(>F)'[1]
         if (p.value < 0.05) {
           output$lsd.results.text <- renderPrint({
-            LSD.test(fit, ind.var.one, console = TRUE)
+            LSD.test(fit, ind.vars, console = TRUE)
           })
-          lsd.results <- LSD.test(fit, ind.var.one)
-          summary.stats <- summarySE(data = my.data, dep.var, groupvars =
-                                     ind.var.one)
-          merged.table <- merge(summary.stats, lsd.results$groups,
-                                by.x = ind.var.one, by.y = "trt")
           output$lsd.bar.plot <- renderPlot({
-            ggplot(merged.table, aes_string(x = ind.var.one, y = "means")) +
-            geom_bar(stat = "identity", fill = "gray50", colour = "black", width = 0.7) +
-            geom_errorbar(aes(ymax = means + se, ymin = means - se), width = 0.0,
-                size = 0.5, color = "black") +
-            geom_text(aes(label = M, y = means + se / 1.8, vjust = -2.5)) +
-            labs(x = ind.var.one, y = dep.var) +
-            theme_bw() +
-            theme(panel.grid.major.x = element_blank(),
-                  panel.grid.major.y = element_line(colour = "grey80"),
-                  plot.title = element_text(size = rel(1.5),
-                                            face = "bold", vjust = 1.5),
-                  axis.title = element_text(face = "bold"),
-                  axis.title.y = element_text(vjust= 1.8),
-                  axis.title.x = element_text(vjust= -0.5),
-                  panel.border = element_rect(colour = "black"),
-                  text = element_text(size = 20))
+            MakePostHocPlot(my.data, fit, dep.var, ind.vars)
           })
-          return(list(p(paste0(ind.var.one, ' is significant (alpha=0.05).')),
+          return(list(p(paste0(ind.vars, ' is significant (alpha=0.05).')),
                       verbatimTextOutput('lsd.results.text'),
                       plotOutput('lsd.bar.plot')))
         } else {
-          return(p(paste0(ind.var.one, ' is not significant.')))
+          return(p(paste0(ind.vars, ' is not significant.')))
         }
-    } else if (input$exp.design %in% c('CRD2', 'RCBD2')) {
-      return(NULL)
-      #if interaction is significant
-        #if all independent variables are significant
-          #run single LSD test with both variables
-          #make single LSD bar chart
-        #else one independent variable is significant
-          #run LSD test on the single significant variable
-          #make single LSD bar chart
-        #else
-          #do not run LSD test
-          #do not make LSD car chart
-      #else interaction is not significant
-          #TODO : What happens here?
-    } else if (input$exp.design %in% c('SPCRD', 'SPRCBD')) {
+      } else if (exp.design %in% c('CRD2', 'RCBD2')) {
+        var.one.p.value <- summary(fit)[[1]]$'Pr(>F)'[1]
+        var.two.p.value <- summary(fit)[[1]]$'Pr(>F)'[2]
+        if (exp.design == 'CRD2') {
+          idx <- 3
+        } else {
+          idx <- 4
+        }
+        interaction.p.value <- summary(fit)[[1]]$'Pr(>F)'[idx]
+        if (interaction.p.value < 0.05) {
+          if (var.one.p.value < 0.05 && var.two.p.value < 0.05){
+
+            output$lsd.results.text <- renderPrint({
+              LSD.test(fit, ind.vars, console = TRUE)
+            })
+            output$lsd.bar.plot <- renderPlot({
+              MakePostHocPlot(my.data, fit, dep.var, ind.vars)
+            })
+            return(list(p(paste0(paste(ind.vars, collapse = ":"),
+                                 ' is significant (alpha=0.05).')),
+                        verbatimTextOutput('lsd.results.text'),
+                        plotOutput('lsd.bar.plot')))
+
+          } else if (var.one.p.value < 0.05) {
+
+            output$lsd.results.text <- renderPrint({
+              LSD.test(fit, ind.var.one, console = TRUE)
+            })
+            output$lsd.bar.plot <- renderPlot({
+              MakePostHocPlot(my.data, fit, dep.var, ind.var.one)
+            })
+            return(list(p(paste0(ind.var.one, ' is significant (alpha=0.05).')),
+                        verbatimTextOutput('lsd.results.text'),
+                        plotOutput('lsd.bar.plot')))
+
+          } else if (var.two.p.value < 0.05) {
+
+            output$lsd.results.text <- renderPrint({
+              LSD.test(fit, ind.var.two, console = TRUE)
+            })
+            output$lsd.bar.plot <- renderPlot({
+              MakePostHocPlot(my.data, fit, dep.var, ind.var.two)
+            })
+            return(list(p(paste0(ind.var.two, ' is significant (alpha=0.05).')),
+                        verbatimTextOutput('lsd.results.text'),
+                        plotOutput('lsd.bar.plot')))
+
+          } else {
+
+            return(p('The interaction is significant but neither factor is  significant.'))
+
+          }
+        } else {
+          # TODO : Implement what happens here.
+          return(p('The interaction is not significant and the post hoc analyses for this scenario are not implemented'))
+        }
+    } else if (exp.design %in% c('SPCRD', 'SPRCBD')) {
       #if interaction is significant
         #if mainplot is significant
           #LSD of main plot
