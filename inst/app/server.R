@@ -421,7 +421,7 @@ shinyServer(function(input, output, session){
                        "my.data$YP.SQ <- predict(model.fit)^2\n",
                        "tukey.one.df.fit <- lm(formula = ",
                        GenerateTukeyFormula(),
-                       ", data = my.data)\nsummary(tukey.one.df.fit)")
+                       ", data = my.data)\nanova(tukey.one.df.fit)")
       }
 
       return(code)
@@ -672,7 +672,7 @@ shinyServer(function(input, output, session){
       f <- GenerateTukeyFormula()
       tukey.one.df.fit <- lm(formula = as.formula(f), data = my.data)
     })
-    return(summary(tukey.one.df.fit))
+    return(anova(tukey.one.df.fit))
   })
 
   output$tukey.results <- renderUI({
