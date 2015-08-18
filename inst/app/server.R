@@ -336,13 +336,18 @@ shinyServer(function(input, output, session){
     if (input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
       f <- paste0(dep.var, ' ~ ',
                   input$independent.variable.one)
-      return(list(as.formula(f)))
+      l <- list()
+      l[[f]] <- as.formula(f)
+      return(l)
     } else {
       f1 <- paste0(dep.var, ' ~ ',
                    input$independent.variable.one)
       f2 <- paste0(dep.var, ' ~ ',
                    input$independent.variable.two)
-      return(list(as.formula(f1), as.formula(f2)))
+      l <- list()
+      l[[f1]] <- as.formula(f1)
+      l[[f2]] <- as.formula(f2)
+      return(l)
     }
   })
 
