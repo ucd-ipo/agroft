@@ -885,6 +885,7 @@ shinyServer( function(input, output, session) {
           text = element_text(size = 20))
   }
 
+  # TODO : Clean up this insane nested if statement! Sorry...
   output$lsd.results <- renderUI({
     input$run_post_hoc_analysis
     if (is.null(input$run_post_hoc_analysis) || input$run_post_hoc_analysis == 0) {
