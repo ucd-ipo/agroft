@@ -900,6 +900,7 @@ shinyServer( function(input, output, session) {
         my.data <- AddTransformationColumns()
         fit <- EvalFit()
       })
+      alpha <- 0.05
       if (exp.design == 'LR') {
         return(p('Post hoc tests are not run for simple linear regression.'))
       } else if (exp.design %in% c('CRD1', 'RCBD1')) {
@@ -908,7 +909,7 @@ shinyServer( function(input, output, session) {
         # pain in the ass to detect the order and then extract. Why does R make
         # this so difficult?
         p.value <- summary(fit)[[1]]$'Pr(>F)'[1]
-        if (p.value < 0.05) {
+        if (p.value < alpha) {
           output$lsd.results.text <- renderPrint({
             LSD.test(fit, ind.vars, console = TRUE)
           })
@@ -930,16 +931,16 @@ shinyServer( function(input, output, session) {
           idx <- 4
         }
         interaction.p.value <- summary(fit)[[1]]$'Pr(>F)'[idx]
-        if (interaction.p.value < 0.05) {
+        if (interaction.p.value < alpha) {
           text <- paste0("The interaction, ", paste(ind.vars, collapse = ":"),
                          ", is significant (alpha = 0.05).")
-          if (var.one.p.value < 0.05 && var.two.p.value < 0.05){
+          if (var.one.p.value < alpha && var.two.p.value < alpha){
             lsd.vars <- ind.vars
             text <- paste0(text, " Both factors are significant.")
-          } else if (var.one.p.value < 0.05) {
+          } else if (var.one.p.value < alpha) {
             text <- paste0(text, " Only ", ind.var.one, " is significant.")
             lsd.vars <- ind.var.one
-          } else if (var.two.p.value < 0.05) {
+          } else if (var.two.p.value < alpha) {
             text <- paste0(text, " Only ", ind.var.two, " is significant.")
             lsd.vars <- ind.var.two
           } else {
@@ -965,12 +966,25 @@ shinyServer( function(input, output, session) {
         # NOTE : This always seems to be [2] for both formulas.
         interaction.p.value <- summary(fit)$'Error: Within'[[1]]$'Pr(>F)'[2]
         isolate({fit.without <- ModelFitWithoutError()})
-        if (interaction.p.value < 0.05) {
+        if (interaction.p.value < alpha) {
+          #for level in main plot
+            #if subplot treatment is significant
+              #LSD of subset of data
+            #else
+              #do not do LSD
+          #for level in split plot
+            #if mainplot treatment is significant
+              #LSD of subset of data
+            #else
+              #do not do LSD
+          #TODO : Compare between subplot levels across main plot levels
+          return(p('Not implemented.'))
+        } else {  # interaction is not significant
           text <- paste0("The interaction, ", paste(ind.vars, collapse = ":"),
-                         ", is significant (alpha = 0.05).")
+                         ", is not significant (alpha = 0.05).")
           main.plot.p.value <- summary(fit)[[1]][[1]]$'Pr(>F)'[1]
           sub.plot.p.value <- summary(fit)$'Error: Within'[[1]]$'Pr(>F)'[1]
-          if (main.plot.p.value < 0.05) {
+          if (main.plot.p.value < alpha) {
             text <- paste0(text, " ", ind.var.one, " is significant.")
             output$lsd.results.text.one <- renderPrint({
               LSD.test(fit.without, ind.var.one, console = TRUE)
@@ -978,7 +992,7 @@ shinyServer( function(input, output, session) {
             output$lsd.bar.plot.one <- renderPlot({
               MakePostHocPlot(my.data, fit.without, dep.var, ind.var.one)
             })
-          } else if (sub.plot.p.value < 0.05) {
+          } else if (sub.plot.p.value < alpha) {
             text <- paste0(text, " ", ind.var.two, " is significant.")
             output$lsd.results.text.two <- renderPrint({
               LSD.test(fit.without, ind.var.two, console = TRUE)
@@ -996,19 +1010,6 @@ shinyServer( function(input, output, session) {
                       plotOutput('lsd.bar.plot.one'),
                       verbatimTextOutput('lsd.results.text.two'),
                       plotOutput('lsd.bar.plot.two')))
-        } else {  # interaction is not significant
-          #for level in main plot
-            #if subplot treatment is significant
-              #LSD of subset of data
-            #else
-              #do not do LSD
-          #for level in split plot
-            #if mainplot treatment is significant
-              #LSD of subset of data
-            #else
-              #do not do LSD
-          #TODO : Compare between subplot levels across main plot levels
-          return(p('Not implemented.'))
         }
       }
     }
