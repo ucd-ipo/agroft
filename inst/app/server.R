@@ -943,7 +943,7 @@ shinyServer( function(input, output, session) {
             lsd.vars <- ind.var.two
           } else {
             text <- paste0(text, " Neither factor is significant.")
-            return(pre(text))
+            return(p(text))
           }
           output$lsd.results.text <- renderPrint({
             LSD.test(fit, lsd.vars, console = TRUE)
@@ -956,30 +956,59 @@ shinyServer( function(input, output, session) {
                       plotOutput('lsd.bar.plot')))
         } else {
           # TODO : Implement what happens here.
-          return(p('The interaction is not significant and the post hoc analyses for this scenario are not implemented'))
+          return(p(paste0('The interaction is not significant and the post ',
+                          'hoc analyses for this scenario are not ',
+                          'implemented.')))
         }
-    } else if (exp.design %in% c('SPCRD', 'SPRCBD')) {
-      # NOTE : This always seems to be [2] for both formulas.
-      interaction.p.value <- summary(fit)$'Error: Within'[[1]]$'Pr(>F)'[2]
-      if (interaction.p.value < 0.05) {
-        #if mainplot is significant
-          #LSD of main plot
-        #else if subplot is significant
-          #LSD of subplot
-        #else
-          #do not do LSD
-      } else {  # interaction is not significant
-        #for level in main plot
-          #if subplot treatment is significant
-            #LSD of subset of data
-          #else
-            #do not do LSD
-        #for level in split plot
-          #if mainplot treatment is significant
-            #LSD of subset of data
-          #else
-            #do not do LSD
-        #TODO : Compare between subplot levels across  main plot levels
+      } else if (exp.design %in% c('SPCRD', 'SPRCBD')) {
+        # NOTE : This always seems to be [2] for both formulas.
+        interaction.p.value <- summary(fit)$'Error: Within'[[1]]$'Pr(>F)'[2]
+        isolate({fit.without <- ModelFitWithoutError()})
+        if (interaction.p.value < 0.05) {
+          text <- paste0("The interaction, ", paste(ind.vars, collapse = ":"),
+                         ", is significant (alpha = 0.05).")
+          main.plot.p.value <- summary(fit)[[1]][[1]]$'Pr(>F)'[1]
+          sub.plot.p.value <- summary(fit)$'Error: Within'[[1]]$'Pr(>F)'[1]
+          if (main.plot.p.value < 0.05) {
+            text <- paste0(text, " ", ind.var.one, " is significant.")
+            output$lsd.results.text.one <- renderPrint({
+              LSD.test(fit.without, ind.var.one, console = TRUE)
+            })
+            output$lsd.bar.plot.one <- renderPlot({
+              MakePostHocPlot(my.data, fit.without, dep.var, ind.var.one)
+            })
+          } else if (sub.plot.p.value < 0.05) {
+            text <- paste0(text, " ", ind.var.two, " is significant.")
+            output$lsd.results.text.two <- renderPrint({
+              LSD.test(fit.without, ind.var.two, console = TRUE)
+            })
+            output$lsd.bar.plot.two <- renderPlot({
+              MakePostHocPlot(my.data, fit.without, dep.var, ind.var.two)
+            })
+          } else {
+            text <- paste0(text,
+              " Neither the main plot or sub plot is significant.")
+            return(p(text))
+          }
+          return(list(p(text),
+                      verbatimTextOutput('lsd.results.text.one'),
+                      plotOutput('lsd.bar.plot.one'),
+                      verbatimTextOutput('lsd.results.text.two'),
+                      plotOutput('lsd.bar.plot.two')))
+        } else {  # interaction is not significant
+          #for level in main plot
+            #if subplot treatment is significant
+              #LSD of subset of data
+            #else
+              #do not do LSD
+          #for level in split plot
+            #if mainplot treatment is significant
+              #LSD of subset of data
+            #else
+              #do not do LSD
+          #TODO : Compare between subplot levels across main plot levels
+          return(p('Not implemented.'))
+        }
       }
     }
   })
