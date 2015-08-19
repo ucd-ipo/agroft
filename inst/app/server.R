@@ -9,16 +9,16 @@ source('pkg_check.R')
 # but the pkg_check.R script is expecting devtools to be installed so that
 # initialize_AIP() can be run. The only hold up is the shinyAce package which
 # doesn't have the latest version on CRAN.
-library(devtools)
+library('devtools')
 
-library(shiny)
+library('shiny')
 
 # This package has bindings for some cool twitter bootstrap UI stuff that shiny
 # doesn't include. Includes the modals, collapse panels, and tool tips.
-library(shinyBS)
+library('shinyBS')
 
 # for displaying R code - pull from github until the correct version is on CRAN
-library(shinyAce)
+library('shinyAce')
 
 # for reading in excel files, uncomment once on CRAN. For now it is on github
 # only. It is a package that has no Java dependencies (only c++), so once
@@ -26,22 +26,31 @@ library(shinyAce)
 # have functionality to read in excel files.
 #library(readxl)
 
-library(agricolae) # for sample datasets and LSD.Test()
+library('agricolae') # for sample datasets and LSD.Test()
 
-library(car)  # for leveneTest()
+library('car')  # for leveneTest()
+
+library('Rmisc')  # for summarySE()
+
+library('ggplot2')  # for ggplot(), etc.
 
 # for loading dynamic reports. I don't use rmarkdown because that requires that
 # pandoc be installed which is a whole different ballgame. knitr doesn't require
 # dependencies like that
-library(knitr)
+library('knitr')
 
-shinyServer(function(input, output, session){
+shinyServer( function(input, output, session) {
 
   # for debugging. Uncomment the verbatimTextOutput under main panel in the UI
   # script to see the contents of this. Useful for seeing what the objects you
   # are crafting actually look like rather than what you think/want them to look
   # like.
   output$debug <- renderText({GenerateFormula()})
+
+  output$debug2 <- renderUI(list(p(input$dependent.variable),
+                                 p(input$independent.variable.one),
+                                 p(input$independent.variable.two),
+                                 p(input$independent.variable.blk)))
 
   #############################################################################
   # Load Data Tab
@@ -457,6 +466,10 @@ shinyServer(function(input, output, session){
                   'Select Your Experimental Design',
                   choices = choices,
                   selected = NULL)
+
+      # TODO : When this is selected it should clear all of the analysis related
+      # input variables so nothing lingers from previous analyses, e.g.
+      # independent.variable.two.
     }
   })
 
@@ -840,6 +853,192 @@ shinyServer(function(input, output, session){
   #############################################################################
   # Post hoc tab
   #############################################################################
+
+  MakePostHocPlot <- function(data, fit, dep.var, ind.var) {
+    lsd.results <- LSD.test(fit, ind.var)
+    summary.stats <- summarySE(data = data, dep.var, groupvars = ind.var)
+    if (length(ind.var) == 2) {
+      summary.stats$trt <- apply(summary.stats[ , ind.var], 1, paste,
+                                 collapse = ":")
+      x.label = paste(ind.var, collapse = ":")
+    } else {
+      summary.stats$trt <- summary.stats[[ind.var]]
+      x.label = ind.var
+    }
+    merged.table <- merge(summary.stats, lsd.results$groups, by = "trt")
+    ggplot(merged.table, aes(x = trt, y = means, ymin = 0,
+                             ymax = 1.35 * max(means))) +
+    geom_bar(stat = "identity", fill = "gray50", colour = "black", width = 0.7) +
+    geom_errorbar(aes(ymax = means + se, ymin = means - se), width = 0.0,
+        size = 0.5, color = "black") +
+    geom_text(aes(label = M, y = means + se / 1.8, vjust = -2.5)) +
+    labs(x = x.label, y = dep.var) +
+    theme_bw() +
+    theme(panel.grid.major.x = element_blank(),
+          panel.grid.major.y = element_line(colour = "grey80"),
+          plot.title = element_text(size = rel(1.5),
+                                    face = "bold", vjust = 1.5),
+          axis.title = element_text(face = "bold"),
+          axis.title.y = element_text(vjust= 1.8),
+          axis.title.x = element_text(vjust= -0.5),
+          panel.border = element_rect(colour = "black"),
+          text = element_text(size = 20))
+  }
+
+  # TODO : Clean up this insane nested if statement! Sorry...
+  output$lsd.results <- renderUI({
+    input$run_post_hoc_analysis
+    if (is.null(input$run_post_hoc_analysis) || input$run_post_hoc_analysis == 0) {
+      return(NULL)
+    } else {
+      isolate({
+        exp.design <- input$exp.design
+        dep.var <- TransformedDepVarColName()
+        ind.var.one <- input$independent.variable.one
+        ind.var.two <- input$independent.variable.two
+        ind.vars <- c(ind.var.one, ind.var.two)
+        my.data <- AddTransformationColumns()
+        fit <- EvalFit()
+      })
+      alpha <- 0.05
+      if (exp.design == 'LR') {
+        return(p('Post hoc tests are not run for simple linear regression.'))
+      } else if (exp.design %in% c('CRD1', 'RCBD1')) {
+        # NOTE : The "[1]" gets the first p-value so this relies on the order of
+        # the variables in the RCBD to always have the treatment first. It is a
+        # pain in the ass to detect the order and then extract. Why does R make
+        # this so difficult?
+        p.value <- summary(fit)[[1]]$'Pr(>F)'[1]
+        if (p.value < alpha) {
+          output$lsd.results.text <- renderPrint({
+            LSD.test(fit, ind.vars, console = TRUE)
+          })
+          output$lsd.bar.plot <- renderPlot({
+            MakePostHocPlot(my.data, fit, dep.var, ind.vars)
+          })
+          return(list(p(paste0(ind.vars, ' is significant (alpha=0.05).')),
+                      verbatimTextOutput('lsd.results.text'),
+                      plotOutput('lsd.bar.plot')))
+        } else {
+          return(p(paste0(ind.vars, ' is not significant.')))
+        }
+      } else if (exp.design %in% c('CRD2', 'RCBD2')) {
+        var.one.p.value <- summary(fit)[[1]]$'Pr(>F)'[1]
+        var.two.p.value <- summary(fit)[[1]]$'Pr(>F)'[2]
+        if (exp.design == 'CRD2') {
+          idx <- 3
+        } else {
+          idx <- 4
+        }
+        interaction.p.value <- summary(fit)[[1]]$'Pr(>F)'[idx]
+        if (interaction.p.value < alpha) {
+          text <- paste0("The interaction, ", paste(ind.vars, collapse = ":"),
+                         ", is significant (alpha = 0.05).")
+          if (var.one.p.value < alpha && var.two.p.value < alpha){
+            lsd.vars <- ind.vars
+            text <- paste0(text, " Both factors are significant.")
+          } else if (var.one.p.value < alpha) {
+            text <- paste0(text, " Only ", ind.var.one, " is significant.")
+            lsd.vars <- ind.var.one
+          } else if (var.two.p.value < alpha) {
+            text <- paste0(text, " Only ", ind.var.two, " is significant.")
+            lsd.vars <- ind.var.two
+          } else {
+            text <- paste0(text, " Neither factor is significant.")
+            return(p(text))
+          }
+          output$lsd.results.text <- renderPrint({
+            LSD.test(fit, lsd.vars, console = TRUE)
+          })
+          output$lsd.bar.plot <- renderPlot({
+            MakePostHocPlot(my.data, fit, dep.var, lsd.vars)
+          })
+          return(list(p(text),
+                      verbatimTextOutput('lsd.results.text'),
+                      plotOutput('lsd.bar.plot')))
+        } else {
+          # TODO : Implement what happens here.
+          return(p(paste0('The interaction is not significant and the post ',
+                          'hoc analyses for this scenario are not ',
+                          'implemented.')))
+        }
+      } else if (exp.design %in% c('SPCRD', 'SPRCBD')) {
+        # NOTE : This always seems to be [2] for both formulas.
+        interaction.p.value <- summary(fit)$'Error: Within'[[1]]$'Pr(>F)'[2]
+        if (interaction.p.value < alpha) {
+          stuff <- list()
+          for (ivars in list(ind.vars, rev(ind.vars))) {
+            f <- paste0(dep.var, ' ~ ', ivars[2])
+            if (exp.design == 'SPRCBD') {
+              f <- paste0(f, ' + ', input$independent.variable.blk)
+            }
+            for (level in levels(my.data[[ivars[1]]])) {
+              sub.data <- my.data[my.data[[ivars[1]]] == level, ]
+              sub.model.fit <- aov(as.formula(f), sub.data)
+              sub.p.value <- summary(sub.model.fit)[[1]][["Pr(>F)"]][1]
+              output.name <- paste0('lsd.results.text.', ivars[1], '.', level)
+              stuff[[paste0(output.name, '.heading')]] <-
+                h4(paste0('Subset of ', ivars[1], ':', level))
+              if (sub.p.value < alpha) {
+                stuff[[output.name]] <- pre(
+                  paste(capture.output(LSD.test(sub.model.fit, ivars[2], console
+                                                = TRUE)), collapse = "\n"))
+                # TODO : These plots work except that the plots created in the
+                # first pass of this loop (for ivars...) are overwritten by
+                # those from the second pass. This also happened when I was
+                # using renderPrint/verbatimTextOutput for the text output and I
+                # couldn't debug it. It seems like the output variable is being
+                # overwritten or that the reactiveness of the functions does
+                # something weird.
+                #output[[paste0(output.name, '.plot')]] <- renderPlot({
+                  #MakePostHocPlot(sub.data, sub.model.fit, dep.var, ivars[2])
+                #})
+                #stuff[[paste0(output.name, '.plot')]] <-
+                  #plotOutput(paste0(output.name, '.plot'))
+              } else {
+                stuff[[output.name]] <- pre(paste0(ivars[2],
+                  ' effect not significant, thus no LSD is performed.\n'))
+              }
+            }
+          }
+          #TODO : Compare between subplot levels across main plot levels
+          return(stuff)
+        } else {  # interaction is not significant
+          isolate({fit.without <- ModelFitWithoutError()})
+          text <- paste0("The interaction, ", paste(ind.vars, collapse = ":"),
+                         ", is not significant (alpha = 0.05).")
+          main.plot.p.value <- summary(fit)[[1]][[1]]$'Pr(>F)'[1]
+          sub.plot.p.value <- summary(fit)$'Error: Within'[[1]]$'Pr(>F)'[1]
+          if (main.plot.p.value < alpha) {
+            text <- paste0(text, " ", ind.var.one, " is significant.")
+            output$lsd.results.text.one <- renderPrint({
+              LSD.test(fit.without, ind.var.one, console = TRUE)
+            })
+            output$lsd.bar.plot.one <- renderPlot({
+              MakePostHocPlot(my.data, fit.without, dep.var, ind.var.one)
+            })
+          } else if (sub.plot.p.value < alpha) {
+            text <- paste0(text, " ", ind.var.two, " is significant.")
+            output$lsd.results.text.two <- renderPrint({
+              LSD.test(fit.without, ind.var.two, console = TRUE)
+            })
+            output$lsd.bar.plot.two <- renderPlot({
+              MakePostHocPlot(my.data, fit.without, dep.var, ind.var.two)
+            })
+          } else {
+            text <- paste0(text,
+              " Neither the main plot or sub plot is significant.")
+            return(p(text))
+          }
+          return(list(p(text),
+                      verbatimTextOutput('lsd.results.text.one'),
+                      plotOutput('lsd.bar.plot.one'),
+                      verbatimTextOutput('lsd.results.text.two'),
+                      plotOutput('lsd.bar.plot.two')))
+        }
+      }
+    }
+  })
 
   #############################################################################
   # Report tab

@@ -1,16 +1,24 @@
 source('pkg_check.R')
 
-library(shiny)
-library(shinyBS)
-library(shinyAce)
-library(yaml)
+library('shiny')
+library('shinyBS')
+library('shinyAce')
+library('yaml')
 
+###############################################################################
+# Setup
+###############################################################################
+
+# Loads in the help and information text.
 # The shinyBS popovers can't handle line returns in the strings so a special
 # handler is needed.
 str.handler <- function(x) { gsub("[\r\n]", "", x) }
 help.text <- yaml.load_file('help-text.yaml', handlers = list(str = str.handler))
 
+###############################################################################
 # Load Data Tab
+###############################################################################
+
 load.data.editor <- aceEditor('code_used_read',
                               value='# code to read in your data',
                               mode='r',
@@ -171,6 +179,7 @@ data.analysis.tab <-
       ),
       mainPanel(
         verbatimTextOutput('debug'),
+        uiOutput('debug2'),
         analysis.editor,
         bsTooltip('code_used_model',
                   'Click for more information',
@@ -204,17 +213,25 @@ data.analysis.tab <-
     )
   )
 
+###############################################################################
 # Post-hoc Tests Tab
-posthoc.tab <- 
-  tabPanel('3. Post-hoc tests',
-           sidebarLayout(
-             sidebarPanel(h4('Post hoc Anaylsis'),
-                          actionButton('run_post_hocanalysis', 'Run post hoc analysis')),
-                          mainPanel(h3('Post-hoc test results'))
-                          )
-                        )
+###############################################################################
 
+posthoc.tab <-
+  tabPanel('3. Post-hoc tests',
+    sidebarLayout(
+      sidebarPanel(h4('Post hoc Analysis'),
+                   actionButton('run_post_hoc_analysis',
+                                'Run post hoc analysis')),
+      mainPanel(h3('Post-hoc test results'),
+                uiOutput('lsd.results'))
+    )
+  )
+
+###############################################################################
 # Report Tab
+###############################################################################
+
 report.tab <- tabPanel('4. Report',
                        sidebarLayout(
                          sidebarPanel(downloadButton('download_report')),
@@ -222,7 +239,10 @@ report.tab <- tabPanel('4. Report',
                          )
                        )
 
+###############################################################################
 # Help Tab
+###############################################################################
+
 help.tab <- navbarMenu('Help',
                        tabPanel('1. Load data'),
                        tabPanel('2. Data analysis'),
@@ -230,7 +250,10 @@ help.tab <- navbarMenu('Help',
                        tabPanel('4. Plots'),
                        tabPanel('5. Report'))
 
-# UI
+###############################################################################
+# Main User Interface
+###############################################################################
+
 shinyUI(
   navbarPage(
     title = 'Agricultural Field Trial Statistics Package',

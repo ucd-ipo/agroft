@@ -14,7 +14,9 @@ Imports:
   car (>= 2.0),
   devtools (>= 1.7.0),
   yaml (>= 2.1.13),
-  xtable (>= 1.7)
+  xtable (>= 1.7),
+  Rmisc (>= 1.5),
+  ggplot2 (>= 1.0.1)
 Description: Package for supporting the USAID agricultural data analysis training.
 License: BSD_3_clause
 URL: https://github.com/ucd-ipo/aip-analysis
