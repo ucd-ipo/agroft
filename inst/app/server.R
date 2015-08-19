@@ -965,21 +965,46 @@ shinyServer( function(input, output, session) {
       } else if (exp.design %in% c('SPCRD', 'SPRCBD')) {
         # NOTE : This always seems to be [2] for both formulas.
         interaction.p.value <- summary(fit)$'Error: Within'[[1]]$'Pr(>F)'[2]
-        isolate({fit.without <- ModelFitWithoutError()})
         if (interaction.p.value < alpha) {
-          #for level in main plot
-            #if subplot treatment is significant
-              #LSD of subset of data
-            #else
-              #do not do LSD
-          #for level in split plot
-            #if mainplot treatment is significant
-              #LSD of subset of data
-            #else
-              #do not do LSD
+          stuff <- list()
+          for (ivars in list(ind.vars, rev(ind.vars))) {
+            f <- paste0(dep.var, ' ~ ', ivars[2])
+            if (exp.design == 'SPRCBD') {
+              f <- paste0(f, ' + ', input$independent.variable.blk)
+            }
+            for (level in levels(my.data[[ivars[1]]])) {
+              sub.data <- my.data[my.data[[ivars[1]]] == level, ]
+              sub.model.fit <- aov(as.formula(f), sub.data)
+              sub.p.value <- summary(sub.model.fit)[[1]][["Pr(>F)"]][1]
+              output.name <- paste0('lsd.results.text.', ivars[1], '.', level)
+              stuff[[paste0(output.name, '.heading')]] <-
+                h4(paste0('Subset of ', ivars[1], ':', level))
+              if (sub.p.value < alpha) {
+                stuff[[output.name]] <- pre(
+                  paste(capture.output(LSD.test(sub.model.fit, ivars[2], console
+                                                = TRUE)), collapse = "\n"))
+                # TODO : These plots work except that the plots created in the
+                # first pass of this loop (for ivars...) are overwritten by
+                # those from the second pass. This also happened when I was
+                # using renderPrint/verbatimTextOutput for the text output and I
+                # couldn't debug it. It seems like the output variable is being
+                # overwritten or that the reactiveness of the functions does
+                # something weird.
+                #output[[paste0(output.name, '.plot')]] <- renderPlot({
+                  #MakePostHocPlot(sub.data, sub.model.fit, dep.var, ivars[2])
+                #})
+                #stuff[[paste0(output.name, '.plot')]] <-
+                  #plotOutput(paste0(output.name, '.plot'))
+              } else {
+                stuff[[output.name]] <- pre(paste0(ivars[2],
+                  ' effect not significant, thus no LSD is performed.\n'))
+              }
+            }
+          }
           #TODO : Compare between subplot levels across main plot levels
-          return(p('Not implemented.'))
+          return(stuff)
         } else {  # interaction is not significant
+          isolate({fit.without <- ModelFitWithoutError()})
           text <- paste0("The interaction, ", paste(ind.vars, collapse = ":"),
                          ", is not significant (alpha = 0.05).")
           main.plot.p.value <- summary(fit)[[1]][[1]]$'Pr(>F)'[1]
