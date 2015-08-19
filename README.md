@@ -14,11 +14,10 @@ This Shiny app has been built into a package and the development version is
 hosted on Github. Currently, it can be installed using the `devtools` R
 package.
 
-Install devtools and the Shiny R packages:
+Install devtools:
 
 ```R
 > install.packages('devtools')
-> install.packages('shiny')
 ```
 
 Now install and load the development version of the app with:
@@ -28,30 +27,11 @@ Now install and load the development version of the app with:
 > library('AIP')
 ```
 
-Get all of the remaining dependencies by initializing the app:
+Finally, get all of the remaining dependencies by initializing the app:
 
 ```R
 > initialize_AIP()
 ```
-
-### Notes on installation
-
-You may need to update the lattice package after the `initialize_AIP()` call:
-
-```R
-> unloadNamespace("lattice")
-> update.packages('lattice')
-```
-
-The required packages are listed in "Enhances" rather than "Depends" or
-"Imports" because `install_github` won't install dependencies from github. In
-the package, there is a function for installing all the packages called
-`initialize_AIP`. This will check if required packages are on the search path,
-and if not, it will install them. All the required packages are on CRAN, but
-shinyACE and shinyBS need version 0.2-1 and 0.5, respectively, so until those
-are on CRAN, this annoying workaround is required. Once they are on CRAN, this
-workaround can be removed and the packages can be moved to "Imports" rather
-than "Enhances" in the "DESRIPTION" file.
 
 ## Usage
 
