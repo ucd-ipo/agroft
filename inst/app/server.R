@@ -41,17 +41,6 @@ library('knitr')
 
 shinyServer( function(input, output, session) {
 
-  # for debugging. Uncomment the verbatimTextOutput under main panel in the UI
-  # script to see the contents of this. Useful for seeing what the objects you
-  # are crafting actually look like rather than what you think/want them to look
-  # like.
-  output$debug <- renderText({GenerateFormula()})
-
-  output$debug2 <- renderUI(list(p(input$dependent.variable),
-                                 p(input$independent.variable.one),
-                                 p(input$independent.variable.two),
-                                 p(input$independent.variable.blk)))
-
   #############################################################################
   # Load Data Tab
   #############################################################################
@@ -606,6 +595,14 @@ shinyServer( function(input, output, session) {
   #---------------------------------------------------------------------------#
   # UI elements for the analysis tab main panel.
   #---------------------------------------------------------------------------#
+
+  output$formula <- renderText({
+    if(is.null(input$run_analysis) || input$run_analysis == 0) {
+      return(NULL)
+    } else {
+      GenerateFormula()
+    }
+  })
 
   output$fit.summary.text <- renderPrint({
     input$run_analysis

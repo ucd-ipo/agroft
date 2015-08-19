@@ -178,8 +178,6 @@ data.analysis.tab <-
         actionButton('run_analysis', 'Run analysis')
       ),
       mainPanel(
-        verbatimTextOutput('debug'),
-        uiOutput('debug2'),
         analysis.editor,
         bsTooltip('code_used_model',
                   'Click for more information',
@@ -190,6 +188,8 @@ data.analysis.tab <-
                   content = help.text$analysis.code.explanation,
                   placement = 'bottom',
                   trigger = 'click'),
+        h2('Model Formula'),
+        verbatimTextOutput('formula'),
         uiOutput('exponent'),
         uiOutput('fit.summary'),
         bsTooltip('fit.summary',
