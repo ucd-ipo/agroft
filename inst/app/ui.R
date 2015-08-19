@@ -179,6 +179,7 @@ data.analysis.tab <-
       ),
       mainPanel(
         verbatimTextOutput('debug'),
+        uiOutput('debug2'),
         analysis.editor,
         bsTooltip('code_used_model',
                   'Click for more information',

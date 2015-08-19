@@ -47,6 +47,11 @@ shinyServer( function(input, output, session) {
   # like.
   output$debug <- renderText({GenerateFormula()})
 
+  output$debug2 <- renderUI(list(p(input$dependent.variable),
+                                 p(input$independent.variable.one),
+                                 p(input$independent.variable.two),
+                                 p(input$independent.variable.blk)))
+
   #############################################################################
   # Load Data Tab
   #############################################################################
@@ -461,6 +466,10 @@ shinyServer( function(input, output, session) {
                   'Select Your Experimental Design',
                   choices = choices,
                   selected = NULL)
+
+      # TODO : When this is selected it should clear all of the analysis related
+      # input variables so nothing lingers from previous analyses, e.g.
+      # independent.variable.two.
     }
   })
 
@@ -882,13 +891,13 @@ shinyServer( function(input, output, session) {
       return(NULL)
     } else {
       isolate({
+        exp.design <- input$exp.design
         dep.var <- TransformedDepVarColName()
         ind.var.one <- input$independent.variable.one
         ind.var.two <- input$independent.variable.two
         ind.vars <- c(ind.var.one, ind.var.two)
         my.data <- AddTransformationColumns()
         fit <- EvalFit()
-        exp.design <- input$exp.design
       })
       if (exp.design == 'LR') {
         return(p('Post hoc tests are not run for simple linear regression.'))
@@ -921,61 +930,45 @@ shinyServer( function(input, output, session) {
         }
         interaction.p.value <- summary(fit)[[1]]$'Pr(>F)'[idx]
         if (interaction.p.value < 0.05) {
+          text <- paste0("The interaction, ", paste(ind.vars, collapse = ":"),
+                         ", is significant (alpha = 0.05).")
           if (var.one.p.value < 0.05 && var.two.p.value < 0.05){
-
-            output$lsd.results.text <- renderPrint({
-              LSD.test(fit, ind.vars, console = TRUE)
-            })
-            output$lsd.bar.plot <- renderPlot({
-              MakePostHocPlot(my.data, fit, dep.var, ind.vars)
-            })
-            return(list(p(paste0(paste(ind.vars, collapse = ":"),
-                                 ' is significant (alpha=0.05).')),
-                        verbatimTextOutput('lsd.results.text'),
-                        plotOutput('lsd.bar.plot')))
-
+            lsd.vars <- ind.vars
+            text <- paste0(text, " Both factors are significant.")
           } else if (var.one.p.value < 0.05) {
-
-            output$lsd.results.text <- renderPrint({
-              LSD.test(fit, ind.var.one, console = TRUE)
-            })
-            output$lsd.bar.plot <- renderPlot({
-              MakePostHocPlot(my.data, fit, dep.var, ind.var.one)
-            })
-            return(list(p(paste0(ind.var.one, ' is significant (alpha=0.05).')),
-                        verbatimTextOutput('lsd.results.text'),
-                        plotOutput('lsd.bar.plot')))
-
+            text <- paste0(text, " Only ", ind.var.one, " is significant.")
+            lsd.vars <- ind.var.one
           } else if (var.two.p.value < 0.05) {
-
-            output$lsd.results.text <- renderPrint({
-              LSD.test(fit, ind.var.two, console = TRUE)
-            })
-            output$lsd.bar.plot <- renderPlot({
-              MakePostHocPlot(my.data, fit, dep.var, ind.var.two)
-            })
-            return(list(p(paste0(ind.var.two, ' is significant (alpha=0.05).')),
-                        verbatimTextOutput('lsd.results.text'),
-                        plotOutput('lsd.bar.plot')))
-
+            text <- paste0(text, " Only ", ind.var.two, " is significant.")
+            lsd.vars <- ind.var.two
           } else {
-
-            return(p('The interaction is significant but neither factor is  significant.'))
-
+            text <- paste0(text, " Neither factor is significant.")
+            return(pre(text))
           }
+          output$lsd.results.text <- renderPrint({
+            LSD.test(fit, lsd.vars, console = TRUE)
+          })
+          output$lsd.bar.plot <- renderPlot({
+            MakePostHocPlot(my.data, fit, dep.var, lsd.vars)
+          })
+          return(list(p(text),
+                      verbatimTextOutput('lsd.results.text'),
+                      plotOutput('lsd.bar.plot')))
         } else {
           # TODO : Implement what happens here.
           return(p('The interaction is not significant and the post hoc analyses for this scenario are not implemented'))
         }
     } else if (exp.design %in% c('SPCRD', 'SPRCBD')) {
-      #if interaction is significant
+      # NOTE : This always seems to be [2] for both formulas.
+      interaction.p.value <- summary(fit)$'Error: Within'[[1]]$'Pr(>F)'[2]
+      if (interaction.p.value < 0.05) {
         #if mainplot is significant
           #LSD of main plot
         #else if subplot is significant
           #LSD of subplot
         #else
           #do not do LSD
-      #else interaction is not significant
+      } else {  # interaction is not significant
         #for level in main plot
           #if subplot treatment is significant
             #LSD of subset of data
@@ -987,8 +980,6 @@ shinyServer( function(input, output, session) {
           #else
             #do not do LSD
         #TODO : Compare between subplot levels across  main plot levels
-      } else {
-        return(NULL)
       }
     }
   })
