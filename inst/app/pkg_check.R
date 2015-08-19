@@ -9,7 +9,9 @@ need.pkgs <- c('shiny',
                'devtools',
                'knitr',
                'yaml',
-               'xtable')
+               'xtable',
+               'Rmisc',
+               'ggplot2')
 
 for (pkg in need.pkgs) {
   if (!pkg %in% inst.pkgs) {

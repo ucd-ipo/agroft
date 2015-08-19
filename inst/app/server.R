@@ -9,16 +9,16 @@ source('pkg_check.R')
 # but the pkg_check.R script is expecting devtools to be installed so that
 # initialize_AIP() can be run. The only hold up is the shinyAce package which
 # doesn't have the latest version on CRAN.
-library(devtools)
+library('devtools')
 
-library(shiny)
+library('shiny')
 
 # This package has bindings for some cool twitter bootstrap UI stuff that shiny
 # doesn't include. Includes the modals, collapse panels, and tool tips.
-library(shinyBS)
+library('shinyBS')
 
 # for displaying R code - pull from github until the correct version is on CRAN
-library(shinyAce)
+library('shinyAce')
 
 # for reading in excel files, uncomment once on CRAN. For now it is on github
 # only. It is a package that has no Java dependencies (only c++), so once
@@ -26,18 +26,18 @@ library(shinyAce)
 # have functionality to read in excel files.
 #library(readxl)
 
-library(agricolae) # for sample datasets and LSD.Test()
+library('agricolae') # for sample datasets and LSD.Test()
 
-library(car)  # for leveneTest()
+library('car')  # for leveneTest()
 
 library('Rmisc')  # for summarySE()
 
-library('ggplot2')
+library('ggplot2')  # for ggplot(), etc.
 
 # for loading dynamic reports. I don't use rmarkdown because that requires that
 # pandoc be installed which is a whole different ballgame. knitr doesn't require
 # dependencies like that
-library(knitr)
+library('knitr')
 
 shinyServer( function(input, output, session) {
 

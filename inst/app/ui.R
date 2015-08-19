@@ -1,9 +1,9 @@
 source('pkg_check.R')
 
-library(shiny)
-library(shinyBS)
-library(shinyAce)
-library(yaml)
+library('shiny')
+library('shinyBS')
+library('shinyAce')
+library('yaml')
 
 ###############################################################################
 # Setup
