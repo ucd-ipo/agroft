@@ -619,6 +619,7 @@ shinyServer( function(input, output, session) {
       return(NULL)
     } else {
       list(h2('Model Fit Summary'),
+           if (input$exp.design != 'LR') { h3('ANOVA Table') } else{ NULL },
            verbatimTextOutput('fit.summary.text'))
     }
   })
