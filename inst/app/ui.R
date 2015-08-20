@@ -251,6 +251,27 @@ help.tab <- navbarMenu('Help',
                        tabPanel('5. Report'))
 
 ###############################################################################
+# About Tab
+###############################################################################
+
+about.tab <-
+  tabPanel('About',
+    verticalLayout(
+      p(help.text$about),
+      h1('Funding'),
+      p(help.text$funding),
+      img(src = "usaid-logo-600.png", width = "300px"),
+      h1('Authors'),
+      tags$ul(tags$li('Ian K. Kyle'), tags$li('Jason K. Moore'),
+              tags$li('Maegan Simmonds')),
+      h1('Disclaimer'),
+      p(help.text$disclaimer),
+      h1('License'),
+      p(help.text$license, tags$a('http://github.com/ucd-ipo/aip-analysis'))
+    )
+  )
+
+###############################################################################
 # Main User Interface
 ###############################################################################
 
@@ -263,6 +284,7 @@ shinyUI(
     data.analysis.tab,
     posthoc.tab,
     report.tab,
-    help.tab
+    help.tab,
+    about.tab
     )
   )

@@ -86,3 +86,14 @@ exp.design.types : >
   Placeholder for experimental design type explanations.
 dependent.variable.info : >
   Placeholder for dependent variable choice explanation.
+about : >
+  The "Agricultural Field Statistics Package" is software developed to provide
+  free and open source statisitics software to farmers around the world.
+disclaimer : >
+  To best of our knowledge this is correct and we cannot be held accountable for
+  any conclusions or data generated using this software.
+funding : >
+  This software is funded by USAID and the UC Davis International Programs Office.
+license : >
+  This sofware is open source and licensed under the 3-clause BSD License. The
+  source code can be obtained here:
