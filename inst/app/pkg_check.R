@@ -15,8 +15,8 @@ need.pkgs <- c('shiny',
 
 for (pkg in need.pkgs) {
   if (!pkg %in% inst.pkgs) {
-    cat(paste0(pkg, ' is not installed.\n\nPress escape to',
-            'exit the app and run initialise_AIP() to install dependencies.'))
+    cat(paste0(pkg, ' is not installed.\n\nPress escape to exit the app and '
+               'run `initialize_AIP()` to install all of the dependencies.'))
     stop()
   }
 }

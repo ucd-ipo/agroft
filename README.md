@@ -20,17 +20,18 @@ Install devtools:
 > install.packages('devtools')
 ```
 
+The dependency ShinyAce 0.2.0 is not yet on CRAN so you will need install it
+from Github first:
+
+```R
+> devtools::install_github('trestletech/shinyAce', ref = 'v0.2.0')
+```
+
 Now install and load the development version of the app with:
 
 ```R
 > devtools::install_github('ucd-ipo/aip-analysis')
 > library('AIP')
-```
-
-Finally, get all of the remaining dependencies by initializing the app:
-
-```R
-> initialize_AIP()
 ```
 
 ## Usage

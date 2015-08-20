@@ -28,20 +28,20 @@ initialize_AIP <- function(){
     install.packages('car', repos="http://cran.rstudio.com/")
   }
 
-  if(!require('car', quietly=TRUE)){
+  if(!require('yaml', quietly=TRUE)){
     install.packages('yaml', repos="http://cran.rstudio.com/")
   }
 
-  if(!require('car', quietly=TRUE)){
+  if(!require('xtable', quietly=TRUE)){
     install.packages('xtable', repos="http://cran.rstudio.com/")
   }
 
   if(!require('Rmisc', quietly=TRUE)){
-    install.packages('xtable', repos="http://cran.rstudio.com/")
+    install.packages('Rmisc', repos="http://cran.rstudio.com/")
   }
 
   if(!require('ggplot2', quietly=TRUE)){
-    install.packages('xtable', repos="http://cran.rstudio.com/")
+    install.packages('ggplot2', repos="http://cran.rstudio.com/")
   }
 
 #   if(!require('readxl', quietly=TRUE)){
