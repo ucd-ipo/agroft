@@ -695,7 +695,13 @@ shinyServer( function(input, output, session) {
       return(NULL)
     } else {
       if (!input$exp.design %in% c('LR', 'CRD1')) {
+        isolate({
+          dep.var <- TransformedDepVarColName()
+          pred.var <- paste0(dep.var, '.predicted.squared')
+        })
         list(h2("Tukey's Test for Nonadditivity"),
+             p(strong(paste0("Attention: Refer only to the '", pred.var, "' ",
+                             "row in this table, ignore all other rows."))),
              verbatimTextOutput('tukey.results.text'))
       } else {
         return(NULL)
