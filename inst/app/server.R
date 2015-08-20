@@ -115,9 +115,10 @@ shinyServer( function(input, output, session) {
     if (!input$use_sample_data) {
       return(deparse(GetLoadCall()))
     } else {
-      l <- 'library(agricolae)  # load "agricolae" package for the sample data'
-      l <- paste0(l, '\ndata("',input$sample_data_buttons,  '")')
-      l <- paste0(l, '\n', 'my.data <- ', input$sample_data_buttons)
+      l <- "# load the agricolae package for the sample data"
+      l <- paste0(l, "\nlibrary('agricolae')")
+      l <- paste0(l, "\ndata('",input$sample_data_buttons,  "')")
+      l <- paste0(l, '\nmy.data <- ', input$sample_data_buttons)
     }
   })
 
@@ -315,7 +316,7 @@ shinyServer( function(input, output, session) {
   })
 
   ModelFitWithoutError <- reactive({
-    # Returns the model fit from formulas with the  Error() term removed.
+    # Returns the model fit from formulas with the Error() term removed.
     input$run_analysis
     isolate(exp.design <- input$exp.design)
     if (exp.design %in% c('SPCRD', 'SPRCBD')) {
@@ -408,19 +409,31 @@ shinyServer( function(input, output, session) {
       # code for the assumptions tests
       if (!input$exp.design %in% c('SPCRD', 'SPRCBD')) {
         code <- paste0(code,
-                       '\n\n# assumptions tests\nshapiro.test(residuals(fit))')
+                       '\n\n# assumptions tests\nshapiro.test(residuals(model.fit))')
       }
 
-      formulas <- GenerateIndividualFormulas()
-      levene.calls <- paste0('leveneTest(', formulas, ', data = my.data)',
-                             collapse = '\n')
-      code <- paste0(code, "\n\n# Levene's Test\nlibrary(car)\n", levene.calls)
+      if (input$exp.design != 'LR') {
+        formulas <- GenerateIndividualFormulas()
+        levene.calls <- paste0('leveneTest(', formulas, ', data = my.data)',
+                               collapse = '\n')
+        code <- paste0(code, "\n\n# Levene's Test\nlibrary('car')\n", levene.calls)
+      }
 
       trans.dep.var <- TransformedDepVarColName()
       if (!input$exp.design %in% c('LR', 'CRD1')) {
-        code <- paste0(code, "\n\n# Tukey's Test for Nonadditivity\n",
+        # TODO : I'm not sure this is the correct thing to do for split plot
+        # Tukey tests.
+        if (input$exp.design %in% c('SPCRD', 'SPRCBD')) {
+          fit.name <- 'model.fit.no.error'
+          fit.line <- paste0(fit.name, ' <- aov(',
+                             GenerateFormulaWithoutError(), ', data = my.data)\n')
+        } else {
+          fit.name <- 'model.fit'
+          fit.line <- ''
+        }
+        code <- paste0(code, "\n\n# Tukey's Test for Nonadditivity\n", fit.line,
                        "my.data$", trans.dep.var,
-                       ".pred.sq <- predict(model.fit)^2\n",
+                       ".pred.sq <- predict(", fit.name, ")^2\n",
                        "tukey.one.df.fit <- lm(formula = ",
                        GenerateTukeyFormula(),
                        ", data = my.data)\nanova(tukey.one.df.fit)")
@@ -435,6 +448,57 @@ shinyServer( function(input, output, session) {
     input$run_analysis
     updateAceEditor(session, 'code_used_model', value=isolate(GenerateAnalysisCode()),
                     readOnly=TRUE, wordWrap=TRUE)
+  })
+
+  # TODO : It could be useful to break this up into each plot and utilize this
+  # code for actual evaluation later on to deduplicate the code.
+  MakePlotAnalysisCode <- reactive({
+    if (input$exp.design %in% c('SPCRD', 'SPRCBD')) {
+      code <- paste0("# Residuals vs. Fitted\nplot(model.fit.no.error, which = 1)")
+      code <- paste0(code, "\n\n# Kernel Density Plot",
+                     "\nplot(density(residuals(model.fit.no.error)))")
+    } else {
+      code <- paste0("# Residuals vs. Fitted\nplot(model.fit, which = 1)")
+      code <- paste0(code, "\n\n# Kernel Density Plot\nplot(density(residuals(model.fit)))")
+    }
+
+    if (input$exp.design == 'LR') {
+      code <- paste0(code, "\n\n# Best Fit Line\nplot(formula = ",
+                     GenerateFormula(), ", data = my.data)\nabline(model.fit)")
+    } else {
+      dep.var <- TransformedDepVarColName()
+      ind.var.one <- input$independent.variable.one
+      ind.var.two <- input$independent.variable.two
+      f1 <- paste0(dep.var, ' ~ ', ind.var.one)
+      main <- paste0("Effect of ", ind.var.one, " on ",
+                     dep.var)
+      code <- paste0(code, "\n\n# Effects Box Plots\n",
+                     "boxplot(", f1, ", data = my.data, main = '", main,
+                     "', xlab = '", ind.var.one,
+                     "', ylab = '", dep.var,  "')")
+      if (!input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
+        f2 <- paste0(dep.var, ' ~ ', ind.var.two)
+        main <- paste0("Effect of ", ind.var.two, " on ",
+                       dep.var)
+        code <- paste0(code, "\nboxplot(", f2, ", data = my.data, main = '",
+                       main, "', xlab = '", ind.var.two,
+                       "', ylab = '", dep.var,  "')")
+      }
+    }
+
+    if (!input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
+      code <- paste0(code, "\n# Interaction Plots\n",
+                     "interaction.plot(my.data$", ind.var.one, ", my.data$",
+                     ind.var.two, ", my.data$", dep.var, ", xlab = '",
+                     ind.var.one, "', trace.label = '", ind.var.two, "', ylab = '",
+                     dep.var, "')")
+      code <- paste0(code, "\ninteraction.plot(my.data$", ind.var.two,
+                     ", my.data$", ind.var.one, ", my.data$", dep.var, ", xlab = '",
+                     ind.var.two, "', trace.label = '", ind.var.one,
+                     "', ylab = '", dep.var, "')")
+    }
+
+    return(code)
   })
 
   #---------------------------------------------------------------------------#
@@ -670,8 +734,12 @@ shinyServer( function(input, output, session) {
     if(is.null(input$run_analysis) || input$run_analysis == 0) {
       return(NULL)
     } else {
-      list(h2("Levene's Test for Homogeneity of Variance"),
-           verbatimTextOutput('levene.results.text'))
+      if (input$exp.design != 'LR') {
+        list(h2("Levene's Test for Homogeneity of Variance"),
+             verbatimTextOutput('levene.results.text'))
+      } else {
+        return(NULL)
+      }
     }
   })
 
@@ -1054,16 +1122,20 @@ shinyServer( function(input, output, session) {
 
   output$download_report <- downloadHandler(
     filename = function() {
-      paste0(input$analysis, '_analysis_report_', Sys.Date(),'.html')
+      input$file.name
     },
     content = function(file) {
+      template <- paste(readLines('report-template.Rmd'), collapse='\n')
+      filled.template <- gsub('replace_with_data_code', ReadCode(), template)
+      filled.template <- gsub('replace_with_analysis_code',
+                              GenerateAnalysisCode(), filled.template)
+      filled.template <- gsub('replace_with_analysis_plot_code',
+                              MakePlotAnalysisCode(), filled.template)
+      writeLines(filled.template, 'report.Rmd')
       src <- normalizePath('report.Rmd')
-
-      file.copy(src, 'report.Rmd')
-
-      out <- knit2html('report.Rmd',
-                       output=paste0(input$analysis, '_analysis_report_', Sys.Date(),'.html'))
-      file.rename(out, file)
+      file.copy(filled.template, 'report.Rmd')
+      out <- knit2html('report.Rmd', output=input$file.name)
+      file.copy(out, file)
     }
   )
 
