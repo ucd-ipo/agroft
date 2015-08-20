@@ -6,7 +6,6 @@ need.pkgs <- c('shiny',
                #'readxl',
                'agricolae',
                'car',
-               'devtools',
                'knitr',
                'yaml',
                'xtable',
@@ -15,7 +14,7 @@ need.pkgs <- c('shiny',
 
 for (pkg in need.pkgs) {
   if (!pkg %in% inst.pkgs) {
-    cat(paste0(pkg, ' is not installed.\n\nPress escape to exit the app and '
+    cat(paste0(pkg, ' is not installed.\n\nPress escape to exit the app and ',
                'run `initialize_AIP()` to install all of the dependencies.'))
     stop()
   }

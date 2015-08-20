@@ -23,7 +23,6 @@ load.data.editor <- aceEditor('code_used_read',
                               value='# code to read in your data',
                               mode='r',
                               readOnly=TRUE,
-                              wordWrap=TRUE,
                               height='100px')
 
 load.data.side.panel <- sidebarPanel(
@@ -157,8 +156,7 @@ transformation.panel <-
   )
 
 analysis.editor <- aceEditor('code_used_model', value='# code to run analysis',
-                              mode='r', wordWrap=TRUE, readOnly=TRUE,
-                              height='150px')
+                             mode='r', readOnly=TRUE, height='150px')
 
 data.analysis.tab <-
   tabPanel(

@@ -1,9 +1,5 @@
 initialize_AIP <- function(){
 
-  if(!require('devtools', quietly=TRUE)){
-    install.packages('devtools', repos="http://cran.rstudio.com/")
-  }
-
   if(!require('shiny', quietly=TRUE)){
     install.packages('shiny', repos="http://cran.rstudio.com/")
   }
@@ -13,7 +9,7 @@ initialize_AIP <- function(){
   }
 
   if(!require('shinyAce', quietly=TRUE)){
-    devtools::install_github('trestletech/shinyAce')
+    install.packages('shinyAce', repos="http://cran.rstudio.com/")
   }
 
   if(!require('knitr', quietly=TRUE)){

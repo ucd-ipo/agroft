@@ -11,8 +11,22 @@ https://moorepants.shinyapps.io/aftsp
 ## Installation
 
 This Shiny app has been built into a package and the development version is
-hosted on Github. Currently, it can be installed using the `devtools` R
-package.
+hosted on Github. Currently, it can be installed from source either using
+`install.packages()` or using the `devtools` R package.
+
+### install.packages()
+
+First download the source from:
+
+https://github.com/ucd-ipo/aip-analysis/archive/master.tar.gz
+
+and install with:
+
+```r
+> install.packages('master.tar.gz', repos = NULL, type = 'source')
+```
+
+### devtools()
 
 Install devtools:
 
@@ -20,25 +34,21 @@ Install devtools:
 > install.packages('devtools')
 ```
 
-The dependency ShinyAce 0.2.0 is not yet on CRAN so you will need install it
-from Github first:
-
-```R
-> devtools::install_github('trestletech/shinyAce', ref = 'v0.2.0')
-```
-
 Now install and load the development version of the app with:
 
 ```R
 > devtools::install_github('ucd-ipo/aip-analysis')
-> library('AIP')
 ```
 
 ## Usage
 
 The function `AIP` will run the app (i.e., just run `AIP()` in the console). If
 all packages aren't installed, a warning will be generated telling you to stop
-the app and run `initialize_AIP`.
+the app and run `initialize_AIP`. First load the library:
+
+```R
+> library('AIP')
+```
 
 Run the app with:
 
