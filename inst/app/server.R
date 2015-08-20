@@ -352,7 +352,7 @@ shinyServer( function(input, output, session) {
   GenerateTukeyFormula <- reactive({
     dep.var <- TransformedDepVarColName()
     return(paste0(GenerateFormulaWithoutError(),
-                  ' + ', dep.var, '.predicted.squared'))
+                  ' + ', dep.var, '.pred.sq'))
   })
 
   GenerateAnalysisCode <- reactive({
@@ -420,7 +420,7 @@ shinyServer( function(input, output, session) {
       if (!input$exp.design %in% c('LR', 'CRD1')) {
         code <- paste0(code, "\n\n# Tukey's Test for Nonadditivity\n",
                        "my.data$", trans.dep.var,
-                       ".predicted.squared <- predict(model.fit)^2\n",
+                       ".pred.sq <- predict(model.fit)^2\n",
                        "tukey.one.df.fit <- lm(formula = ",
                        GenerateTukeyFormula(),
                        ", data = my.data)\nanova(tukey.one.df.fit)")
@@ -683,7 +683,7 @@ shinyServer( function(input, output, session) {
       fit <- ModelFitWithoutError()
       my.data <- AddTransformationColumns()
       dep.var <- TransformedDepVarColName()
-      my.data[[paste0(dep.var, '.predicted.squared')]] <- predict(fit)^2
+      my.data[[paste0(dep.var, '.pred.sq')]] <- predict(fit)^2
       f <- GenerateTukeyFormula()
       tukey.one.df.fit <- lm(formula = as.formula(f), data = my.data)
     })
@@ -697,7 +697,7 @@ shinyServer( function(input, output, session) {
       if (!input$exp.design %in% c('LR', 'CRD1')) {
         isolate({
           dep.var <- TransformedDepVarColName()
-          pred.var <- paste0(dep.var, '.predicted.squared')
+          pred.var <- paste0(dep.var, '.pred.sq')
         })
         list(h2("Tukey's Test for Nonadditivity"),
              p(strong(paste0("Attention: Refer only to the '", pred.var, "' ",
