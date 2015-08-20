@@ -315,7 +315,7 @@ shinyServer( function(input, output, session) {
   })
 
   ModelFitWithoutError <- reactive({
-    # Returns the model fit from formulas with the  Error() term removed.
+    # Returns the model fit from formulas with the Error() term removed.
     input$run_analysis
     isolate(exp.design <- input$exp.design)
     if (exp.design %in% c('SPCRD', 'SPRCBD')) {
@@ -418,9 +418,19 @@ shinyServer( function(input, output, session) {
 
       trans.dep.var <- TransformedDepVarColName()
       if (!input$exp.design %in% c('LR', 'CRD1')) {
-        code <- paste0(code, "\n\n# Tukey's Test for Nonadditivity\n",
+        # TODO : I'm not sure this is the correct thing to do for split plot
+        # Tukey tests.
+        if (input$exp.design %in% c('SPCRD', 'SPRCBD')) {
+          fit.name <- 'model.fit.no.error'
+          fit.line <- paste0(fit.name, ' <- aov(',
+                             GenerateFormulaWithoutError(), ', data = my.data)\n')
+        } else {
+          fit.name <- 'model.fit'
+          fit.line <- ''
+        }
+        code <- paste0(code, "\n\n# Tukey's Test for Nonadditivity\n", fit.line,
                        "my.data$", trans.dep.var,
-                       ".pred.sq <- predict(model.fit)^2\n",
+                       ".pred.sq <- predict(", fit.name, ")^2\n",
                        "tukey.one.df.fit <- lm(formula = ",
                        GenerateTukeyFormula(),
                        ", data = my.data)\nanova(tukey.one.df.fit)")
