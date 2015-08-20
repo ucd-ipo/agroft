@@ -408,7 +408,7 @@ shinyServer( function(input, output, session) {
       # code for the assumptions tests
       if (!input$exp.design %in% c('SPCRD', 'SPRCBD')) {
         code <- paste0(code,
-                       '\n\n# assumptions tests\nshapiro.test(residuals(fit))')
+                       '\n\n# assumptions tests\nshapiro.test(residuals(model.fit))')
       }
 
       formulas <- GenerateIndividualFormulas()
@@ -1054,16 +1054,17 @@ shinyServer( function(input, output, session) {
 
   output$download_report <- downloadHandler(
     filename = function() {
-      paste0(input$analysis, '_analysis_report_', Sys.Date(),'.html')
+      input$file.name
     },
     content = function(file) {
+      template <- paste(readLines('report-template.Rmd'), collapse='\n')
+      filled.template <- gsub('replace_with_data_code', ReadCode(), template)
+      filled.template <- gsub('replace_with_analysis_code', GenerateAnalysisCode(), filled.template)
+      writeLines(filled.template, 'report.Rmd')
       src <- normalizePath('report.Rmd')
-
-      file.copy(src, 'report.Rmd')
-
-      out <- knit2html('report.Rmd',
-                       output=paste0(input$analysis, '_analysis_report_', Sys.Date(),'.html'))
-      file.rename(out, file)
+      file.copy(filled.template, 'report.Rmd')
+      out <- knit2html('report.Rmd', output=input$file.name)
+      file.copy(out, file)
     }
   )
 

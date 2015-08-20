@@ -232,23 +232,13 @@ posthoc.tab <-
 # Report Tab
 ###############################################################################
 
-report.tab <- tabPanel('4. Report',
-                       sidebarLayout(
-                         sidebarPanel(downloadButton('download_report')),
-                         mainPanel()
-                         )
-                       )
-
-###############################################################################
-# Help Tab
-###############################################################################
-
-help.tab <- navbarMenu('Help',
-                       tabPanel('1. Load data'),
-                       tabPanel('2. Data analysis'),
-                       tabPanel('3. Post-hoc tests'),
-                       tabPanel('4. Plots'),
-                       tabPanel('5. Report'))
+report.tab <-
+  tabPanel('4. Report',
+           verticalLayout(
+             textInput('file.name', "File name:", "analysis.html"),
+             downloadButton('download_report')
+           )
+          )
 
 ###############################################################################
 # About Tab
@@ -284,7 +274,6 @@ shinyUI(
     data.analysis.tab,
     posthoc.tab,
     report.tab,
-    help.tab,
     about.tab
-    )
   )
+)
