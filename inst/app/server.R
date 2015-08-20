@@ -350,7 +350,9 @@ shinyServer( function(input, output, session) {
   })
 
   GenerateTukeyFormula <- reactive({
-      return(paste0(GenerateFormulaWithoutError(), ' + YP.SQ'))
+    dep.var <- TransformedDepVarColName()
+    return(paste0(GenerateFormulaWithoutError(),
+                  ' + ', dep.var, '.predicted.squared'))
   })
 
   GenerateAnalysisCode <- reactive({
@@ -414,9 +416,11 @@ shinyServer( function(input, output, session) {
                              collapse = '\n')
       code <- paste0(code, "\n\n# Levene's Test\nlibrary(car)\n", levene.calls)
 
+      trans.dep.var <- TransformedDepVarColName()
       if (!input$exp.design %in% c('LR', 'CRD1')) {
         code <- paste0(code, "\n\n# Tukey's Test for Nonadditivity\n",
-                       "my.data$YP.SQ <- predict(model.fit)^2\n",
+                       "my.data$", trans.dep.var,
+                       ".predicted.squared <- predict(model.fit)^2\n",
                        "tukey.one.df.fit <- lm(formula = ",
                        GenerateTukeyFormula(),
                        ", data = my.data)\nanova(tukey.one.df.fit)")
@@ -678,7 +682,8 @@ shinyServer( function(input, output, session) {
       # plot results.
       fit <- ModelFitWithoutError()
       my.data <- AddTransformationColumns()
-      my.data$YP.SQ <- predict(fit)^2
+      dep.var <- TransformedDepVarColName()
+      my.data[[paste0(dep.var, '.predicted.squared')]] <- predict(fit)^2
       f <- GenerateTukeyFormula()
       tukey.one.df.fit <- lm(formula = as.formula(f), data = my.data)
     })
