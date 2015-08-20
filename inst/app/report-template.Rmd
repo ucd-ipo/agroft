@@ -12,3 +12,7 @@ replace_with_data_code
 ```{r, warning=FALSE, error=FALSE, message=FALSE}
 replace_with_analysis_code
 ```
+
+```{r, warning=FALSE, error=FALSE, message=FALSE}
+replace_with_analysis_plot_code
+```
