@@ -642,6 +642,9 @@ shinyServer( function(input, output, session) {
     if (!input$exp.design %in% c('SPCRD', 'SPRCBD')) {
       isolate({fit <- EvalFit()})
       return(shapiro.test(residuals(fit)))
+    } else {
+      return(cat(paste0("Shapiro-Wilk Normality Test is not performed because ",
+                        "it is not straightforward for split-plot designs.")))
     }
   })
 
@@ -649,12 +652,8 @@ shinyServer( function(input, output, session) {
     if(is.null(input$run_analysis) || input$run_analysis == 0) {
       return(NULL)
     } else {
-      if (!input$exp.design %in% c('SPCRD', 'SPRCBD')) {
-        list(h2('Shapiro-Wilk Normality Test Results'),
-             verbatimTextOutput('shapiro.wilk.results.text'))
-      } else {
-        return(NULL)
-      }
+      list(h2('Shapiro-Wilk Normality Test Results'),
+           verbatimTextOutput('shapiro.wilk.results.text'))
     }
   })
 
