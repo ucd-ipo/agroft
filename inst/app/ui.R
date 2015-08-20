@@ -220,10 +220,10 @@ data.analysis.tab <-
 posthoc.tab <-
   tabPanel('3. Post-hoc tests',
     sidebarLayout(
-      sidebarPanel(h4('Post hoc Analysis'),
+      sidebarPanel(h4('Post hoc analysis'),
                    actionButton('run_post_hoc_analysis',
                                 'Run post hoc analysis')),
-      mainPanel(h3('Post-hoc test results'),
+      mainPanel(h3('Post hoc tests and figures'),
                 uiOutput('lsd.results'))
     )
   )
