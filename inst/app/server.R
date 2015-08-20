@@ -415,7 +415,7 @@ shinyServer( function(input, output, session) {
       code <- paste0(code, "\n\n# Levene's Test\nlibrary(car)\n", levene.calls)
 
       if (!input$exp.design %in% c('LR', 'CRD1')) {
-        code <- paste0(code, "\n\n# Tukey's One DoF Test\n",
+        code <- paste0(code, "\n\n# Tukey's Test for Nonadditivity\n",
                        "my.data$YP.SQ <- predict(model.fit)^2\n",
                        "tukey.one.df.fit <- lm(formula = ",
                        GenerateTukeyFormula(),
@@ -690,7 +690,7 @@ shinyServer( function(input, output, session) {
       return(NULL)
     } else {
       if (!input$exp.design %in% c('LR', 'CRD1')) {
-        list(h2("Tukey's Test"),
+        list(h2("Tukey's Test for Nonadditivity"),
              verbatimTextOutput('tukey.results.text'))
       } else {
         return(NULL)
