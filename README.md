@@ -11,20 +11,8 @@ https://moorepants.shinyapps.io/aftsp
 ## Installation
 
 This Shiny app has been built into a package and the development version is
-hosted on Github. Currently, it can be installed from source either using
-`install.packages()` or using the `devtools` R package.
-
-### install.packages()
-
-First download the source from:
-
-https://github.com/ucd-ipo/aip-analysis/archive/master.tar.gz
-
-and install with:
-
-```r
-> install.packages('master.tar.gz', repos = NULL, type = 'source')
-```
+hosted on Github. Currently, it can be installed from source either using using
+the `devtools` R package.
 
 ### devtools()
 
