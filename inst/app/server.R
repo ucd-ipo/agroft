@@ -412,7 +412,7 @@ shinyServer( function(input, output, session) {
       }
 
       trans.dep.var <- TransformedDepVarColName()
-      if (!input$exp.design %in% c('LR', 'CRD1')) {
+      if (!input$exp.design %in% c('LR', 'CRD1', 'CRD2')) {
         # TODO : I'm not sure this is the correct thing to do for split plot
         # Tukey tests.
         if (input$exp.design %in% c('SPCRD', 'SPRCBD')) {
@@ -754,7 +754,7 @@ shinyServer( function(input, output, session) {
     if(is.null(input$run_analysis) || input$run_analysis == 0) {
       return(NULL)
     } else {
-      if (!input$exp.design %in% c('LR', 'CRD1')) {
+      if (!input$exp.design %in% c('LR', 'CRD1', 'CRD2')) {
         isolate({
           dep.var <- TransformedDepVarColName()
           pred.var <- paste0(dep.var, '.pred.sq')
