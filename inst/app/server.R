@@ -519,6 +519,7 @@ shinyServer( function(input, output, session) {
       # TODO : When this is selected it should clear all of the analysis related
       # input variables so nothing lingers from previous analyses, e.g.
       # independent.variable.two.
+
     }
   })
 
@@ -963,7 +964,11 @@ shinyServer( function(input, output, session) {
         exp.design <- input$exp.design
         dep.var <- TransformedDepVarColName()
         ind.var.one <- input$independent.variable.one
-        ind.var.two <- input$independent.variable.two
+        if (exp.design %in% c('CRD1', 'RCBD1')) {
+            ind.var.two <- NULL
+        } else {
+          ind.var.two <- input$independent.variable.two
+        }
         ind.vars <- c(ind.var.one, ind.var.two)
         my.data <- AddTransformationColumns()
         fit <- EvalFit()
