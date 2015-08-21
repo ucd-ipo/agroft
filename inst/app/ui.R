@@ -251,7 +251,7 @@ about.tab <-
       img(src = "usaid-logo-600.png", width = "300px"),
       h1('Authors'),
       tags$ul(tags$li('Ian K. Kyle'), tags$li('Jason K. Moore'),
-              tags$li('Maegan Simmonds')),
+              tags$li('Maegen B. Simmonds')),
       h1('Disclaimer'),
       p(help.text$disclaimer),
       h1('License'),
