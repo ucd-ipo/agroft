@@ -75,7 +75,6 @@ load.data.tab <- tabPanel('1. Load data',
 experimental.design.panel <-
   bsCollapsePanel(
     '1. Experimental Design',
-    id = 'experimental_design_panel',
     h5('Choose an experimental design that matches your data.'),
     uiOutput('select.design'),
     bsButton('exp_design_info_button',
@@ -88,16 +87,12 @@ experimental.design.panel <-
   )
 
 # The user can adjust whether variables are continuous or factors.
-# TODO : I don't think there is any use in this panel. Since we use `aov`
-# instead of `lm`, all of the variables on the right hand side of the model are
-# consider factors by default.
-# TODO : If this panel is kept, maybe it should go below the dependent and
-# independent variable selections so you only have to choose the variable type
-# for the variables used in the analysis.
+# TODO : Maybe it should go below the dependent and independent variable
+# selections so you only have to choose the variable type for the variables used
+# in the analysis.
 variable.type.panel <-
   bsCollapsePanel(
     '2. Variable types',
-    id='variable_type_panel',
     h5('Indicate your variable types below'),
     h6(paste('We have made guesses at the variable types ',
              'in your data, but change the variable types ',
@@ -117,7 +112,6 @@ variable.type.panel <-
 dependent.panel <-
   bsCollapsePanel(
     "3. Dependent Variable",
-    id='select_dependent_variable_panel',
     uiOutput('select.dependent'),
     bsButton('dependent_info_button',
              "Dependent Variable Information"),
@@ -133,7 +127,6 @@ dependent.panel <-
 independent.panel <-
   bsCollapsePanel(
     '4. Independent variables',
-    id='select_independent_variable_panel',
     uiOutput('select.independent'),
     bsButton('select_iv_info',
              'Independent variable info'),
@@ -148,7 +141,6 @@ independent.panel <-
 transformation.panel <-
   bsCollapsePanel(
     '5. Transformations',
-    id = 'transformations_panel',
     selectInput('transformation',
                 'Select a transformation for the dependent variable:',
                 choices = c('None', 'Power', 'Logarithmic', 'Square Root'),
@@ -165,7 +157,6 @@ data.analysis.tab <-
       sidebarPanel(
         bsCollapse(
           multiple = FALSE,
-          open = 'experimental_design_panel',
           id = 'main_collapse_panel',
           experimental.design.panel,
           variable.type.panel,
