@@ -3,7 +3,7 @@ Version: 0.1
 Date: 2015-02-20
 Title: Agricultural Field Trial Statistics Package
 Authors@R: c(
-  person("Ian", "Kyle", email = "ikkyle@ucdavis.edu", role = c("cre", "aut")),
+  person("Ian", "Kyle", email = "iankyle1@gmail.com", role = c("cre", "aut")),
   person("Jason", "Moore", email = "moorepants@gmail.com", role = "aut"))
 Imports:
   shiny (>= 0.12),
