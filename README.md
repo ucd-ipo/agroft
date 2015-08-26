@@ -42,5 +42,5 @@ Run the app with:
 > AIP()
 ```
 
-The app should open in your default webbrowser. If not, navigate to the
+The app should open in your default web browser. If not, navigate to the
 provided URL.
