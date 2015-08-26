@@ -37,27 +37,11 @@ my.data <- read.csv('Lab9ex1.csv')
 
 # The factors in this experiment are recorded with numerical values so they need
 # to be recoded as factors. The user will have to set this manually in the app.
-# NOTE : This is not necessary if `aov()` is used instead of `lm()`.
 #-----------------------------------------------------------------------------#
 my.data$SeedLotA <- as.factor(my.data$SeedLotA)
 my.data$Block <- as.factor(my.data$Block)
 my.data$TrtmtB <- as.factor(my.data$TrtmtB)
 #-----------------------------------------------------------------------------#
-
-# TODO : Is this triple transformation necessary? LOL, I didn't mean it to be a triple transform
-##Testing various transformations for improving assumption tests##
-#(1) Create a sqrt-transformed variable
-my.data$Yield <- sqrt(my.data$Yield)
-
-#(2) Create a log-transformed variable
-my.data$Yield <- log10(my.data$Yield)
-
-#(3)----- Finding the exponent for a power transformation ---- #
-mean.data <- aggregate(Yield ~ SeedLotA + TrtmtB, data = my.data, function(x)
-                       c(logmean=log10(mean(x)), logvar=log10(var(x))))
-power.model <- lm(logvar ~ logmean, data = as.data.frame(mean.data$Yield))
-power <- 1 - summary(power.model)$coefficients[2, 1] / 2
-my.data$Yield <- my.data$Yield^power
 
 # This is the standard model for a split plot RCBD.
 # NOTE : I'm getting this warning message:
@@ -87,8 +71,8 @@ plot(model.tmp, which = c(1, 2))
 invisible(dev.copy(png, 'split-plot-rcbd-fit-plots.png'))
 invisible(dev.off())
 
-# Do not do the Shapiro-Wilk Normality Test because it is not straight forward
-# for a split-plot design.
+# NOTE: Do not do the Shapiro-Wilk Normality Test because it is not straight
+# forward for a split-plot design.
 
 # Levene's Test.
 cat("Levene's Test\n")
