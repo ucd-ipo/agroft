@@ -1,0 +1,216 @@
+# This is an example of a split-plot RCBD experimental design based off of the
+# first example in [1] and further analysis in [2]. The data can be downloaded
+# from [3].
+#
+# To run the script type:
+#
+# source('split_plot_rcbd.R', print.eval = TRUE)
+#
+# [1] http://www.unh.edu/halelab/BIOL933/labs/lab9.pdf
+# [2] http://www.personal.psu.edu/mar36/stat_461/split_plot/split_plot.html
+# [3] http://www.unh.edu/halelab/BIOL933/schedule.htm
+#
+# NOTE : The code that will be shown to the user in the app is bounded by these
+# separators: #------------#.
+
+# Load the necessary libraries.
+#-----------------------------------------------------------------------------#
+library('agricolae')  # for LSD.test()
+library('car')  # for leveneTest()
+library('HH')  # for intxplot()
+#-----------------------------------------------------------------------------#
+
+sep <- function(n){
+  # This function simply prints a line of "=" to the screen as a separator and
+  # will not show up in the app. It is only here for nice console printing.
+  line <- paste0(paste(replicate(n, "="), collapse = ""), '\n')
+  cat(line)
+}
+
+# Load the data.
+# repetitions: block
+# main plots: SeedLotA (four plots in a block)
+# subplots: TrtmtB (four subplots in a main plot)
+#-----------------------------------------------------------------------------#
+my.data <- read.csv('Lab9ex1.csv')
+#-----------------------------------------------------------------------------#
+
+# The factors in this experiment are recorded with numerical values so they need
+# to be recoded as factors. The user will have to set this manually in the app.
+# NOTE : This is not necessary if `aov()` is used instead of `lm()`.
+#-----------------------------------------------------------------------------#
+my.data$SeedLotA <- as.factor(my.data$SeedLotA)
+my.data$Block <- as.factor(my.data$Block)
+my.data$TrtmtB <- as.factor(my.data$TrtmtB)
+#-----------------------------------------------------------------------------#
+
+# TODO : Is this triple transformation necessary? LOL, I didn't mean it to be a triple transform
+##Testing various transformations for improving assumption tests##
+#(1) Create a sqrt-transformed variable
+my.data$Yield <- sqrt(my.data$Yield)
+
+#(2) Create a log-transformed variable
+my.data$Yield <- log10(my.data$Yield)
+
+#(3)----- Finding the exponent for a power transformation ---- #
+mean.data <- aggregate(Yield ~ SeedLotA + TrtmtB, data = my.data, function(x)
+                       c(logmean=log10(mean(x)), logvar=log10(var(x))))
+power.model <- lm(logvar ~ logmean, data = as.data.frame(mean.data$Yield))
+power <- 1 - summary(power.model)$coefficients[2, 1] / 2
+my.data$Yield <- my.data$Yield^power
+
+# This is the standard model for a split plot RCBD.
+# NOTE : I'm getting this warning message:
+# Warning message:
+# In aov(formula = Yield ~ SeedLotA + Block + Error(SeedLotA:Block) +  :
+#   Error() model is singular
+#-----------------------------------------------------------------------------#
+model <- aov(formula = Yield ~ SeedLotA + Block + Error(SeedLotA:Block) +
+             TrtmtB + SeedLotA:TrtmtB, data = my.data)
+#-----------------------------------------------------------------------------#
+
+# Following the advice in [2], I create the same model without the error term
+# for assumption testing (and post hoc?). The F values and P values are not
+# correct for this model so the ANOVA table should not be shown to the user.
+#-----------------------------------------------------------------------------#
+model.tmp <- aov(formula = Yield ~ Block + SeedLotA + TrtmtB + SeedLotA:Block +
+                 SeedLotA:TrtmtB, data = my.data)
+#-----------------------------------------------------------------------------#
+
+# Plot the four standard fit plots: residuals vs predicted and the Normal Q-Q
+# plot of the residuals.
+dev.new()
+#-----------------------------------------------------------------------------#
+par(mfrow = c(2, 1), oma = c(0, 0, 2, 0))
+plot(model.tmp, which = c(1, 2))
+#-----------------------------------------------------------------------------#
+invisible(dev.copy(png, 'split-plot-rcbd-fit-plots.png'))
+invisible(dev.off())
+
+# Do not do the Shapiro-Wilk Normality Test because it is not straight forward
+# for a split-plot design.
+
+# Levene's Test.
+cat("Levene's Test\n")
+sep(79)
+#-----------------------------------------------------------------------------#
+leveneTest(Yield ~ SeedLotA, data = my.data)
+leveneTest(Yield ~ TrtmtB, data = my.data)
+#-----------------------------------------------------------------------------#
+sep(79)
+
+# 1-df Tukey:
+cat("One DoF Tukey Test\n")
+sep(79)
+#-----------------------------------------------------------------------------#
+my.data$sq_preds <- predict(model.tmp)^2
+one.df.model <- lm(Yield ~ SeedLotA + Block + SeedLotA:Block + TrtmtB +
+                   SeedLotA:TrtmtB + sq_preds, my.data)
+anova(one.df.model)
+#-----------------------------------------------------------------------------#
+sep(79)
+
+# Print the ANOVA table of the fit. The user will have to note the significant
+# factors.
+# NOTE : `anova(model)` fails here because the `model` variable contains a list
+# of anova results due to the `Error()` term.
+cat('ANOVA Table\n')
+sep(79)
+#-----------------------------------------------------------------------------#
+summary(model)
+#-----------------------------------------------------------------------------#
+sep(79)
+
+# Plot the mean yield with respect to each factor.
+dev.new()
+#-----------------------------------------------------------------------------#
+intxplot(Yield ~ SeedLotA, groups = TrtmtB, data = my.data, se = TRUE,
+         ylim = range(my.data$Yield), offset.scale = 500)
+#-----------------------------------------------------------------------------#
+invisible(dev.copy(png, 'split-plot-rcbd-main-plot-interaction-plot.png'))
+invisible(dev.off())
+
+dev.new()
+#-----------------------------------------------------------------------------#
+intxplot(Yield ~ TrtmtB, groups = SeedLotA, data = my.data, se = TRUE,
+         ylim = range(my.data$Yield), offset.scale = 500)
+#-----------------------------------------------------------------------------#
+invisible(dev.copy(png, 'split-plot-rcbd-split-plot-interaction-plot.png'))
+invisible(dev.off())
+
+# If the interaction between main-plot : subplot is NOT significant AND the
+# main-plot or sub-plot effect is sig in ANOVA, do the following.
+# TODO : We should be able to simply pass the model to LSD.test() and skip the
+# extraction of the error and dof.
+cat('Least Significant Difference: Interaction Insignficant\n')
+sep(79)
+#-----------------------------------------------------------------------------#
+model.summary <- summary(model.tmp)[[1]]
+trim <- function (x) sub("\\s+$", "", x)  # trims trailing whitespace
+row.names(model.summary) <- trim(row.names(model.summary))
+
+# Comparisons among main plot levels
+main.plot.error <- model.summary["SeedLotA", "Mean Sq"]
+main.plot.dof <- model.summary["SeedLotA", "Df"]
+main.plot.lsd.results <- LSD.test(my.data$Yield, my.data$SeedLotA, DFerror =
+                                  main.plot.dof, MSerror = main.plot.error,
+                                  console = TRUE)
+
+# Comparisons among subplot levels
+# NOTE : To compare subplots, it is not necessary to specify subplot error
+# because it is the residual error (the default MSE for all F tests).
+split.plot.error <- model.summary["TrtmtB", "Mean Sq"]
+split.plot.dof <- model.summary["TrtmtB", "Df"]
+split.plot.lsd.results <- LSD.test(my.data$Yield, my.data$TrtmtB, DFerror =
+                                   split.plot.dof, MSerror = split.plot.error,
+                                   console = TRUE)
+#-----------------------------------------------------------------------------#
+sep(79)
+
+# ANOVA table shows significant interaction ==> must do LSD for simple effects
+# (all 12 combinations of SeedLotA and TrtmtB)
+cat('Least Significant Difference: Interaction Signficant\n')
+sep(79)
+#-----------------------------------------------------------------------------#
+# (a) Comparisons among subplot levels within a main plot level.
+main.plot.levels <- c(1:nlevels(my.data$SeedLotA))
+for (i in main.plot.levels) {
+  with(subset(my.data, SeedLotA == main.plot.levels[i]),
+       {
+        sep(79)
+        print(paste('SeedLotA = ', main.plot.levels[i]))
+        model.i <- aov(Yield ~ Block + TrtmtB)
+        summary(model.i)
+        # TODO : Ensure this is always grabbed from the correct row.
+        p_value <- summary(model.i)[[1]][["Pr(>F)"]][2]
+        if(p_value < 0.05) {
+          LSD.test(model.i, 'TrtmtB', console = TRUE)
+        } else {
+          print('Treatment effect not significant, thus no LSD is performed')
+        }
+       }
+      )
+}
+# (b) Comparisons among main plot levels within a subplot level.
+split.plot.levels <- c(1:nlevels(my.data$TrtmtB))
+for (i in split.plot.levels) {
+  with(subset(my.data, TrtmtB == split.plot.levels[i]),
+       {
+        sep(79)
+        print(paste('TrtmtB =', split.plot.levels[i]))
+        model.i <- aov(Yield ~ Block + SeedLotA)
+        summary(model.i)
+        # TODO : Ensure this is always grabbed from the correct row.
+        p_value <- summary(model.i)[[1]][["Pr(>F)"]][2]
+        if(p_value < 0.05) {
+          LSD.test(model.i, 'SeedLotA', console = TRUE)
+        } else {
+          print('Treatment effect not significant, thus no LSD is performed')
+        }
+       }
+      )
+}
+# (c) Comparisons between subplot levels across different main plot levels
+# TODO :Trying to figure out how to code for this. It's more complicated.
+#-----------------------------------------------------------------------------#
+sep(79)
