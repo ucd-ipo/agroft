@@ -11,8 +11,8 @@ https://moorepants.shinyapps.io/aftsp
 ## Installation
 
 This Shiny app has been built into a package and the development version is
-hosted on Github. Currently, it can be installed from source either using using
-the `devtools` R package.
+hosted on Github. Currently, it can be installed from source using the
+`devtools` R package.
 
 Install devtools:
 
