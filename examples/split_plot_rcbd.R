@@ -40,14 +40,11 @@ my.data$Block <- as.factor(my.data$Block)
 my.data$TrtmtB <- as.factor(my.data$TrtmtB)
 #-----------------------------------------------------------------------------#
 
-# This is the standard model for a split plot RCBD.
-# NOTE : I'm getting this warning message:
-# Warning message:
-# In aov(formula = Yield ~ SeedLotA + Block + Error(SeedLotA:Block) +  :
-#   Error() model is singular
+# This is the standard model for a split-plot RCBD, where 'SeedLotA' is mainplot
+# within 'block' in RCBD, and 'TrtmtB' is subplot within mainplot.
 #-----------------------------------------------------------------------------#
-model <- aov(formula = Yield ~ SeedLotA + Block + Error(SeedLotA:Block) +
-             TrtmtB + SeedLotA:TrtmtB, data = my.data)
+model <- lmer(Yield ~ SeedLotA + TrtmtB + (1|Block) + (1|Block:SeedlotA), 
+              data = my.data)
 #-----------------------------------------------------------------------------#
 
 # Following the advice in [2], I create the same model without the error term
