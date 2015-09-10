@@ -43,7 +43,7 @@ my.data$TrtmtB <- as.factor(my.data$TrtmtB)
 # This is the standard model for a split-plot RCBD, where 'SeedLotA' is mainplot
 # within 'block' in RCBD, and 'TrtmtB' is subplot within mainplot.
 #-----------------------------------------------------------------------------#
-model <- lmer(Yield ~ SeedLotA + TrtmtB + (1|Block) + (1|Block:SeedlotA), 
+model <- lmer(Yield ~ SeedLotA*TrtmtB + (1|Block) + (1|Block:SeedlotA), 
               data = my.data)
 #-----------------------------------------------------------------------------#
 
