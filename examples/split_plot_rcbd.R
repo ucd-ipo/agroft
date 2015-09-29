@@ -1,11 +1,9 @@
-# This is an example of a split-plot RCBD experimental design. The data can be downloaded
-# from [1].
+# This is an example of a split-plot RCBD experimental design. 
 #
 # To run the script type:
 #
 # source('split_plot_rcbd.R', print.eval = TRUE)
 #
-# [1] http://www.unh.edu/halelab/BIOL933/schedule.htm
 #
 # NOTE : The code that will be shown to the user in the app is bounded by these
 # separators: #------------#.
