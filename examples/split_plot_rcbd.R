@@ -99,7 +99,7 @@ invisible(dev.off())
 cat('Least Significant Difference: Interaction Insignficant\n')
 sep(79)
 #-----------------------------------------------------------------------------#
-model.summary <- summary(model.tmp)[[1]]
+model.summary <- summary(model)[[1]]
 trim <- function (x) sub("\\s+$", "", x)  # trims trailing whitespace
 row.names(model.summary) <- trim(row.names(model.summary))
 
