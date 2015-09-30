@@ -101,27 +101,6 @@ sep(79)
 #-----------------------------------------------------------------------------#
 # Comparisons among main plot levels
 cld(lsmeans(model, tukey ~ SeedLotA)) #does number groupings - can we switch to letters?
-
-
-model.summary <- summary(model)[[1]]
-trim <- function (x) sub("\\s+$", "", x)  # trims trailing whitespace
-row.names(model.summary) <- trim(row.names(model.summary))
-
-# Comparisons among main plot levels
-main.plot.error <- model.summary["SeedLotA", "Mean Sq"]
-main.plot.dof <- model.summary["SeedLotA", "Df"]
-main.plot.lsd.results <- LSD.test(my.data$Yield, my.data$SeedLotA, DFerror =
-                                  main.plot.dof, MSerror = main.plot.error,
-                                  console = TRUE)
-
-# Comparisons among subplot levels
-# NOTE : To compare subplots, it is not necessary to specify subplot error
-# because it is the residual error (the default MSE for all F tests).
-split.plot.error <- model.summary["TrtmtB", "Mean Sq"]
-split.plot.dof <- model.summary["TrtmtB", "Df"]
-split.plot.lsd.results <- LSD.test(my.data$Yield, my.data$TrtmtB, DFerror =
-                                   split.plot.dof, MSerror = split.plot.error,
-                                   console = TRUE)
 #-----------------------------------------------------------------------------#
 sep(79)
 
