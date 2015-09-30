@@ -46,14 +46,6 @@ model <- lmer(Yield ~ SeedLotA*TrtmtB + (1|Block) + (1|Block:SeedLotA),
               data = my.data)
 #-----------------------------------------------------------------------------#
 
-# Following the advice in [2], I create the same model without the error term
-# for assumption testing (and post hoc?). The F values and P values are not
-# correct for this model so the ANOVA table should not be shown to the user.
-#-----------------------------------------------------------------------------#
-model.tmp <- aov(formula = Yield ~ Block + SeedLotA + TrtmtB + SeedLotA:Block +
-                 SeedLotA:TrtmtB, data = my.data)
-#-----------------------------------------------------------------------------#
-
 # Plot the four standard fit plots: residuals vs predicted and the Normal Q-Q
 # plot of the residuals.
 dev.new()
