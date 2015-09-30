@@ -51,7 +51,7 @@ model <- lmer(Yield ~ SeedLotA*TrtmtB + (1|Block) + (1|Block:SeedLotA),
 dev.new()
 #-----------------------------------------------------------------------------#
 par(mfrow = c(2, 1), oma = c(0, 0, 2, 0))
-plot(model.tmp, which = c(1, 2))
+plot(model, which = c(1, 2))
 #-----------------------------------------------------------------------------#
 invisible(dev.copy(png, 'split-plot-rcbd-fit-plots.png'))
 invisible(dev.off())
