@@ -120,46 +120,4 @@ sep(79)
 # Comparisons among all combinations of mainplot and subplot levels
 cld(lsmeans(model, tukey ~ SeedLotA + TrtmtB))
 
-# Comparisons among sub-plot levels
-# (a) Comparisons among subplot levels within a main plot level.
-main.plot.levels <- c(1:nlevels(my.data$SeedLotA))
-for (i in main.plot.levels) {
-  with(subset(my.data, SeedLotA == main.plot.levels[i]),
-       {
-        sep(79)
-        print(paste('SeedLotA = ', main.plot.levels[i]))
-        model.i <- aov(Yield ~ Block + TrtmtB)
-        summary(model.i)
-        # TODO : Ensure this is always grabbed from the correct row.
-        p_value <- summary(model.i)[[1]][["Pr(>F)"]][2]
-        if(p_value < 0.05) {
-          LSD.test(model.i, 'TrtmtB', console = TRUE)
-        } else {
-          print('Treatment effect not significant, thus no LSD is performed')
-        }
-       }
-      )
-}
-# (b) Comparisons among main plot levels within a subplot level.
-split.plot.levels <- c(1:nlevels(my.data$TrtmtB))
-for (i in split.plot.levels) {
-  with(subset(my.data, TrtmtB == split.plot.levels[i]),
-       {
-        sep(79)
-        print(paste('TrtmtB =', split.plot.levels[i]))
-        model.i <- aov(Yield ~ Block + SeedLotA)
-        summary(model.i)
-        # TODO : Ensure this is always grabbed from the correct row.
-        p_value <- summary(model.i)[[1]][["Pr(>F)"]][2]
-        if(p_value < 0.05) {
-          LSD.test(model.i, 'SeedLotA', console = TRUE)
-        } else {
-          print('Treatment effect not significant, thus no LSD is performed')
-        }
-       }
-      )
-}
-# (c) Comparisons between subplot levels across different main plot levels
-# TODO :Trying to figure out how to code for this. It's more complicated.
-#-----------------------------------------------------------------------------#
-sep(79)
+
