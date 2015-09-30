@@ -95,7 +95,7 @@ invisible(dev.copy(png, 'split-plot-rcbd-split-plot-interaction-plot.png'))
 invisible(dev.off())
 
 # If the interaction between main-plot : subplot is NOT significant AND the
-# main-plot is sig in ANOVA, do the following:
+# main-plot IS sig in ANOVA, do the following:
 cat('Tukey method for multiple mean comparison of mainplot: Interaction Insignficant\n')
 sep(79)
 #-----------------------------------------------------------------------------#
@@ -104,7 +104,7 @@ cld(lsmeans(model, tukey ~ SeedLotA)) #does number groupings - can we switch to 
 #-----------------------------------------------------------------------------#
 sep(79)
 # If the interaction between main-plot : subplot is NOT significant AND the
-# sub-plot is sig in ANOVA, do the following:
+# sub-plot IS sig in ANOVA, do the following:
 cat('Tukey method for multiple mean comparison of sub-plot: Interaction Insignficant\n')
 sep(79)
 #-----------------------------------------------------------------------------#
@@ -112,11 +112,15 @@ sep(79)
 cld(lsmeans(model, tukey ~ TrtmtB)) #does number groupings - can we switch to letters?
 #-----------------------------------------------------------------------------#
 sep(79)
-# ANOVA table shows significant interaction ==> must do LSD for simple effects
-# (all 12 combinations of SeedLotA and TrtmtB)
+# ANOVA table shows significant interaction ==> must do Tukey on simple effects
+# (all 16 combinations of SeedLotA and TrtmtB)
 cat('Least Significant Difference: Interaction Signficant\n')
 sep(79)
 #-----------------------------------------------------------------------------#
+# Comparisons among all combinations of mainplot and subplot levels
+cld(lsmeans(model, tukey ~ SeedLotA + TrtmtB))
+
+# Comparisons among sub-plot levels
 # (a) Comparisons among subplot levels within a main plot level.
 main.plot.levels <- c(1:nlevels(my.data$SeedLotA))
 for (i in main.plot.levels) {
