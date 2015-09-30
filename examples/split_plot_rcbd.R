@@ -14,6 +14,8 @@ library('agricolae')  # for LSD.test()
 library('lmerTest') # for lmer()
 library('car')  # for leveneTest()
 library('HH')  # for intxplot()
+library('lsmeans') #for Tukey or LSD test
+library('multcompView') #for cld methods
 #-----------------------------------------------------------------------------#
 
 sep <- function(n){
