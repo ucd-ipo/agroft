@@ -15,7 +15,7 @@ library('lmerTest') # for lmer()
 library('car')  # for leveneTest()
 library('HH')  # for intxplot()
 library('lsmeans') #for Tukey or LSD test
-library('multcompView') #for cld methods
+library('multcompView') #for cld (compact letter display) methods 
 #-----------------------------------------------------------------------------#
 
 sep <- function(n){
@@ -95,12 +95,14 @@ invisible(dev.copy(png, 'split-plot-rcbd-split-plot-interaction-plot.png'))
 invisible(dev.off())
 
 # If the interaction between main-plot : subplot is NOT significant AND the
-# main-plot or sub-plot effect is sig in ANOVA, do the following.
-# TODO : We should be able to simply pass the model to LSD.test() and skip the
-# extraction of the error and dof.
-cat('Least Significant Difference: Interaction Insignficant\n')
+# main-plot is sig in ANOVA, do the following:
+cat('Tukey method for multiple mean comparison: Interaction Insignficant\n')
 sep(79)
 #-----------------------------------------------------------------------------#
+# Comparisons among main plot levels
+cld(lsmeans(model, tukey ~ SeedLotA)) #does number groupings - can we switch to letters?
+
+
 model.summary <- summary(model)[[1]]
 trim <- function (x) sub("\\s+$", "", x)  # trims trailing whitespace
 row.names(model.summary) <- trim(row.names(model.summary))
