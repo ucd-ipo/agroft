@@ -68,14 +68,10 @@ leveneTest(Yield ~ TrtmtB, data = my.data)
 #-----------------------------------------------------------------------------#
 sep(79)
 
-# Print the ANOVA table of the fit. The user will have to note the significant
-# factors.
-# NOTE : `anova(model)` fails here because the `model` variable contains a list
-# of anova results due to the `Error()` term.
 cat('ANOVA Table\n')
 sep(79)
 #-----------------------------------------------------------------------------#
-summary(model)
+anova(model)
 #-----------------------------------------------------------------------------#
 sep(79)
 
