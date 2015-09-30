@@ -11,6 +11,7 @@
 # Load the necessary libraries.
 #-----------------------------------------------------------------------------#
 library('agricolae')  # for LSD.test()
+library('lmerTest') # for lmer()
 library('car')  # for leveneTest()
 library('HH')  # for intxplot()
 #-----------------------------------------------------------------------------#
@@ -72,17 +73,6 @@ sep(79)
 #-----------------------------------------------------------------------------#
 leveneTest(Yield ~ SeedLotA, data = my.data)
 leveneTest(Yield ~ TrtmtB, data = my.data)
-#-----------------------------------------------------------------------------#
-sep(79)
-
-# 1-df Tukey:
-cat("One DoF Tukey Test\n")
-sep(79)
-#-----------------------------------------------------------------------------#
-my.data$sq_preds <- predict(model.tmp)^2
-one.df.model <- lm(Yield ~ SeedLotA + Block + SeedLotA:Block + TrtmtB +
-                   SeedLotA:TrtmtB + sq_preds, my.data)
-anova(one.df.model)
 #-----------------------------------------------------------------------------#
 sep(79)
 
