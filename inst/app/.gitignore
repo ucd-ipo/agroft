@@ -1,2 +1,4 @@
 figure
 report.md
+report.Rmd
+.*~
