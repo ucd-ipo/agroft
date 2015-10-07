@@ -1,17 +1,11 @@
-# this sources the file that checks whether all the packages are installed. It
-# might be a good idea to edit this source file (located in the app working
-# directory, "AIP/inst/app") so that it checks the required version is installed
-# too. Required versions can be found in the AIP package DESCRIPTION file
-source('pkg_check.R')
-
-library('shiny')
+library(shiny)
 
 # This package has bindings for some cool twitter bootstrap UI stuff that shiny
 # doesn't include. Includes the modals, collapse panels, and tool tips.
-library('shinyBS')
+library(shinyBS)
 
 # for displaying R code - pull from github until the correct version is on CRAN
-library('shinyAce')
+library(shinyAce)
 
 # for reading in excel files, uncomment once on CRAN. For now it is on github
 # only. It is a package that has no Java dependencies (only c++), so once
@@ -19,13 +13,15 @@ library('shinyAce')
 # have functionality to read in excel files.
 #library(readxl)
 
-library('agricolae') # for sample datasets and LSD.Test()
+library(agricolae) # for sample datasets and LSD.Test()
 
-library('car')  # for leveneTest()
+library(car)  # for leveneTest()
 
-library('Rmisc')  # for summarySE()
+library(Rmisc)  # for summarySE()
 
-library('ggplot2')  # for ggplot(), etc.
+library(ggplot2)  # for ggplot(), etc.
+
+library(nlme)
 
 # for loading dynamic reports. I don't use rmarkdown because that requires that
 # pandoc be installed which is a whole different ballgame. knitr doesn't require
@@ -33,11 +29,15 @@ library('ggplot2')  # for ggplot(), etc.
 library('knitr')
 
 shinyServer( function(input, output, session) {
-
+  
   #############################################################################
   # Load Data Tab
   #############################################################################
-
+  
+  output$debug <- renderText({
+    class(EvalFit())
+  })
+  
   GetLoadCall <- reactive({
     # Returns one of three things:
     # 1. call containing the read.csv unevaluated function call
@@ -48,17 +48,17 @@ shinyServer( function(input, output, session) {
     # use sample data, then... make the reactive expression "GetLoadCall" NULL,
     # otherwise, do read in data things
     if ((is.null(input$data_file) || length(input$data_file) == 0) &&
-       !input$use_sample_data) {
+        !input$use_sample_data) {
       return(NULL)
     } else {
       # if a data file has been uploaded and the user doesn't want to use sample
       # data...
       if (length(input$data_file) > 0 && !input$use_sample_data) {
         # uncomment once readxl gets on CRAN
-#         readcall <- switch(file_ext(input$data_file$name),
-#                            'csv'='read.csv',
-#                            'xls'='read_excel',
-#                            'xlsx'='read_excel')
+        #         readcall <- switch(file_ext(input$data_file$name),
+        #                            'csv'='read.csv',
+        #                            'xls'='read_excel',
+        #                            'xlsx'='read_excel')
         # make the call "read.csv". It is set up like this so that when the
         # readxl is enabled, we can change the call depeding on the file tpe
         # uploaded
@@ -74,18 +74,20 @@ shinyServer( function(input, output, session) {
     }
     return(load.call)
   })
-
+  
   LoadData <- reactive({
     # Returns a data.frame with the appropriate data set or NULL.
-
+    
     # TODO : This should only run if GetLoadCall returns a name.
     # TODO : This should probably be in the GetLoadCall function.
     # The following loads the selected agricolae data set into the workspace,
     # regardless if the user selects "Use sample data instead". The name of the
     # data.frame is the same as input$sample_data_buttons.
-    eval(call('data', input$sample_data_buttons, package='agricolae',
+    eval(call('data', 
+              input$sample_data_buttons, 
+              package='agricolae',
               envir=environment()))
-
+    
     # set "data" to the GetLoadCall object
     # remeber that GetLoadCall is either NULL, the call to read.csv, or the name of
     # the dataset the user wants.
@@ -94,15 +96,15 @@ shinyServer( function(input, output, session) {
     # wanted, that data is assigned to data (because we read it into the
     # workspace via the call to 'data' above)
     data <- eval(GetLoadCall(), envir=environment())
-
+    
     return(data)
-
+    
   })
-
+  
   GetSimpleLoadExpr <- reactive({
     # Returns a character containing the code an R user would use to load the
     # data.
-
+    
     # if they aren't using sample data, deparse the call to get the character
     # represntation of the call, otherwise, construct it from scratch
     if (!input$use_sample_data) {
@@ -114,7 +116,7 @@ shinyServer( function(input, output, session) {
       l <- paste0(l, '\nmy.data <- ', input$sample_data_buttons)
     }
   })
-
+  
   ReadCode <- reactive({
     if (length(input$data_file) == 0 && !input$use_sample_data) {
       return(NULL)
@@ -129,22 +131,22 @@ shinyServer( function(input, output, session) {
     }
     return(filestr)
   })
-
+  
   observe({
     # Updates the load code editor.
     updateAceEditor(session, 'code_used_read', value=ReadCode(), readOnly=TRUE)
   })
-
+  
   output$data_table <- renderDataTable({LoadData()})
-
+  
   #############################################################################
-  # Analysis Tab
+  ##### Analysis Tab #####
   #############################################################################
-
+  
   #---------------------------------------------------------------------------#
   # Functions used to run the analyses.
   #---------------------------------------------------------------------------#
-
+  
   ConvertData <- reactive({
     # convert variables to their respective types
     raw.data <- LoadData()
@@ -161,7 +163,7 @@ shinyServer( function(input, output, session) {
     }
     return(raw.data)
   })
-
+  
   ComputeExponent <- reactive({
     # Returns the exponent numeric to be used in the power transformation.
     if (input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
@@ -180,7 +182,7 @@ shinyServer( function(input, output, session) {
     power <- 1 - summary(power.fit)$coefficients[2, 1] / 2
     return(power)
   })
-
+  
   TransformedDepVarColName <- function() {
     # Returns the transformed dependent variable name.
     dep.var <- input$dependent.variable
@@ -190,7 +192,7 @@ shinyServer( function(input, output, session) {
                 'Square Root' = paste0(dep.var, '.sqrt'))
     return(choices[[input$transformation]])
   }
-
+  
   AddTransformationColumns <- reactive({
     # Returns the converted data frame with three new columns for the three
     # transformations.
@@ -207,7 +209,7 @@ shinyServer( function(input, output, session) {
     }
     return(data)
   })
-
+  
   GenerateFormula <- reactive({
     left.side <- paste(TransformedDepVarColName(), '~')
     if (input$exp.design %in% c('LR', 'CRD1')) {
@@ -234,79 +236,83 @@ shinyServer( function(input, output, session) {
                            input$independent.variable.one, ':',
                            input$independent.variable.blk, ')')
     } else if (input$exp.design == 'SPRCBD') {
-      right.side <- paste0(input$independent.variable.one, ' + ',
-                           input$independent.variable.two, ' + ',
-                           input$independent.variable.one, ':',
-                           input$independent.variable.two, ' + ',
-                           input$independent.variable.blk, ' + Error(',
-                           input$independent.variable.one, ':',
-                           input$independent.variable.blk, ')')
+      right.side <- paste0(input$independent.variable.one, ' * ',
+                           input$independent.variable.two)
     }
     form <- paste(left.side, right.side)
     return(form)
   })
-
+  
+  GenerateRandomEffFormula <- reactive({
+    if(input$exp.design == 'SPRCBD'){
+      f <- paste0('~ 1|', input$independent.variable.blk, '/', input$independent.variable.one)
+      return(f)
+    }
+  })
+  
   GenerateFormulaWithoutError <- reactive({
     f <- GenerateFormula()
-    if (input$exp.design %in% c('SPCRD', 'SPRCBD')) {
+    if (input$exp.design %in% c('SPCRD')) {
       f <- gsub(' \\+ Error\\(.*:.*)', '', f)
     }
     return(f)
   })
-
+  
   GetFitCall <- reactive({
     # Returns the call used to run the analysis.
-
+    
     # The following line forces this reactive expression to take a dependency on
     # the "Run Analysis" button. Thus this will run anytime it is clicked.
     input$run_analysis
-
+    
     # isolate prevents this reactive expression from depending on any of the
     # variables inside the isolated expression.
     isolate({
-
-      fit <- call('aov',
-                  formula = as.formula(GenerateFormula()),
-                  data = as.name('my.data'))
-
-      # santizes the call (from global.R)
-      fit <- strip.args(fit)
-
+      if (input$exp.design=='SPRCBD'){
+        fit <- call('lme',
+                    fixed   = as.formula(GenerateFormula()),
+                    random  = as.formula(GenerateRandomEffFormula()),
+                    data    = as.name('my.data'))
+      } else {
+        fit <- call('aov',
+                    formula = as.formula(GenerateFormula()),
+                    data = as.name('my.data'))
+      }
     })
-
+    
     return(fit)
-
-    })
-
+    
+  })
+  
   EvalFit <- reactive({
     # Returns the fit model.
-
+    
     # Run every time the "Run Analysis" button is pressed.
     input$run_analysis
-
+    
     isolate({
       my.data <- AddTransformationColumns()
       model.fit <- eval(GetFitCall())
     })
-
+    
     return(model.fit)
-
-    })
-
+    
+  })
+  
   GetFitExpr <- reactive({
     # Returns the char of the expression used to evaluate the fit.
-
+    
     # Run every time the "Run Analysis" button is pressed.
     input$run_analysis
-
+    
     isolate({
       x <- deparse(GetFitCall(), width.cutoff=500L)
     })
-
+    
     return(x)
-
+    
   })
-
+  
   ModelFitWithoutError <- reactive({
     # Returns the model fit from formulas with the Error() term removed.
     input$run_analysis
@@ -320,7 +326,7 @@ shinyServer( function(input, output, session) {
     }
     return(model.fit)
   })
-
+  
   GenerateIndividualFormulas <- reactive({
     # Returns single variate formulas.
     dep.var <- TransformedDepVarColName()
@@ -341,122 +347,123 @@ shinyServer( function(input, output, session) {
       return(l)
     }
   })
-
+  
   GenerateTukeyFormula <- reactive({
     dep.var <- TransformedDepVarColName()
     return(paste0(GenerateFormulaWithoutError(),
                   ' + ', dep.var, '.pred.sq'))
   })
-
+  
   GenerateAnalysisCode <- reactive({
     # Returns the R code a user would type to run the analysis.
     if (input$run_analysis==0) {
       return(NULL)
     } else {
-
-      # code for converting columns to factors
+      # analysisCode for converting columns to factors
       factor.idx <- which(sapply(ConvertData(), is.factor))
       if (length(factor.idx) > 0) {
         factor.names <- names(ConvertData()[factor.idx])
-        code <- paste0('my.data$', factor.names, ' <- as.factor(my.data$',
-                        factor.names, ')', collapse='\n')
-        code <- paste0('# convert categorical variables to factors\n', code)
+        analysisCode <- paste0('my.data$', factor.names, ' <- as.factor(my.data$',
+                               factor.names, ')', collapse='\n')
+        analysisCode <- paste0('# convert categorical variables to factors\n', analysisCode)
       }
-
-      # code for the transformation
+      
+      # analysisCode for the transformation
       dep.var <- input$dependent.variable
       if (input$transformation == 'Power') {
-        code <- paste0(code, '\n\n# transform the dependent variable\n')
+        analysisCode <- paste0(analysisCode, '\n\n# transform the dependent variable\n')
         if (input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
-          code <- paste0(code, 'mean.data <- aggregate(', dep.var, ' ~ ',
-                         input$independent.variable.one)
+          analysisCode <- paste0(analysisCode, 'mean.data <- aggregate(', dep.var, ' ~ ',
+                                 input$independent.variable.one)
         } else {
-          code <- paste0(code, 'mean.data <- aggregate(', dep.var, ' ~ ',
-                         input$independent.variable.one, ' + ',
-                         input$independent.variable.two)
+          analysisCode <- paste0(analysisCode, 'mean.data <- aggregate(', dep.var, ' ~ ',
+                                 input$independent.variable.one, ' + ',
+                                 input$independent.variable.two)
         }
-        code <- paste0(code,
-                       ', data = my.data, function(x) ',
-                       'c(logmean=log10(mean(x)), logvar=log10(var(x))))\n',
-                       'power.fit <- lm(logvar ~ logmean, ',
-                       'data = as.data.frame(mean.data$', dep.var, '))\n',
-                       'power <- 1 - summary(power.fit)$coefficients[2, 1] / 2\n',
-                       'my.data$', dep.var, '.pow <- my.data$', dep.var,
-                       '^power')
-      } else if (input$transformation == 'Logarithmic') {
-        code <- paste0(code, '\n\n# transform the dependent variable\nmy.data$',
-                       input$dependent.variable, '.log10 <- log10(my.data$',
-                       input$dependent.variable, ')')
-      } else if (input$transformation == 'Square Root') {
-        code <- paste0(code, '\n\n# transform the dependent variable\nmy.data$',
-                       input$dependent.variable, '.sqrt <- sqrt(my.data$',
-                       input$dependent.variable, ')')
+        analysisCode <- paste0(analysisCode,
+                               ', data = my.data, function(x) ',
+                               'c(logmean=log10(mean(x)), logvar=log10(var(x))))\n',
+                               'power.fit <- lm(logvar ~ logmean, ',
+                               'data = as.data.frame(mean.data$', dep.var, '))\n',
+                               'power <- 1 - summary(power.fit)$coefficients[2, 1] / 2\n',
+                               'my.data$', dep.var, '.pow <- my.data$', dep.var,
+                               '^power')
+      } 
+      if (input$transformation == 'Logarithmic') {
+        analysisCode <- paste0(analysisCode, '\n\n# transform the dependent variable\nmy.data$',
+                               input$dependent.variable, '.log10 <- log10(my.data$',
+                               input$dependent.variable, ')')
+      } 
+      if (input$transformation == 'Square Root') {
+        analysisCode <- paste0(analysisCode, '\n\n# transform the dependent variable\nmy.data$',
+                               input$dependent.variable, '.sqrt <- sqrt(my.data$',
+                               input$dependent.variable, ')')
       }
-
-      # code for the model fit and summary
-      code <- paste0(code, '\n\n# fit the model\n')
-      code <- paste0(code, 'model.fit <- ', GetFitExpr())
-      code <- paste0(code, '\n\n# print summary table\nsummary(model.fit)')
-
-      # code for the assumptions tests
+      
+      # analysisCode for the model fit and summary
+      analysisCode <- paste0(analysisCode, '\n\n# fit the model\n')
+      analysisCode <- paste0(analysisCode, 'model.fit <- ', GetFitExpr())
+      analysisCode <- paste0(analysisCode, '\n\n# print summary table\nsummary(model.fit)')
+      
+      # analysisCode for the assumptions tests
       if (!input$exp.design %in% c('SPCRD', 'SPRCBD')) {
-        code <- paste0(code,
-                       '\n\n# assumptions tests\nshapiro.test(residuals(model.fit))')
+        analysisCode <- paste0(analysisCode,
+                               '\n\n# assumptions tests\nshapiro.test(residuals(model.fit))')
       }
-
+      
       if (input$exp.design != 'LR') {
         formulas <- GenerateIndividualFormulas()
         levene.calls <- paste0('leveneTest(', formulas, ', data = my.data)',
                                collapse = '\n')
-        code <- paste0(code, "\n\n# Levene's Test\nlibrary('car')\n", levene.calls)
+        analysisCode <- paste0(analysisCode, "\n\n# Levene's Test\nlibrary('car')\n", levene.calls)
       }
-
+      
       trans.dep.var <- TransformedDepVarColName()
       if (!input$exp.design %in% c('LR', 'CRD1', 'CRD2')) {
         # TODO : I'm not sure this is the correct thing to do for split plot
         # Tukey tests.
-        if (input$exp.design %in% c('SPCRD', 'SPRCBD')) {
-          fit.name <- 'model.fit.no.error'
-          fit.line <- paste0(fit.name, ' <- aov(',
-                             GenerateFormulaWithoutError(), ', data = my.data)\n')
-        } else {
-          fit.name <- 'model.fit'
-          fit.line <- ''
-        }
-        code <- paste0(code, "\n\n# Tukey's Test for Nonadditivity\n", fit.line,
-                       "my.data$", trans.dep.var,
-                       ".pred.sq <- predict(", fit.name, ")^2\n",
-                       "tukey.one.df.fit <- lm(formula = ",
-                       GenerateTukeyFormula(),
-                       ", data = my.data)\nanova(tukey.one.df.fit)")
+        #         if (input$exp.design %in% c('SPCRD', 'SPRCBD')) {
+        #           fit.name <- 'model.fit.no.error'
+        #           fit.line <- paste0(fit.name, ' <- aov(',
+        #                              GenerateFormulaWithoutError(), ', data = my.data)\n')
+        #         } else {
+        fit.name <- 'model.fit'
+        fit.line <- ''
+        #         }
+        analysisCode <- paste0(analysisCode, "\n\n# Tukey's Test for Nonadditivity\n", fit.line,
+                               "my.data$", trans.dep.var,
+                               ".pred.sq <- predict(", fit.name, ")^2\n",
+                               "tukey.one.df.fit <- lm(formula = ",
+                               GenerateTukeyFormula(),
+                               ", data = my.data)\nanova(tukey.one.df.fit)")
       }
-
-      return(code)
+      # browser()
+      return(analysisCode)
     }
   })
-
+  
   observe({
     # Updates the analysis code in the editor.
-    input$run_analysis
+    GenerateAnalysisCode()
     updateAceEditor(session, 'code_used_model',
                     value=isolate(GenerateAnalysisCode()), readOnly=TRUE)
   })
-
+  
   # TODO : It could be useful to break this up into each plot and utilize this
   # code for actual evaluation later on to deduplicate the code.
   MakePlotAnalysisCode <- reactive({
     if (input$exp.design %in% c('SPCRD', 'SPRCBD')) {
-      code <- paste0("# Residuals vs. Fitted\nplot(model.fit.no.error, which = 1)")
-      code <- paste0(code, "\n\n# Kernel Density Plot",
-                     "\nplot(density(residuals(model.fit.no.error)))")
+      analysisCode <- paste0("# Residuals vs. Fitted\nplot(model.fit.no.error, which = 1)")
+      analysisCode <- paste0(analysisCode, "\n\n# Kernel Density Plot",
+                             "\nplot(density(residuals(model.fit.no.error)))")
     } else {
-      code <- paste0("# Residuals vs. Fitted\nplot(model.fit, which = 1)")
-      code <- paste0(code, "\n\n# Kernel Density Plot\nplot(density(residuals(model.fit)))")
+      analysisCode <- paste0("# Residuals vs. Fitted\nplot(model.fit, which = 1)")
+      analysisCode <- paste0(analysisCode, "\n\n# Kernel Density Plot\nplot(density(residuals(model.fit)))")
     }
-
+    
     if (input$exp.design == 'LR') {
-      code <- paste0(code, "\n\n# Best Fit Line\nplot(formula = ",
-                     GenerateFormula(), ", data = my.data)\nabline(model.fit)")
+      analysisCode <- paste0(analysisCode, "\n\n# Best Fit Line\nplot(formula = ",
+                             GenerateFormula(), ", data = my.data)\nabline(model.fit)")
     } else {
       dep.var <- TransformedDepVarColName()
       ind.var.one <- input$independent.variable.one
@@ -464,40 +471,40 @@ shinyServer( function(input, output, session) {
       f1 <- paste0(dep.var, ' ~ ', ind.var.one)
       main <- paste0("Effect of ", ind.var.one, " on ",
                      dep.var)
-      code <- paste0(code, "\n\n# Effects Box Plots\n",
-                     "boxplot(", f1, ", data = my.data, main = '", main,
-                     "', xlab = '", ind.var.one,
-                     "', ylab = '", dep.var,  "')")
+      analysisCode <- paste0(analysisCode, "\n\n# Effects Box Plots\n",
+                             "boxplot(", f1, ", data = my.data, main = '", main,
+                             "', xlab = '", ind.var.one,
+                             "', ylab = '", dep.var,  "')")
       if (!input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
         f2 <- paste0(dep.var, ' ~ ', ind.var.two)
         main <- paste0("Effect of ", ind.var.two, " on ",
                        dep.var)
-        code <- paste0(code, "\nboxplot(", f2, ", data = my.data, main = '",
-                       main, "', xlab = '", ind.var.two,
-                       "', ylab = '", dep.var,  "')")
+        analysisCode <- paste0(analysisCode, "\nboxplot(", f2, ", data = my.data, main = '",
+                               main, "', xlab = '", ind.var.two,
+                               "', ylab = '", dep.var,  "')")
       }
     }
-
+    
     if (!input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
-      code <- paste0(code, "\n# Interaction Plots\n",
-                     "interaction.plot(my.data$", ind.var.one, ", my.data$",
-                     ind.var.two, ", my.data$", dep.var, ", xlab = '",
-                     ind.var.one, "', trace.label = '", ind.var.two, "', ylab = '",
-                     dep.var, "')")
-      code <- paste0(code, "\ninteraction.plot(my.data$", ind.var.two,
-                     ", my.data$", ind.var.one, ", my.data$", dep.var, ", xlab = '",
-                     ind.var.two, "', trace.label = '", ind.var.one,
-                     "', ylab = '", dep.var, "')")
+      analysisCode <- paste0(analysisCode, "\n# Interaction Plots\n",
+                             "interaction.plot(my.data$", ind.var.one, ", my.data$",
+                             ind.var.two, ", my.data$", dep.var, ", xlab = '",
+                             ind.var.one, "', trace.label = '", ind.var.two, "', ylab = '",
+                             dep.var, "')")
+      analysisCode <- paste0(analysisCode, "\ninteraction.plot(my.data$", ind.var.two,
+                             ", my.data$", ind.var.one, ", my.data$", dep.var, ", xlab = '",
+                             ind.var.two, "', trace.label = '", ind.var.one,
+                             "', ylab = '", dep.var, "')")
     }
-
-    return(code)
+    
+    return(analysisCode)
   })
-
+  
   #---------------------------------------------------------------------------#
   # UI elements for the analysis tab side panel.
   #---------------------------------------------------------------------------#
-
-  output$select.design <- renderUI({
+  
+  output$selectDesign <- renderUI({
     # Renders a dropdown for selecting the type of experimental design.
     if(is.null(LoadData())){
       h4('Please upload or select data first.')
@@ -510,20 +517,20 @@ shinyServer( function(input, output, session) {
                    'Split-Plot Completely Randomized Design' = 'SPCRD',
                    'Split-Plot Randomized Complete Block Design' = 'SPRCBD')
       # TODO : Add in the two designs with random effects.
-
+      
       selectInput('exp.design',
                   'Select Your Experimental Design',
                   choices = choices,
                   selected = NULL)
-
+      
       # TODO : When this is selected it should clear all of the analysis related
       # input variables so nothing lingers from previous analyses, e.g.
       # independent.variable.two.
-
+      
     }
   })
-
-  output$select.dependent <- renderUI({
+  
+  output$selectDependent <- renderUI({
     # Renders a dropdown for selecting the dependent variable from the loaded
     # data.
     if (is.null(input$exp.design)) {
@@ -536,8 +543,8 @@ shinyServer( function(input, output, session) {
                   selected = NULL)
     }
   })
-
-  output$select.independent <- renderUI({
+  
+  output$selectIndependent <- renderUI({
     # Renders a number of dropdowns for selecting in independent variables.
     # TODO : This should check that the variable type panel has been run,
     # otherwise `ConvertData()` will fail.
@@ -549,90 +556,90 @@ shinyServer( function(input, output, session) {
       if (input$exp.design == 'LR') {
         selectInput('independent.variable.one',
                     'Select a single continous independent variable:',
-                     choices = choices,
-                     selected = NULL)
+                    choices = choices,
+                    selected = NULL)
       } else if (input$exp.design == 'CRD1') {
         selectInput('independent.variable.one',
                     'Select a single independent factor variable:',
-                     choices = choices,
-                     selected = NULL)
+                    choices = choices,
+                    selected = NULL)
       } else if (input$exp.design == 'CRD2') {
         input1 <- selectInput('independent.variable.one',
-                    'Select the first independent factor variable:',
-                     choices = choices,
-                     selected = NULL)
+                              'Select the first independent factor variable:',
+                              choices = choices,
+                              selected = NULL)
         input2 <- selectInput('independent.variable.two',
-                    'Select the second independent factor variable:',
-                     choices = choices,
-                     selected = NULL)
+                              'Select the second independent factor variable:',
+                              choices = choices,
+                              selected = NULL)
         return(list(input1, input2))
       } else if (input$exp.design == 'RCBD1') {
         input1 <- selectInput('independent.variable.one',
-                    'Select the first independent factor variable:',
-                     choices = choices,
-                     selected = NULL)
+                              'Select the first independent factor variable:',
+                              choices = choices,
+                              selected = NULL)
         input2 <- selectInput('independent.variable.blk',
-                    'Select the blocking factor variable:',
-                     choices = choices,
-                     selected = NULL)
+                              'Select the blocking factor variable:',
+                              choices = choices,
+                              selected = NULL)
         return(list(input1, input2))
       } else if (input$exp.design == 'RCBD2') {
         input1 <- selectInput('independent.variable.one',
-                    'Select the first independent factor variable:',
-                     choices = choices,
-                     selected = NULL)
+                              'Select the first independent factor variable:',
+                              choices = choices,
+                              selected = NULL)
         input2 <- selectInput('independent.variable.two',
-                    'Select the second independent factor variable:',
-                     choices = choices,
-                     selected = NULL)
+                              'Select the second independent factor variable:',
+                              choices = choices,
+                              selected = NULL)
         input3 <- selectInput('independent.variable.blk',
-                    'Select the blocking factor variable:',
-                     choices = choices,
-                     selected = NULL)
+                              'Select the blocking factor variable:',
+                              choices = choices,
+                              selected = NULL)
         return(list(input1, input2, input3))
       } else if (input$exp.design == 'SPCRD') {
         input1 <- selectInput('independent.variable.one',
-                    'Select the main plot treatment:',
-                     choices = choices,
-                     selected = NULL)
+                              'Select the main plot treatment:',
+                              choices = choices,
+                              selected = NULL)
         input2 <- selectInput('independent.variable.two',
-                    'Select the sub plot treatment:',
-                     choices = choices,
-                     selected = NULL)
+                              'Select the sub plot treatment:',
+                              choices = choices,
+                              selected = NULL)
         input3 <- selectInput('independent.variable.blk',
-                    'Select the repetition:',
-                     choices = choices,
-                     selected = NULL)
+                              'Select the repetition:',
+                              choices = choices,
+                              selected = NULL)
         return(list(input1, input2, input3))
       } else if (input$exp.design == 'SPRCBD') {
         input1 <- selectInput('independent.variable.one',
-                    'Select the main plot treatment:',
-                     choices = choices,
-                     selected = NULL)
+                              'Select the main plot treatment:',
+                              choices = choices,
+                              selected = NULL)
         input2 <- selectInput('independent.variable.two',
-                    'Select the sub plot treatment:',
-                     choices = choices,
-                     selected = NULL)
+                              'Select the sub plot treatment:',
+                              choices = choices,
+                              selected = NULL)
         input3 <- selectInput('independent.variable.blk',
-                    'Select the blocking factor variable:',
-                     choices = choices,
-                     selected = NULL)
+                              'Select the blocking factor variable:',
+                              choices = choices,
+                              selected = NULL)
         return(list(input1, input2, input3))
       }
     }
   })
-
+  
   output$var_types_select <- renderUI({
     # Renders a series of radio buttons for selecting a type for each varible:
     # numeric or factor.
-
+    
     raw.data <- LoadData()
     raw.data.col.names <- names(raw.data)
-
+    
     if (is.null(raw.data)) {
       return(NULL)
     }
-
+    
     class.recode <- c('character'='factor',
                       'factor'='factor',
                       'logical'='factor',
@@ -643,7 +650,7 @@ shinyServer( function(input, output, session) {
     for(i in 1:ncol(raw.data)){
       clss <- class(raw.data[,i])
       clss <- class.recode[clss]
-
+      
       btns[[i]] <- radioButtons(inputId=paste0(raw.data.col.names[i], '_recode'),
                                 label=raw.data.col.names[i],
                                 choices=c('Numeric'='numeric', 'Grouping'='factor'),
@@ -652,11 +659,11 @@ shinyServer( function(input, output, session) {
     }
     return(btns)
   })
-
+  
   #---------------------------------------------------------------------------#
   # UI elements for the analysis tab main panel.
   #---------------------------------------------------------------------------#
-
+  
   output$formula <- renderText({
     if(is.null(input$run_analysis) || input$run_analysis == 0) {
       return(NULL)
@@ -664,13 +671,19 @@ shinyServer( function(input, output, session) {
       GenerateFormula()
     }
   })
-
+  
   output$fit.summary.text <- renderPrint({
-    input$run_analysis
-    isolate({fit.summary <- summary(EvalFit())})
+    # input$run_analysis
+    # isolate({
+    if(input$exp.design != 'SPRCBD'){
+      fit.summary <- summary(EvalFit())
+    } else {
+      fit.summary <- anova(EvalFit())
+    }
+    # })
     return(fit.summary)
   })
-
+  
   output$fit.summary <- renderUI({
     if(is.null(input$run_analysis) || input$run_analysis == 0) {
       return(NULL)
@@ -680,7 +693,7 @@ shinyServer( function(input, output, session) {
            verbatimTextOutput('fit.summary.text'))
     }
   })
-
+  
   output$exponent <- renderUI({
     # Renders a paragraph tag with the computed exponent value.
     if (input$transformation == 'Power') {
@@ -691,7 +704,7 @@ shinyServer( function(input, output, session) {
       return(NULL)
     }
   })
-
+  
   output$shapiro.wilk.results.text <- renderPrint({
     input$run_analysis
     # NOTE : We don't do the Shapiro-Wilk test for the split plot designs
@@ -704,7 +717,7 @@ shinyServer( function(input, output, session) {
                         "it is not straightforward for split-plot designs.")))
     }
   })
-
+  
   output$shapiro.wilk.results <- renderUI({
     if(is.null(input$run_analysis) || input$run_analysis == 0) {
       return(NULL)
@@ -713,7 +726,7 @@ shinyServer( function(input, output, session) {
            verbatimTextOutput('shapiro.wilk.results.text'))
     }
   })
-
+  
   output$levene.results.text <- renderPrint({
     input$run_analysis
     isolate({
@@ -722,7 +735,7 @@ shinyServer( function(input, output, session) {
     })
     return(lapply(formulas, leveneTest, data = my.data))
   })
-
+  
   output$levene.results <- renderUI({
     if(is.null(input$run_analysis) || input$run_analysis == 0) {
       return(NULL)
@@ -735,7 +748,7 @@ shinyServer( function(input, output, session) {
       }
     }
   })
-
+  
   output$tukey.results.text <- renderPrint({
     input$run_analysis
     isolate({
@@ -750,7 +763,7 @@ shinyServer( function(input, output, session) {
     })
     return(anova(tukey.one.df.fit))
   })
-
+  
   output$tukey.results <- renderUI({
     if(is.null(input$run_analysis) || input$run_analysis == 0) {
       return(NULL)
@@ -769,37 +782,37 @@ shinyServer( function(input, output, session) {
       }
     }
   })
-
+  
   output$plot.residuals.vs.fitted <- renderPlot({
     input$run_analysis
     model.fit <- ModelFitWithoutError()
     plot(model.fit, which = 1)
   })
-
+  
   output$residuals.vs.fitted.plot <- renderUI({
     if (is.null(input$run_analysis) || input$run_analysis == 0) {
       return(NULL)
     } else {
-    list(h2('Residuals vs Fitted'),
-         plotOutput('plot.residuals.vs.fitted'))
+      list(h2('Residuals vs Fitted'),
+           plotOutput('plot.residuals.vs.fitted'))
     }
   })
-
+  
   output$plot.kernel.density <- renderPlot({
     input$run_analysis
     model.fit <- ModelFitWithoutError()
     plot(density(residuals(model.fit)))
   })
-
+  
   output$kernel.density.plot <- renderUI({
     if (is.null(input$run_analysis) || input$run_analysis == 0) {
       return(NULL)
     } else {
-    list(h2('Kernel Density of the Residuals'),
-         plotOutput('plot.kernel.density'))
+      list(h2('Kernel Density of the Residuals'),
+           plotOutput('plot.kernel.density'))
     }
   })
-
+  
   output$plot.best.fit <- renderPlot({
     input$run_analysis
     f <- paste0(input$dependent.variable, ' ~ ',
@@ -809,7 +822,7 @@ shinyServer( function(input, output, session) {
     model.fit <- ModelFitWithoutError()
     abline(model.fit)
   })
-
+  
   output$best.fit.plot <- renderUI({
     if (is.null(input$run_analysis) || input$run_analysis == 0) {
       return(NULL)
@@ -822,7 +835,7 @@ shinyServer( function(input, output, session) {
       }
     }
   })
-
+  
   output$plot.boxplot.one <- renderPlot({
     input$run_analysis
     dep.var <- TransformedDepVarColName()
@@ -837,7 +850,7 @@ shinyServer( function(input, output, session) {
               ylab = dep.var)
     }
   })
-
+  
   output$plot.boxplot.two <- renderPlot({
     input$run_analysis
     dep.var <- TransformedDepVarColName()
@@ -852,7 +865,7 @@ shinyServer( function(input, output, session) {
               ylab = dep.var)
     }
   })
-
+  
   output$boxplot.plot <- renderUI({
     input$run_analysis
     if (is.null(input$run_analysis) || input$run_analysis == 0) {
@@ -873,7 +886,7 @@ shinyServer( function(input, output, session) {
       }
     }
   })
-
+  
   output$plot.interaction.one <- renderPlot({
     input$run_analysis
     isolate({
@@ -884,11 +897,11 @@ shinyServer( function(input, output, session) {
         my.data <- AddTransformationColumns()
         interaction.plot(my.data[[ind.var.one]], my.data[[ind.var.two]],
                          my.data[[dep.var]], xlab = ind.var.one, trace.label =
-                         ind.var.two, ylab = dep.var)
+                           ind.var.two, ylab = dep.var)
       }
     })
   })
-
+  
   output$plot.interaction.two <- renderPlot({
     input$run_analysis
     isolate({
@@ -899,30 +912,30 @@ shinyServer( function(input, output, session) {
         my.data <- AddTransformationColumns()
         interaction.plot(my.data[[ind.var.two]], my.data[[ind.var.one]],
                          my.data[[dep.var]], xlab = ind.var.two, trace.label =
-                         ind.var.one, ylab = dep.var)
+                           ind.var.one, ylab = dep.var)
       }
     })
   })
-
+  
   output$interaction.plot <- renderUI({
     input$run_analysis
     if (is.null(input$run_analysis) || input$run_analysis == 0) {
       return(NULL)
     } else {
       if (!input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
-          return(list(h2('Interaction Plots'),
-                         plotOutput('plot.interaction.one'),
-                         plotOutput('plot.interaction.two')))
+        return(list(h2('Interaction Plots'),
+                    plotOutput('plot.interaction.one'),
+                    plotOutput('plot.interaction.two')))
       } else {
         return(NULL)
       }
     }
   })
-
+  
   #############################################################################
   # Post hoc tab
   #############################################################################
-
+  
   MakePostHocPlot <- function(data, fit, dep.var, ind.var) {
     lsd.results <- LSD.test(fit, ind.var)
     summary.stats <- summarySE(data = data, dep.var, groupvars = ind.var)
@@ -937,23 +950,23 @@ shinyServer( function(input, output, session) {
     merged.table <- merge(summary.stats, lsd.results$groups, by = "trt")
     ggplot(merged.table, aes(x = trt, y = means, ymin = 0,
                              ymax = 1.35 * max(means))) +
-    geom_bar(stat = "identity", fill = "gray50", colour = "black", width = 0.7) +
-    geom_errorbar(aes(ymax = means + se, ymin = means - se), width = 0.0,
-        size = 0.5, color = "black") +
-    geom_text(aes(label = M, y = means + se / 1.8, vjust = -2.5)) +
-    labs(x = x.label, y = dep.var) +
-    theme_bw() +
-    theme(panel.grid.major.x = element_blank(),
-          panel.grid.major.y = element_line(colour = "grey80"),
-          plot.title = element_text(size = rel(1.5),
-                                    face = "bold", vjust = 1.5),
-          axis.title = element_text(face = "bold"),
-          axis.title.y = element_text(vjust= 1.8),
-          axis.title.x = element_text(vjust= -0.5),
-          panel.border = element_rect(colour = "black"),
-          text = element_text(size = 20))
+      geom_bar(stat = "identity", fill = "gray50", colour = "black", width = 0.7) +
+      geom_errorbar(aes(ymax = means + se, ymin = means - se), width = 0.0,
+                    size = 0.5, color = "black") +
+      geom_text(aes(label = M, y = means + se / 1.8, vjust = -2.5)) +
+      labs(x = x.label, y = dep.var) +
+      theme_bw() +
+      theme(panel.grid.major.x = element_blank(),
+            panel.grid.major.y = element_line(colour = "grey80"),
+            plot.title = element_text(size = rel(1.5),
+                                      face = "bold", vjust = 1.5),
+            axis.title = element_text(face = "bold"),
+            axis.title.y = element_text(vjust= 1.8),
+            axis.title.x = element_text(vjust= -0.5),
+            panel.border = element_rect(colour = "black"),
+            text = element_text(size = 20))
   }
-
+  
   # TODO : Clean up this insane nested if statement! Sorry...
   output$lsd.results <- renderUI({
     input$run_post_hoc_analysis
@@ -965,7 +978,7 @@ shinyServer( function(input, output, session) {
         dep.var <- TransformedDepVarColName()
         ind.var.one <- input$independent.variable.one
         if (exp.design %in% c('CRD1', 'RCBD1')) {
-            ind.var.two <- NULL
+          ind.var.two <- NULL
         } else {
           ind.var.two <- input$independent.variable.two
         }
@@ -1003,8 +1016,10 @@ shinyServer( function(input, output, session) {
         } else {
           idx <- 4
         }
-        interaction.p.value <- summary(fit)[[1]]$'Pr(>F)'[idx]
-        if (interaction.p.value < alpha) {
+        if (exp.design != 'SPRCBD'){
+          interaction.p.value <- summary(fit)[[1]]$'Pr(>F)'[idx]
+        } 
+        if (interaction.p.value < .05) {
           text <- paste0("The interaction, ", paste(ind.vars, collapse = ":"),
                          ", is significant (alpha = 0.05).")
           if (var.one.p.value < alpha && var.two.p.value < alpha){
@@ -1037,8 +1052,12 @@ shinyServer( function(input, output, session) {
         }
       } else if (exp.design %in% c('SPCRD', 'SPRCBD')) {
         # NOTE : This always seems to be [2] for both formulas.
-        interaction.p.value <- summary(fit)$'Error: Within'[[1]]$'Pr(>F)'[2]
-        if (interaction.p.value < alpha) {
+        if(exp.design == 'SPCRD'){
+          interaction.p.value <- summary(fit)$'Error: Within'[[1]]$'Pr(>F)'[2]
+        } else {
+          interaction.p.value <- anova(fit)[4, 'p-value']
+        }
+        if (interaction.p.value < .05) {
           stuff <- list()
           for (ivars in list(ind.vars, rev(ind.vars))) {
             f <- paste0(dep.var, ' ~ ', ivars[2])
@@ -1064,13 +1083,13 @@ shinyServer( function(input, output, session) {
                 # overwritten or that the reactiveness of the functions does
                 # something weird.
                 #output[[paste0(output.name, '.plot')]] <- renderPlot({
-                  #MakePostHocPlot(sub.data, sub.model.fit, dep.var, ivars[2])
+                #MakePostHocPlot(sub.data, sub.model.fit, dep.var, ivars[2])
                 #})
                 #stuff[[paste0(output.name, '.plot')]] <-
-                  #plotOutput(paste0(output.name, '.plot'))
+                #plotOutput(paste0(output.name, '.plot'))
               } else {
                 stuff[[output.name]] <- pre(paste0(ivars[2],
-                  ' effect not significant, thus no LSD is performed.\n'))
+                                                   ' effect not significant, thus no LSD is performed.\n'))
               }
             }
           }
@@ -1100,7 +1119,7 @@ shinyServer( function(input, output, session) {
             })
           } else {
             text <- paste0(text,
-              " Neither the main plot or sub plot is significant.")
+                           " Neither the main plot or sub plot is significant.")
             return(p(text))
           }
           return(list(p(text),
@@ -1112,11 +1131,11 @@ shinyServer( function(input, output, session) {
       }
     }
   })
-
+  
   #############################################################################
   # Report tab
   #############################################################################
-
+  
   output$download_report <- downloadHandler(
     filename = function() {
       input$file.name
@@ -1135,5 +1154,10 @@ shinyServer( function(input, output, session) {
       file.copy(out, file)
     }
   )
-
+  
+  
+  session$onSessionEnded(function() { 
+    stopApp()
+  })
+  
 })
