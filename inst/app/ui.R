@@ -176,8 +176,10 @@ data.analysis.tab <-
                   content = help.text$analysis.code.explanation,
                   placement = 'bottom',
                   trigger = 'click'),
+        conditionalPanel('input.run_analysis !== 0', 
         h2('Model Formula'),
-        verbatimTextOutput('formula'),
+        verbatimTextOutput('formula')
+        ),
         uiOutput('exponent'),
         uiOutput('fit.summary'),
         bsTooltip('fit.summary',
