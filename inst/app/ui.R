@@ -1,9 +1,7 @@
-source('pkg_check.R')
-
-library('shiny')
-library('shinyBS')
-library('shinyAce')
-library('yaml')
+library(shiny)
+library(shinyBS)
+library(shinyAce)
+library(yaml)
 
 ###############################################################################
 # Setup
@@ -26,33 +24,33 @@ load.data.editor <- aceEditor('code_used_read',
                               height='100px')
 
 load.data.side.panel <- sidebarPanel(
-                          h4('Upload your CSV file by pressing "Load data" below'),
-                          h5(paste('Your data should appear to the right. If ',
-                                   'this data is correct, please move to tab ',
-                                   '2: "Data analysis"', sep='')),
-                          fileInput('data_file', 'Load data'),
-                          h6('Code used to read in data:'),
-                          load.data.editor,
-                          checkboxInput('use_sample_data', 'Use sample data instead'),
-                          conditionalPanel(
-                            condition="input.use_sample_data == true",
-                            radioButtons('sample_data_buttons',
-                                         'Select your sample data',
-                                         choices=c('Split plot design'='plots',
-                                                   'Data of corn'='corn',
-                                                   'Data of cotton'='cotton',
-                                                   'Data of sweetpotato yield'='sweetpotato')
-                                                  )),
-                          bsTooltip('code_used_read',
-                                    title='click for more information',
-                                    placement = 'top',
-                                    trigger='hover'),
-                          bsPopover('code_used_read',
-                                    title='Load data R code',
-                                    content=help.text$load.data.explanation,
-                                    placement='top',
-                                    trigger='click')
-                          )
+  h4('Upload your CSV file by pressing "Load data" below'),
+  h5(paste('Your data should appear to the right. If ',
+           'this data is correct, please move to tab ',
+           '2: "Data analysis"', sep='')),
+  fileInput('data_file', 'Load data'),
+  h6('Code used to read in data:'),
+  load.data.editor,
+  checkboxInput('use_sample_data', 'Use sample data instead'),
+  conditionalPanel(
+    condition="input.use_sample_data == true",
+    radioButtons('sample_data_buttons',
+                 'Select your sample data',
+                 choices=c('Split plot design'='plots',
+                           'Data of corn'='corn',
+                           'Data of cotton'='cotton',
+                           'Data of sweetpotato yield'='sweetpotato')
+    )),
+  bsTooltip('code_used_read',
+            title='click for more information',
+            placement = 'top',
+            trigger='hover'),
+  bsPopover('code_used_read',
+            title='Load data R code',
+            content=help.text$load.data.explanation,
+            placement='top',
+            trigger='click')
+)
 
 load.data.tab <- tabPanel('1. Load data',
                           tags$style(type="text/css", "body {padding-top: 55px;}"),
@@ -61,9 +59,9 @@ load.data.tab <- tabPanel('1. Load data',
                             mainPanel(
                               h4('Loaded Data'),
                               dataTableOutput('data_table')
-                              )
                             )
                           )
+)
 
 ###############################################################################
 # Data Analysis Tab
@@ -76,14 +74,14 @@ experimental.design.panel <-
   bsCollapsePanel(
     '1. Experimental Design',
     h5('Choose an experimental design that matches your data.'),
-    uiOutput('select.design'),
+    uiOutput('selectDesign'),
     bsButton('exp_design_info_button',
              "Experimental Design Information"),
     bsModal('exp_design_info_content',
             trigger='exp_design_info_button',
             title='Information On Experimental Design Types',
             h5(help.text$exp.design.types)
-           )
+    )
   )
 
 # The user can adjust whether variables are continuous or factors.
@@ -96,7 +94,7 @@ variable.type.panel <-
     h5('Indicate your variable types below'),
     h6(paste('We have made guesses at the variable types ',
              'in your data, but change the variable types ',
-              'below if they are incorrect.', sep='')),
+             'below if they are incorrect.', sep='')),
     uiOutput('var_types_select'),
     bsButton('variable_type_button',
              'Information on variable types'),
@@ -112,14 +110,14 @@ variable.type.panel <-
 dependent.panel <-
   bsCollapsePanel(
     "3. Dependent Variable",
-    uiOutput('select.dependent'),
+    uiOutput('selectDependent'),
     bsButton('dependent_info_button',
              "Dependent Variable Information"),
     bsModal('dependent_info_content',
             trigger='dependent_info_button',
             title='Information on Dependent Variable Choice',
             h5(help.text$dependent.variable.info)
-           )
+    )
   )
 
 # In this panel the user selects the independent variables. Depending on which
@@ -127,7 +125,7 @@ dependent.panel <-
 independent.panel <-
   bsCollapsePanel(
     '4. Independent variables',
-    uiOutput('select.independent'),
+    uiOutput('selectIndependent'),
     bsButton('select_iv_info',
              'Independent variable info'),
     bsModal('iv_info_content',
@@ -163,10 +161,11 @@ data.analysis.tab <-
           dependent.panel,
           independent.panel,
           transformation.panel
-          ),
+        ),
         actionButton('run_analysis', 'Run analysis')
       ),
       mainPanel(
+        # verbatimTextOutput('debug'),
         analysis.editor,
         bsTooltip('code_used_model',
                   'Click for more information',
@@ -208,13 +207,13 @@ data.analysis.tab <-
 
 posthoc.tab <-
   tabPanel('3. Post-hoc tests',
-    sidebarLayout(
-      sidebarPanel(h4('Post hoc analysis'),
-                   actionButton('run_post_hoc_analysis',
-                                'Run post hoc analysis')),
-      mainPanel(h3('Post hoc tests and figures'),
-                uiOutput('lsd.results'))
-    )
+           sidebarLayout(
+             sidebarPanel(h4('Post hoc analysis'),
+                          actionButton('run_post_hoc_analysis',
+                                       'Run post hoc analysis')),
+             mainPanel(h3('Post hoc tests and figures'),
+                       uiOutput('lsd.results'))
+           )
   )
 
 ###############################################################################
@@ -227,7 +226,7 @@ report.tab <-
              textInput('file.name', "File name:", "analysis.html"),
              downloadButton('download_report')
            )
-          )
+  )
 
 ###############################################################################
 # About Tab
@@ -235,19 +234,19 @@ report.tab <-
 
 about.tab <-
   tabPanel('About',
-    verticalLayout(
-      p(help.text$about),
-      h1('Funding'),
-      p(help.text$funding),
-      img(src = "usaid-logo-600.png", width = "300px"),
-      h1('Authors'),
-      tags$ul(tags$li('Ian K. Kyle'), tags$li('Jason K. Moore'),
-              tags$li('Maegen B. Simmonds')),
-      h1('Disclaimer'),
-      p(help.text$disclaimer),
-      h1('License'),
-      p(help.text$license, tags$a('http://github.com/ucd-ipo/aip-analysis'))
-    )
+           verticalLayout(
+             p(help.text$about),
+             h1('Funding'),
+             p(help.text$funding),
+             img(src = "usaid-logo-600.png", width = "300px"),
+             h1('Authors'),
+             tags$ul(tags$li('Ian K. Kyle'), tags$li('Jason K. Moore'),
+                     tags$li('Maegen B. Simmonds')),
+             h1('Disclaimer'),
+             p(help.text$disclaimer),
+             h1('License'),
+             p(help.text$license, tags$a('http://github.com/ucd-ipo/aip-analysis'))
+           )
   )
 
 ###############################################################################
