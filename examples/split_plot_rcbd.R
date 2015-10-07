@@ -1,11 +1,9 @@
-# This is an example of a split-plot RCBD experimental design. The data can be downloaded
-# from [1].
+# This is an example of a split-plot RCBD experimental design. 
 #
 # To run the script type:
 #
 # source('split_plot_rcbd.R', print.eval = TRUE)
 #
-# [1] http://www.unh.edu/halelab/BIOL933/schedule.htm
 #
 # NOTE : The code that will be shown to the user in the app is bounded by these
 # separators: #------------#.
@@ -13,8 +11,11 @@
 # Load the necessary libraries.
 #-----------------------------------------------------------------------------#
 library('agricolae')  # for LSD.test()
+library('lmerTest') # for lmer()
 library('car')  # for leveneTest()
 library('HH')  # for intxplot()
+library('lsmeans') #for Tukey or LSD test
+library('multcompView') #for cld (compact letter display) methods 
 #-----------------------------------------------------------------------------#
 
 sep <- function(n){
@@ -43,16 +44,8 @@ my.data$TrtmtB <- as.factor(my.data$TrtmtB)
 # This is the standard model for a split-plot RCBD, where 'SeedLotA' is mainplot
 # within 'block' in RCBD, and 'TrtmtB' is subplot within mainplot.
 #-----------------------------------------------------------------------------#
-model <- lmer(Yield ~ SeedLotA*TrtmtB + (1|Block) + (1|Block:SeedlotA), 
+model <- lmer(Yield ~ SeedLotA*TrtmtB + (1|Block) + (1|Block:SeedLotA), 
               data = my.data)
-#-----------------------------------------------------------------------------#
-
-# Following the advice in [2], I create the same model without the error term
-# for assumption testing (and post hoc?). The F values and P values are not
-# correct for this model so the ANOVA table should not be shown to the user.
-#-----------------------------------------------------------------------------#
-model.tmp <- aov(formula = Yield ~ Block + SeedLotA + TrtmtB + SeedLotA:Block +
-                 SeedLotA:TrtmtB, data = my.data)
 #-----------------------------------------------------------------------------#
 
 # Plot the four standard fit plots: residuals vs predicted and the Normal Q-Q
@@ -60,7 +53,7 @@ model.tmp <- aov(formula = Yield ~ Block + SeedLotA + TrtmtB + SeedLotA:Block +
 dev.new()
 #-----------------------------------------------------------------------------#
 par(mfrow = c(2, 1), oma = c(0, 0, 2, 0))
-plot(model.tmp, which = c(1, 2))
+plot(model, which = c(1, 2))
 #-----------------------------------------------------------------------------#
 invisible(dev.copy(png, 'split-plot-rcbd-fit-plots.png'))
 invisible(dev.off())
@@ -77,25 +70,10 @@ leveneTest(Yield ~ TrtmtB, data = my.data)
 #-----------------------------------------------------------------------------#
 sep(79)
 
-# 1-df Tukey:
-cat("One DoF Tukey Test\n")
-sep(79)
-#-----------------------------------------------------------------------------#
-my.data$sq_preds <- predict(model.tmp)^2
-one.df.model <- lm(Yield ~ SeedLotA + Block + SeedLotA:Block + TrtmtB +
-                   SeedLotA:TrtmtB + sq_preds, my.data)
-anova(one.df.model)
-#-----------------------------------------------------------------------------#
-sep(79)
-
-# Print the ANOVA table of the fit. The user will have to note the significant
-# factors.
-# NOTE : `anova(model)` fails here because the `model` variable contains a list
-# of anova results due to the `Error()` term.
 cat('ANOVA Table\n')
 sep(79)
 #-----------------------------------------------------------------------------#
-summary(model)
+anova(model)
 #-----------------------------------------------------------------------------#
 sep(79)
 
@@ -117,78 +95,29 @@ invisible(dev.copy(png, 'split-plot-rcbd-split-plot-interaction-plot.png'))
 invisible(dev.off())
 
 # If the interaction between main-plot : subplot is NOT significant AND the
-# main-plot or sub-plot effect is sig in ANOVA, do the following.
-# TODO : We should be able to simply pass the model to LSD.test() and skip the
-# extraction of the error and dof.
-cat('Least Significant Difference: Interaction Insignficant\n')
+# main-plot IS sig in ANOVA, do the following:
+cat('Tukey method for multiple mean comparison of mainplot: Interaction Insignficant\n')
 sep(79)
 #-----------------------------------------------------------------------------#
-model.summary <- summary(model.tmp)[[1]]
-trim <- function (x) sub("\\s+$", "", x)  # trims trailing whitespace
-row.names(model.summary) <- trim(row.names(model.summary))
-
 # Comparisons among main plot levels
-main.plot.error <- model.summary["SeedLotA", "Mean Sq"]
-main.plot.dof <- model.summary["SeedLotA", "Df"]
-main.plot.lsd.results <- LSD.test(my.data$Yield, my.data$SeedLotA, DFerror =
-                                  main.plot.dof, MSerror = main.plot.error,
-                                  console = TRUE)
-
-# Comparisons among subplot levels
-# NOTE : To compare subplots, it is not necessary to specify subplot error
-# because it is the residual error (the default MSE for all F tests).
-split.plot.error <- model.summary["TrtmtB", "Mean Sq"]
-split.plot.dof <- model.summary["TrtmtB", "Df"]
-split.plot.lsd.results <- LSD.test(my.data$Yield, my.data$TrtmtB, DFerror =
-                                   split.plot.dof, MSerror = split.plot.error,
-                                   console = TRUE)
+cld(lsmeans(model, tukey ~ SeedLotA)) #does number groupings - can we switch to letters?
 #-----------------------------------------------------------------------------#
 sep(79)
-
-# ANOVA table shows significant interaction ==> must do LSD for simple effects
-# (all 12 combinations of SeedLotA and TrtmtB)
+# If the interaction between main-plot : subplot is NOT significant AND the
+# sub-plot IS sig in ANOVA, do the following:
+cat('Tukey method for multiple mean comparison of sub-plot: Interaction Insignficant\n')
+sep(79)
+#-----------------------------------------------------------------------------#
+# Comparisons among sub-plot levels
+cld(lsmeans(model, tukey ~ TrtmtB)) #does number groupings - can we switch to letters?
+#-----------------------------------------------------------------------------#
+sep(79)
+# ANOVA table shows significant interaction ==> must do Tukey on simple effects
+# (all 16 combinations of SeedLotA and TrtmtB)
 cat('Least Significant Difference: Interaction Signficant\n')
 sep(79)
 #-----------------------------------------------------------------------------#
-# (a) Comparisons among subplot levels within a main plot level.
-main.plot.levels <- c(1:nlevels(my.data$SeedLotA))
-for (i in main.plot.levels) {
-  with(subset(my.data, SeedLotA == main.plot.levels[i]),
-       {
-        sep(79)
-        print(paste('SeedLotA = ', main.plot.levels[i]))
-        model.i <- aov(Yield ~ Block + TrtmtB)
-        summary(model.i)
-        # TODO : Ensure this is always grabbed from the correct row.
-        p_value <- summary(model.i)[[1]][["Pr(>F)"]][2]
-        if(p_value < 0.05) {
-          LSD.test(model.i, 'TrtmtB', console = TRUE)
-        } else {
-          print('Treatment effect not significant, thus no LSD is performed')
-        }
-       }
-      )
-}
-# (b) Comparisons among main plot levels within a subplot level.
-split.plot.levels <- c(1:nlevels(my.data$TrtmtB))
-for (i in split.plot.levels) {
-  with(subset(my.data, TrtmtB == split.plot.levels[i]),
-       {
-        sep(79)
-        print(paste('TrtmtB =', split.plot.levels[i]))
-        model.i <- aov(Yield ~ Block + SeedLotA)
-        summary(model.i)
-        # TODO : Ensure this is always grabbed from the correct row.
-        p_value <- summary(model.i)[[1]][["Pr(>F)"]][2]
-        if(p_value < 0.05) {
-          LSD.test(model.i, 'SeedLotA', console = TRUE)
-        } else {
-          print('Treatment effect not significant, thus no LSD is performed')
-        }
-       }
-      )
-}
-# (c) Comparisons between subplot levels across different main plot levels
-# TODO :Trying to figure out how to code for this. It's more complicated.
-#-----------------------------------------------------------------------------#
-sep(79)
+# Comparisons among all combinations of mainplot and subplot levels
+cld(lsmeans(model, tukey ~ SeedLotA + TrtmtB))
+
+
