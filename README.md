@@ -28,15 +28,7 @@ Now install and load the development version of the app with:
 
 ## Usage
 
-The function `AIP` will run the app (i.e., just run `AIP()` in the console). If
-all packages aren't installed, a warning will be generated telling you to stop
-the app and run `initialize_AIP`. First load the library:
-
-```R
-> library('AIP')
-```
-
-Run the app with:
+The function `AIP` will run the app (i.e., just run `AIP()` in the console):
 
 ```R
 > AIP()
