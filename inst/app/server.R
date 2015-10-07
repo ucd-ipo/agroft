@@ -26,7 +26,7 @@ library(nlme)
 # for loading dynamic reports. I don't use rmarkdown because that requires that
 # pandoc be installed which is a whole different ballgame. knitr doesn't require
 # dependencies like that
-library('knitr')
+library(knitr)
 
 shinyServer( function(input, output, session) {
   
@@ -35,7 +35,7 @@ shinyServer( function(input, output, session) {
   #############################################################################
   
   output$debug <- renderText({
-    class(EvalFit())
+    
   })
   
   GetLoadCall <- reactive({
@@ -668,7 +668,11 @@ shinyServer( function(input, output, session) {
     if(is.null(input$run_analysis) || input$run_analysis == 0) {
       return(NULL)
     } else {
-      GenerateFormula()
+      if (!input$exp.design %in% c('SPRCBD', 'SPCRD')) {
+        GenerateFormula()
+      } else {
+        paste('fixed  = ', GenerateFormula(), '\nrandom = ', GenerateRandomEffFormula())
+      }
     }
   })
   
