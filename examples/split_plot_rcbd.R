@@ -8,14 +8,14 @@
 # NOTE : The code that will be shown to the user in the app is bounded by these
 # separators: #------------#.
 
-# Load the necessary libraries.
+# Load the necessary packages.
 #-----------------------------------------------------------------------------#
-library('agricolae')  # for LSD.test()
-library('lmerTest') # for lmer()
-library('car')  # for leveneTest()
-library('HH')  # for intxplot()
-library('lsmeans') #for Tukey or LSD test
-library('multcompView') #for cld (compact letter display) methods 
+library(nlme)
+library(agricolae)  # for LSD.test()
+library(car)  # for leveneTest()
+library(HH)   # for intxplot()
+library(lsmeans) #for Tukey or LSD test
+library(multcompView) #for cld (compact letter display) methods 
 #-----------------------------------------------------------------------------#
 
 sep <- function(n){
@@ -44,7 +44,8 @@ my.data$TrtmtB <- as.factor(my.data$TrtmtB)
 # This is the standard model for a split-plot RCBD, where 'SeedLotA' is mainplot
 # within 'block' in RCBD, and 'TrtmtB' is subplot within mainplot.
 #-----------------------------------------------------------------------------#
-model <- lmer(Yield ~ SeedLotA*TrtmtB + (1|Block) + (1|Block:SeedLotA), 
+model <- lme(fixed = Yield ~ SeedLotA*TrtmtB,
+             random = ~1|Block/SeedLotA,
               data = my.data)
 #-----------------------------------------------------------------------------#
 
