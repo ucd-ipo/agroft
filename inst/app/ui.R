@@ -226,7 +226,7 @@ report.tab <-
   tabPanel('4. Report',
            verticalLayout(
              textInput('file.name', "File name:", "analysis.html"),
-             downloadButton('download_report')
+             uiOutput('download_report_button')
            )
   )
 

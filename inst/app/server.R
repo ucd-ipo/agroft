@@ -1140,6 +1140,20 @@ shinyServer( function(input, output, session) {
   # Report tab
   #############################################################################
   
+  output$download_report_button <- renderUI({
+    if (input$run_analysis == 0){
+      list(bsButton('download_report0_button',
+               "Download Report"),
+      bsModal('download_report0_modal',
+              trigger='download_report0_button',
+              title='Download report error',
+              h5('You must run an analysis before downloading your report.')))
+    } else {
+      downloadButton('download_report', 'Download Report')
+    }
+  })
+  
+  
   output$download_report <- downloadHandler(
     filename = function() {
       input$file.name
