@@ -6,7 +6,7 @@ An analysis interface for the Agriculture Innovation Project
 
 A demo of the app can be accessed here:
 
-https://moorepants.shinyapps.io/aftsp
+http://ikkyle.com/playground/aip-analysis/
 
 ## Installation
 
