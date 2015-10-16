@@ -228,14 +228,7 @@ shinyServer( function(input, output, session) {
                            input$independent.variable.one, ':',
                            input$independent.variable.two, ' + ',
                            input$independent.variable.blk)
-    } else if (input$exp.design == 'SPCRD') {
-      right.side <- paste0(input$independent.variable.one, ' + ',
-                           input$independent.variable.two, ' + ',
-                           input$independent.variable.one, ':',
-                           input$independent.variable.two, ' + Error(',
-                           input$independent.variable.one, ':',
-                           input$independent.variable.blk, ')')
-    } else if (input$exp.design == 'SPRCBD') {
+    } else if (input$exp.design %in%  c('SPRCBD', 'SPCRD')) {
       right.side <- paste0(input$independent.variable.one, ' * ',
                            input$independent.variable.two)
     }
@@ -244,18 +237,10 @@ shinyServer( function(input, output, session) {
   })
   
   GenerateRandomEffFormula <- reactive({
-    if(input$exp.design == 'SPRCBD'){
+    if(input$exp.design %in%  c('SPRCBD', 'SPCRD')){
       f <- paste0('~ 1|', input$independent.variable.blk, '/', input$independent.variable.one)
       return(f)
     }
-  })
-  
-  GenerateFormulaWithoutError <- reactive({
-    f <- GenerateFormula()
-    if (input$exp.design %in% c('SPCRD')) {
-      f <- gsub(' \\+ Error\\(.*:.*)', '', f)
-    }
-    return(f)
   })
   
   GetFitCall <- reactive({
@@ -268,7 +253,7 @@ shinyServer( function(input, output, session) {
     # isolate prevents this reactive expression from depending on any of the
     # variables inside the isolated expression.
     isolate({
-      if (input$exp.design=='SPRCBD'){
+      if (input$exp.design %in%  c('SPRCBD', 'SPCRD')){
         fit <- call('lme',
                     fixed   = as.formula(GenerateFormula()),
                     random  = as.formula(GenerateRandomEffFormula()),
@@ -319,7 +304,7 @@ shinyServer( function(input, output, session) {
     isolate(exp.design <- input$exp.design)
     if (exp.design %in% c('SPCRD', 'SPRCBD')) {
       my.data <- AddTransformationColumns()
-      model.fit <- aov(formula = as.formula(GenerateFormulaWithoutError()),
+      model.fit <- aov(formula = as.formula(GenerateFormula()),
                        data = my.data)
     } else {
       model.fit <- EvalFit()
@@ -350,7 +335,7 @@ shinyServer( function(input, output, session) {
   
   GenerateTukeyFormula <- reactive({
     dep.var <- TransformedDepVarColName()
-    return(paste0(GenerateFormulaWithoutError(),
+    return(paste0(GenerateFormula(),
                   ' + ', dep.var, '.pred.sq'))
   })
   
@@ -425,7 +410,7 @@ shinyServer( function(input, output, session) {
         #         if (input$exp.design %in% c('SPCRD', 'SPRCBD')) {
         #           fit.name <- 'model.fit.no.error'
         #           fit.line <- paste0(fit.name, ' <- aov(',
-        #                              GenerateFormulaWithoutError(), ', data = my.data)\n')
+        #                              GenerateFormula(), ', data = my.data)\n')
         #         } else {
         fit.name <- 'model.fit'
         fit.line <- ''
@@ -677,14 +662,10 @@ shinyServer( function(input, output, session) {
   })
   
   output$fit.summary.text <- renderPrint({
-    # input$run_analysis
-    # isolate({
-    if(input$exp.design != 'SPRCBD'){
-      fit.summary <- summary(EvalFit())
-    } else {
+    isolate({
+      input$run_analysis
       fit.summary <- anova(EvalFit())
-    }
-    # })
+    })
     return(fit.summary)
   })
   
@@ -991,7 +972,7 @@ shinyServer( function(input, output, session) {
         fit <- EvalFit()
       })
       alpha <- 0.05
-      if (exp.design == 'LR') {
+      if (input$exp.design == 'LR') {
         return(p('Post hoc tests are not run for simple linear regression.'))
       } else if (exp.design %in% c('CRD1', 'RCBD1')) {
         # NOTE : The "[1]" gets the first p-value so this relies on the order of
@@ -1012,7 +993,7 @@ shinyServer( function(input, output, session) {
         } else {
           return(p(paste0(ind.vars, ' is not significant.')))
         }
-      } else if (exp.design %in% c('CRD2', 'RCBD2')) {
+      } else if (input$exp.design %in% c('CRD2', 'RCBD2')) {
         var.one.p.value <- summary(fit)[[1]]$'Pr(>F)'[1]
         var.two.p.value <- summary(fit)[[1]]$'Pr(>F)'[2]
         if (exp.design == 'CRD2') {
@@ -1020,9 +1001,6 @@ shinyServer( function(input, output, session) {
         } else {
           idx <- 4
         }
-        if (exp.design != 'SPRCBD'){
-          interaction.p.value <- summary(fit)[[1]]$'Pr(>F)'[idx]
-        } 
         if (interaction.p.value < .05) {
           text <- paste0("The interaction, ", paste(ind.vars, collapse = ":"),
                          ", is significant (alpha = 0.05).")
@@ -1054,18 +1032,14 @@ shinyServer( function(input, output, session) {
                           'hoc analyses for this scenario are not ',
                           'implemented.')))
         }
-      } else if (exp.design %in% c('SPCRD', 'SPRCBD')) {
+      } else if (input$exp.design %in% c('SPCRD', 'SPRCBD')) {
         # NOTE : This always seems to be [2] for both formulas.
-        if(exp.design == 'SPCRD'){
-          interaction.p.value <- summary(fit)$'Error: Within'[[1]]$'Pr(>F)'[2]
-        } else {
           interaction.p.value <- anova(fit)[4, 'p-value']
-        }
         if (interaction.p.value < .05) {
           stuff <- list()
           for (ivars in list(ind.vars, rev(ind.vars))) {
             f <- paste0(dep.var, ' ~ ', ivars[2])
-            if (exp.design == 'SPRCBD') {
+            if (exp.design %in%  c('SPRCBD', 'SPCRD')) {
               f <- paste0(f, ' + ', input$independent.variable.blk)
             }
             for (level in levels(my.data[[ivars[1]]])) {
