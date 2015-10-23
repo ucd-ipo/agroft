@@ -4,11 +4,11 @@ library(shiny)
 # doesn't include. Includes the modals, collapse panels, and tool tips.
 library(shinyBS)
 
-# for displaying R code - pull from github until the correct version is on CRAN
+# for displaying R code
 library(shinyAce)
 
-# for reading in excel files, uncomment once on CRAN. For now it is on github
-# only. It is a package that has no Java dependencies (only c++), so once
+# for reading in excel files,
+# It is a package that has no Java dependencies (only c++), so once
 # binaries are on CRAN, anyone can install it (no JRE required!) and the app can
 # have functionality to read in excel files.
 #library(readxl)
@@ -21,7 +21,7 @@ library(Rmisc)  # for summarySE()
 
 library(ggplot2)  # for ggplot(), etc.
 
-library(nlme)
+library(nlme) #for split plot designs
 
 # for loading dynamic reports. I don't use rmarkdown because that requires that
 # pandoc be installed which is a whole different ballgame. knitr doesn't require
@@ -326,6 +326,7 @@ shinyServer( function(input, output, session) {
                    input$independent.variable.one)
       f2 <- paste0(dep.var, ' ~ ',
                    input$independent.variable.two)
+      # should levenes test be used for block variable in split plot designs?
       l <- list()
       l[[f1]] <- as.formula(f1)
       l[[f2]] <- as.formula(f2)
@@ -386,9 +387,15 @@ shinyServer( function(input, output, session) {
       }
       
       # analysisCode for the model fit and summary
+      if (input$exp.design %in% c('SPRCBD', 'SPCRD')){
+        summaryExpr <- 'anova'
+      } else {
+        summaryExpr <- 'summary'
+      }
+      
       analysisCode <- paste0(analysisCode, '\n\n# fit the model\n')
       analysisCode <- paste0(analysisCode, 'model.fit <- ', GetFitExpr())
-      analysisCode <- paste0(analysisCode, '\n\n# print summary table\nsummary(model.fit)')
+      analysisCode <- paste0(analysisCode, sprintf('\n\n# print summary table\n%s(model.fit)', summaryExpr))
       
       # analysisCode for the assumptions tests
       if (!input$exp.design %in% c('SPCRD', 'SPRCBD')) {
@@ -501,8 +508,7 @@ shinyServer( function(input, output, session) {
                    'Randomized Complete Block Design (RCBD) with Two Treatments' = 'RCBD2',
                    'Split-Plot Completely Randomized Design' = 'SPCRD',
                    'Split-Plot Randomized Complete Block Design' = 'SPRCBD')
-      # TODO : Add in the two designs with random effects.
-      
+
       selectInput('exp.design',
                   'Select Your Experimental Design',
                   choices = choices,
@@ -975,10 +981,6 @@ shinyServer( function(input, output, session) {
       if (input$exp.design == 'LR') {
         return(p('Post hoc tests are not run for simple linear regression.'))
       } else if (exp.design %in% c('CRD1', 'RCBD1')) {
-        # NOTE : The "[1]" gets the first p-value so this relies on the order of
-        # the variables in the RCBD to always have the treatment first. It is a
-        # pain in the ass to detect the order and then extract. Why does R make
-        # this so difficult?
         p.value <- summary(fit)[[1]]$'Pr(>F)'[1]
         if (p.value < alpha) {
           output$lsd.results.text <- renderPrint({
@@ -1077,8 +1079,8 @@ shinyServer( function(input, output, session) {
           isolate({fit.without <- ModelFitWithoutError()})
           text <- paste0("The interaction, ", paste(ind.vars, collapse = ":"),
                          ", is not significant (alpha = 0.05).")
-          main.plot.p.value <- summary(fit)[[1]][[1]]$'Pr(>F)'[1]
-          sub.plot.p.value <- summary(fit)$'Error: Within'[[1]]$'Pr(>F)'[1]
+          main.plot.p.value <- anova(fit)[ind.var.one, 'p-value']
+          sub.plot.p.value <- anova(fit)[ind.var.two, 'p-value']
           if (main.plot.p.value < alpha) {
             text <- paste0(text, " ", ind.var.one, " is significant.")
             output$lsd.results.text.one <- renderPrint({
