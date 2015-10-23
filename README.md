@@ -24,6 +24,7 @@ Now install and load the development version of the app with:
 
 ```R
 > devtools::install_github('ucd-ipo/aip-analysis')
+> library(AIP)
 ```
 
 ## Usage
