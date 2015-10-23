@@ -15,7 +15,7 @@ library(shinyAce)
 
 library(agricolae) # for sample datasets and LSD.Test()
 
-library(car)  # for leveneTest()
+library(car)  # for leveneTest() and Anova()
 
 library(Rmisc)  # for summarySE()
 
@@ -387,15 +387,17 @@ shinyServer( function(input, output, session) {
       }
       
       # analysisCode for the model fit and summary
-      if (input$exp.design %in% c('SPRCBD', 'SPCRD')){
-        summaryExpr <- 'anova'
-      } else {
-        summaryExpr <- 'summary'
-      }
+#       if (input$exp.design %in% c('SPRCBD', 'SPCRD')){
+#         summaryExpr <- 'anova'
+#       } else {
+#         summaryExpr <- 'summary'
+#       }
+        summaryExpr <- 'Anova'
       
       analysisCode <- paste0(analysisCode, '\n\n# fit the model\n')
       analysisCode <- paste0(analysisCode, 'model.fit <- ', GetFitExpr())
-      analysisCode <- paste0(analysisCode, sprintf('\n\n# print summary table\n%s(model.fit)', summaryExpr))
+      analysisCode <- paste0(analysisCode, 
+                             sprintf('\n\n# print summary table\nlibrary(car)\n%s(model.fit)', summaryExpr))
       
       # analysisCode for the assumptions tests
       if (!input$exp.design %in% c('SPCRD', 'SPRCBD')) {
@@ -407,7 +409,7 @@ shinyServer( function(input, output, session) {
         formulas <- GenerateIndividualFormulas()
         levene.calls <- paste0('leveneTest(', formulas, ', data = my.data)',
                                collapse = '\n')
-        analysisCode <- paste0(analysisCode, "\n\n# Levene's Test\nlibrary('car')\n", levene.calls)
+        analysisCode <- paste0(analysisCode, "\n\n# Levene's Test\n", levene.calls)
       }
       
       trans.dep.var <- TransformedDepVarColName()
@@ -670,7 +672,7 @@ shinyServer( function(input, output, session) {
   output$fit.summary.text <- renderPrint({
     isolate({
       input$run_analysis
-      fit.summary <- anova(EvalFit())
+      fit.summary <- Anova(EvalFit(), type='III')
     })
     return(fit.summary)
   })
@@ -1036,7 +1038,7 @@ shinyServer( function(input, output, session) {
         }
       } else if (input$exp.design %in% c('SPCRD', 'SPRCBD')) {
         # NOTE : This always seems to be [2] for both formulas.
-          interaction.p.value <- anova(fit)[4, 'p-value']
+          interaction.p.value <- Anova(fit, type='III')[4, 'Pr(>Chisq)']
         if (interaction.p.value < .05) {
           stuff <- list()
           for (ivars in list(ind.vars, rev(ind.vars))) {
@@ -1079,8 +1081,8 @@ shinyServer( function(input, output, session) {
           isolate({fit.without <- ModelFitWithoutError()})
           text <- paste0("The interaction, ", paste(ind.vars, collapse = ":"),
                          ", is not significant (alpha = 0.05).")
-          main.plot.p.value <- anova(fit)[ind.var.one, 'p-value']
-          sub.plot.p.value <- anova(fit)[ind.var.two, 'p-value']
+          main.plot.p.value <- Anova(fit, type='III')[ind.var.one, 'Pr(>Chisq)']
+          sub.plot.p.value <- Anova(fit, type='III')[ind.var.two, 'Pr(>Chisq)']
           if (main.plot.p.value < alpha) {
             text <- paste0(text, " ", ind.var.one, " is significant.")
             output$lsd.results.text.one <- renderPrint({
