@@ -299,11 +299,11 @@ shinyServer( function(input, output, session) {
   })
   
   ModelFitWithoutError <- reactive({
-    # Returns the model fit from formulas with the Error() term removed.
+    # Returns the model fit from formulas with the ranef term removed
     input$run_analysis
     isolate(exp.design <- input$exp.design)
+    my.data <- AddTransformationColumns()
     if (exp.design %in% c('SPCRD', 'SPRCBD')) {
-      my.data <- AddTransformationColumns()
       model.fit <- aov(formula = as.formula(GenerateFormula()),
                        data = my.data)
     } else {
@@ -387,11 +387,6 @@ shinyServer( function(input, output, session) {
       }
       
       # analysisCode for the model fit and summary
-#       if (input$exp.design %in% c('SPRCBD', 'SPCRD')){
-#         summaryExpr <- 'anova'
-#       } else {
-#         summaryExpr <- 'summary'
-#       }
         summaryExpr <- 'Anova'
       
       analysisCode <- paste0(analysisCode, '\n\n# fit the model\n')
