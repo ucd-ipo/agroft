@@ -194,8 +194,7 @@ shinyServer( function(input, output, session) {
   }
   
   AddTransformationColumns <- reactive({
-    # Returns the converted data frame with three new columns for the three
-    # transformations.
+    # Returns the converted data frame with a new variable housing the transformed data
     data <- ConvertData()
     dep.var <- input$dependent.variable
     trans.dep.var <- TransformedDepVarColName()
@@ -273,12 +272,11 @@ shinyServer( function(input, output, session) {
     # Returns the fit model.
     
     # Run every time the "Run Analysis" button is pressed.
-    input$run_analysis
+    # input$run_analysis
     
-    isolate({
-      my.data <- AddTransformationColumns()
-      model.fit <- eval(GetFitCall())
-    })
+    # isolate({
+      model.fit <- eval(GetFitCall(), envir = my.data)
+    # })
     
     return(model.fit)
     
@@ -433,9 +431,12 @@ shinyServer( function(input, output, session) {
   
   observe({
     # Updates the analysis code in the editor.
-    GenerateAnalysisCode()
-    updateAceEditor(session, 'code_used_model',
-                    value=isolate(GenerateAnalysisCode()), readOnly=TRUE)
+    tryCatch({
+      GenerateAnalysisCode()
+      updateAceEditor(session, 'code_used_model',
+                      value=isolate(GenerateAnalysisCode()), readOnly=TRUE)
+    }, 
+      error = function(e){return(NULL)})
   })
   
   # TODO : It could be useful to break this up into each plot and utilize this
@@ -664,10 +665,15 @@ shinyServer( function(input, output, session) {
     }
   })
   
-  output$fit.summary.text <- renderPrint({
+  output$fitSummaryText <- renderPrint({
+    input$run_analysis
     isolate({
-      input$run_analysis
-      fit.summary <- Anova(EvalFit(), type='III')
+      if(input$run_analysis == 0) {
+        return(NULL)
+      } else {
+        assign('my.data', AddTransformationColumns(), envir=.GlobalEnv)
+        fit.summary <- Anova(EvalFit(), type='III')
+      }
     })
     return(fit.summary)
   })
@@ -678,7 +684,7 @@ shinyServer( function(input, output, session) {
     } else {
       list(h2('Model Fit Summary'),
            if (input$exp.design != 'LR') { h3('ANOVA Table') } else{ NULL },
-           verbatimTextOutput('fit.summary.text'))
+           verbatimTextOutput('fitSummaryText'))
     }
   })
   
