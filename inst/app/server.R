@@ -1152,7 +1152,26 @@ shinyServer( function(input, output, session) {
     }
   )
   
+  #############################################################################
+  # About tab 
+  #############################################################################
   
+  output$downloadSlides1 <- downloadHandler(
+    filename = function(){"Workshop Slides Day 1.pdf"},
+    content  = function(file) file.copy('www/AIP Workshop Day 1.pdf', file, overwrite = FALSE)
+  )
+  
+  output$downloadSlides2 <- downloadHandler(
+    filename = function(){"Workshop Slides Day 2.pdf"},
+    content  = function(file) file.copy('www/AIP Workshop Day 2.pdf', file, overwrite = FALSE)
+  )
+  
+  
+  
+  #############################################################################
+  # end 
+  #############################################################################
+
   session$onSessionEnded(function() { 
     stopApp()
   })

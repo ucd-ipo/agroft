@@ -64,7 +64,7 @@ load.data.tab <- tabPanel('1. Load data',
 )
 
 ###############################################################################
-# Data Analysis Tab
+# Design and Diagnostics tab
 ###############################################################################
 
 # In this panel the user selects 1 of 9 experimental design options from a
@@ -150,7 +150,7 @@ analysis.editor <- aceEditor('code_used_model', value='# code to run analysis',
 
 data.analysis.tab <-
   tabPanel(
-    '2. Analysis',
+    '2. Model Design and Diagnostics',
     sidebarLayout(
       sidebarPanel(
         bsCollapse(
@@ -181,39 +181,50 @@ data.analysis.tab <-
         verbatimTextOutput('formula')
         ),
         uiOutput('exponent'),
-        uiOutput('fit.summary'),
-        bsTooltip('fit.summary',
-                  'Click for more information',
-                  placement = 'top',
-                  trigger = 'hover'),
-        bsPopover('fit.summary',
-                  title = 'Standard output',
-                  help.text$fit.explanation,
-                  placement = 'left',
-                  trigger = 'click'),
+#         uiOutput('fit.summary'),
+#         bsTooltip('fit.summary',
+#                   'Click for more information',
+#                   placement = 'top',
+#                   trigger = 'hover'),
+#         bsPopover('fit.summary',
+#                   title = 'Standard output',
+#                   help.text$fit.explanation,
+#                   placement = 'left',
+#                   trigger = 'click'),
         uiOutput('residuals.vs.fitted.plot'),
         uiOutput('kernel.density.plot'),
         uiOutput('best.fit.plot'),
         uiOutput('boxplot.plot'),
         uiOutput('shapiro.wilk.results'),
         uiOutput('levene.results'),
-        uiOutput('tukey.results'),
-        uiOutput('interaction.plot')
+        uiOutput('tukey.results') #,
+        # uiOutput('interaction.plot')
       )
     )
   )
 
 ###############################################################################
-# Post-hoc Tests Tab
+# Results and Post-hoc Tests Tab
 ###############################################################################
 
 posthoc.tab <-
-  tabPanel('3. Post-hoc tests',
+  tabPanel('3. Results and Post-hoc tests',
            sidebarLayout(
              sidebarPanel(h4('Post hoc analysis'),
                           actionButton('run_post_hoc_analysis',
                                        'Run post hoc analysis')),
-             mainPanel(h3('Post hoc tests and figures'),
+             mainPanel(uiOutput('fit.summary'),
+                       bsTooltip('fit.summary',
+                                 'Click for more information',
+                                 placement = 'top',
+                                 trigger = 'hover'),
+                       bsPopover('fit.summary',
+                                 title = 'Standard output',
+                                 help.text$fit.explanation,
+                                 placement = 'left',
+                                 trigger = 'click'),
+                       uiOutput('interaction.plot'),
+                       h3('Post hoc tests and figures'),
                        uiOutput('lsd.results'))
            )
   )
@@ -247,14 +258,15 @@ about.tab <-
              h1('Disclaimer'),
              p(help.text$disclaimer),
              h1('License'),
-             p(help.text$license, tags$a('http://github.com/ucd-ipo/aip-analysis'))
+             p(help.text$license, tags$a('http://github.com/ucd-ipo/aip-analysis')),
+             downloadButton('downloadSlides1', label = 'Download Workshop Day 1 Slides'),
+             downloadButton('downloadSlides2', label = 'Download Workshop Day 2 Slides')
            )
   )
 
 ###############################################################################
 # Main User Interface
 ###############################################################################
-
 shinyUI(
   navbarPage(
     title = 'Agricultural Field Trial Statistics Package',
