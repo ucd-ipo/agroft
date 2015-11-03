@@ -275,6 +275,7 @@ shinyServer( function(input, output, session) {
     # input$run_analysis
     
     # isolate({
+      my.data <- AddTransformationColumns()
       model.fit <- eval(GetFitCall(), envir = my.data)
     # })
     
@@ -504,8 +505,8 @@ shinyServer( function(input, output, session) {
                    'Completely Randomized Design (CRD) with Two Treatments' = 'CRD2',
                    'Randomized Complete Block Design (RCBD) with One Treatment' = 'RCBD1',
                    'Randomized Complete Block Design (RCBD) with Two Treatments' = 'RCBD2',
-                   'Split-Plot Completely Randomized Design' = 'SPCRD',
-                   'Split-Plot Randomized Complete Block Design' = 'SPRCBD')
+                   'Split-Plot Completely Randomized Design (Split-Plot CRD)' = 'SPCRD',
+                   'Split-Plot Randomized Complete Block Design (Split-Plot R)' = 'SPRCBD')
 
       selectInput('exp.design',
                   'Select Your Experimental Design',
@@ -1002,10 +1003,8 @@ shinyServer( function(input, output, session) {
         var.one.p.value <- summary(fit)[[1]]$'Pr(>F)'[1]
         var.two.p.value <- summary(fit)[[1]]$'Pr(>F)'[2]
         if (exp.design == 'CRD2') {
-          idx <- 3
-        } else {
-          idx <- 4
-        }
+          assign('my.data', AddTransformationColumns(), envir=.GlobalEnv)
+          interaction.p.value <- Anova(fit, type='III')[4, 'Pr(>Chisq)']
         if (interaction.p.value < .05) {
           text <- paste0("The interaction, ", paste(ind.vars, collapse = ":"),
                          ", is significant (alpha = 0.05).")
@@ -1037,8 +1036,9 @@ shinyServer( function(input, output, session) {
                           'hoc analyses for this scenario are not ',
                           'implemented.')))
         }
+      }
       } else if (input$exp.design %in% c('SPCRD', 'SPRCBD')) {
-        # NOTE : This always seems to be [2] for both formulas.
+          assign('my.data', AddTransformationColumns(), envir=.GlobalEnv)
           interaction.p.value <- Anova(fit, type='III')[4, 'Pr(>Chisq)']
         if (interaction.p.value < .05) {
           stuff <- list()
@@ -1082,6 +1082,7 @@ shinyServer( function(input, output, session) {
           isolate({fit.without <- ModelFitWithoutError()})
           text <- paste0("The interaction, ", paste(ind.vars, collapse = ":"),
                          ", is not significant (alpha = 0.05).")
+          assign('my.data', AddTransformationColumns(), envir=.GlobalEnv)
           main.plot.p.value <- Anova(fit, type='III')[ind.var.one, 'Pr(>Chisq)']
           sub.plot.p.value <- Anova(fit, type='III')[ind.var.two, 'Pr(>Chisq)']
           if (main.plot.p.value < alpha) {
