@@ -210,10 +210,15 @@ data.analysis.tab <-
 posthoc.tab <-
   tabPanel('3. Results and Post-hoc tests',
            sidebarLayout(
-             sidebarPanel(h4('Post hoc analysis'),
+             sidebarPanel(actionButton('view_anova_table',
+                                       'View model fit summary'),
+                          br(),
                           actionButton('run_post_hoc_analysis',
                                        'Run post hoc analysis')),
-             mainPanel(uiOutput('fit.summary'),
+             mainPanel(tabsetPanel(
+               tabPanel('Model Fit Summary',
+                conditionalPanel('input.view_anova_table > 0',
+                       uiOutput('fit.summary'),
                        bsTooltip('fit.summary',
                                  'Click for more information',
                                  placement = 'top',
@@ -223,9 +228,12 @@ posthoc.tab <-
                                  help.text$fit.explanation,
                                  placement = 'left',
                                  trigger = 'click'),
-                       uiOutput('interaction.plot'),
-                       h3('Post hoc tests and figures'),
-                       uiOutput('lsd.results'))
+                       uiOutput('interaction.plot'))),
+                tabPanel('Post-hoc Tests',        
+               conditionalPanel('input.run_post_hoc_analysis > 0',
+                       h3('Post hoc tests and figures')
+                       ),
+                       uiOutput('lsd.results'))))
            )
   )
 

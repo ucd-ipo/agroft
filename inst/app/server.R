@@ -31,7 +31,7 @@ library(knitr)
 shinyServer( function(input, output, session) {
   
   #############################################################################
-  # Load Data Tab
+  # Load Data Tab #####
   #############################################################################
   
   output$debug <- renderText({
@@ -680,12 +680,15 @@ shinyServer( function(input, output, session) {
   })
   
   output$fit.summary <- renderUI({
-    if(is.null(input$run_analysis) || input$run_analysis == 0) {
+    if(is.null(input$run_analysis) || input$run_analysis == 0 || input$view_anova_table == 0) {
       return(NULL)
     } else {
+      input$view_anova_table
+      isolate({
       list(h2('Model Fit Summary'),
            if (input$exp.design != 'LR') { h3('ANOVA Table') } else{ NULL },
            verbatimTextOutput('fitSummaryText'))
+      })
     }
   })
   
@@ -862,7 +865,7 @@ shinyServer( function(input, output, session) {
   })
   
   output$boxplot.plot <- renderUI({
-    input$run_analysis
+    input$view_anova_table
     if (is.null(input$run_analysis) || input$run_analysis == 0) {
       return(NULL)
     } else {
@@ -883,7 +886,7 @@ shinyServer( function(input, output, session) {
   })
   
   output$plot.interaction.one <- renderPlot({
-    input$run_analysis
+    input$view_anova_table
     isolate({
       if (!input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
         dep.var <- TransformedDepVarColName()
@@ -898,7 +901,7 @@ shinyServer( function(input, output, session) {
   })
   
   output$plot.interaction.two <- renderPlot({
-    input$run_analysis
+    input$view_anova_table
     isolate({
       if (!input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
         dep.var <- TransformedDepVarColName()
@@ -926,6 +929,7 @@ shinyServer( function(input, output, session) {
       }
     }
   })
+  
   
   #############################################################################
   # Post hoc tab
@@ -1004,7 +1008,7 @@ shinyServer( function(input, output, session) {
         var.two.p.value <- summary(fit)[[1]]$'Pr(>F)'[2]
         if (exp.design == 'CRD2') {
           assign('my.data', AddTransformationColumns(), envir=.GlobalEnv)
-          interaction.p.value <- Anova(fit, type='III')[4, 'Pr(>Chisq)']
+          interaction.p.value <- Anova(fit, type='III')[4, 'Pr(>F)']
         if (interaction.p.value < .05) {
           text <- paste0("The interaction, ", paste(ind.vars, collapse = ":"),
                          ", is significant (alpha = 0.05).")
