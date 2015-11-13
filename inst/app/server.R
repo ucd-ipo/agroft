@@ -35,7 +35,7 @@ shinyServer( function(input, output, session) {
   #############################################################################
   
   output$debug <- renderText({
-    
+    # GenerateAnalysisCode()
   })
   
   GetLoadCall <- reactive({
@@ -47,10 +47,10 @@ shinyServer( function(input, output, session) {
     # length zero (i.e. corrupt or weird filetype) and the user hasn't selected
     # use sample data, then... make the reactive expression "GetLoadCall" NULL,
     # otherwise, do read in data things
-    if ((is.null(input$data_file) || length(input$data_file) == 0) &&
-        !input$use_sample_data) {
-      return(NULL)
-    } else {
+#     if ((is.null(input$data_file) || length(input$data_file) == 0) &&
+#         !input$use_sample_data) {
+#       return(NULL)
+#     } else {
       # if a data file has been uploaded and the user doesn't want to use sample
       # data...
       if (length(input$data_file) > 0 && !input$use_sample_data) {
@@ -71,7 +71,7 @@ shinyServer( function(input, output, session) {
         # should be the name of the dataset to use
         load.call <- as.name(input$sample_data_buttons)
       }
-    }
+    # }
     return(load.call)
   })
   
@@ -85,7 +85,7 @@ shinyServer( function(input, output, session) {
     # data.frame is the same as input$sample_data_buttons.
     eval(call('data', 
               input$sample_data_buttons, 
-              package='agricolae',
+              package='AIP',
               envir=environment()))
     
     # set "data" to the GetLoadCall object
@@ -110,8 +110,8 @@ shinyServer( function(input, output, session) {
     if (!input$use_sample_data) {
       return(deparse(GetLoadCall()))
     } else {
-      l <- "# load the agricolae package for the sample data"
-      l <- paste0(l, "\nlibrary('agricolae')")
+      l <- "# load the AIP package for the sample data"
+      l <- paste0(l, "\nlibrary('AIP')")
       l <- paste0(l, "\ndata('",input$sample_data_buttons,  "')")
       l <- paste0(l, '\nmy.data <- ', input$sample_data_buttons)
     }
@@ -137,7 +137,11 @@ shinyServer( function(input, output, session) {
     updateAceEditor(session, 'code_used_read', value=ReadCode(), readOnly=TRUE)
   })
   
-  output$data_table <- renderDataTable({LoadData()})
+  output$data_table <- renderDataTable({
+    if(!input$use_sample_data & length(input$data_file) == 0){
+      return(NULL)
+    }
+    LoadData()})
   
   #############################################################################
   ##### Analysis Tab #####
@@ -183,34 +187,23 @@ shinyServer( function(input, output, session) {
     return(power)
   })
   
-  TransformedDepVarColName <- function() {
-    # Returns the transformed dependent variable name.
-    dep.var <- input$dependent.variable
-    choices = c('None' = dep.var,
-                'Power' = paste0(dep.var, '.pow'),
-                'Logarithmic' = paste0(dep.var, '.log10'),
-                'Square Root' = paste0(dep.var, '.sqrt'))
-    return(choices[[input$transformation]])
-  }
-  
   AddTransformationColumns <- reactive({
     # Returns the converted data frame with a new variable housing the transformed data
     data <- ConvertData()
     dep.var <- input$dependent.variable
-    trans.dep.var <- TransformedDepVarColName()
     dep.var.col <- data[[dep.var]]
-    if (input$transformation == 'Power') {
-      data[[trans.dep.var]] <- dep.var.col^ComputeExponent()
-    } else if (input$transformation == 'Logarithmic') {
-      data[[trans.dep.var]] <- log10(dep.var.col)
-    } else if (input$transformation == 'Square Root') {
-      data[[trans.dep.var]] <- sqrt(dep.var.col)
-    }
+      data[[paste0(dep.var, '.pow')]] <- dep.var.col^ComputeExponent()
+      data[[paste0(dep.var, '.log10')]] <- log10(dep.var.col)
+      data[[paste0(dep.var, '.sqrt')]] <- sqrt(dep.var.col)
     return(data)
   })
-  
-  GenerateFormula <- reactive({
-    left.side <- paste(TransformedDepVarColName(), '~')
+ 
+  GenerateFormula <- function(transformation){
+    left.side <- switch(transformation,
+                      NoTfm = input$dependent.variable,
+                      PwrTfm = paste0(input$dependent.variable, '.pow'),
+                      LogTfm = paste0(input$dependent.variable, '.log10'),
+                      SqrtTfm = paste0(input$dependent.variable, '.sqrt'))
     if (input$exp.design %in% c('LR', 'CRD1')) {
       right.side <- input$independent.variable.one
     } else if (input$exp.design == 'CRD2') {
@@ -227,93 +220,75 @@ shinyServer( function(input, output, session) {
                            input$independent.variable.one, ':',
                            input$independent.variable.two, ' + ',
                            input$independent.variable.blk)
-    } else if (input$exp.design %in%  c('SPRCBD', 'SPCRD')) {
+    } else if (input$exp.design == 'SPRCBD') {
+      right.side <- paste0(input$independent.variable.one, ' * ',
+                           input$independent.variable.two, ' + ',
+                           input$independent.variable.blk)
+    } else if (input$exp.design == 'SPCRD'){
       right.side <- paste0(input$independent.variable.one, ' * ',
                            input$independent.variable.two)
     }
-    form <- paste(left.side, right.side)
+    form <- paste(left.side, right.side, sep=' ~ ')
     return(form)
-  })
-  
+  } 
+
   GenerateRandomEffFormula <- reactive({
-    if(input$exp.design %in%  c('SPRCBD', 'SPCRD')){
+    if(input$exp.design %in% c('SPRCBD', 'SPCRD')){
       f <- paste0('~ 1|', input$independent.variable.blk, '/', input$independent.variable.one)
-      return(f)
-    }
+    } 
+    return(f)
   })
   
-  GetFitCall <- reactive({
-    # Returns the call used to run the analysis.
-    
-    # The following line forces this reactive expression to take a dependency on
-    # the "Run Analysis" button. Thus this will run anytime it is clicked.
-    input$run_analysis
-    
-    # isolate prevents this reactive expression from depending on any of the
-    # variables inside the isolated expression.
-    isolate({
+  GetFitCall <- function(transformation){
       if (input$exp.design %in%  c('SPRCBD', 'SPCRD')){
         fit <- call('lme',
-                    fixed   = as.formula(GenerateFormula()),
+                    fixed   = as.formula(GenerateFormula(transformation)),
                     random  = as.formula(GenerateRandomEffFormula()),
                     data    = as.name('my.data'))
       } else {
         fit <- call('aov',
-                    formula = as.formula(GenerateFormula()),
+                    formula = as.formula(GenerateFormula(transformation)),
                     data = as.name('my.data'))
       }
-    })
-    
     return(fit)
-    
-  })
-  
-  EvalFit <- reactive({
-    # Returns the fit model.
-    
-    # Run every time the "Run Analysis" button is pressed.
-    # input$run_analysis
-    
-    # isolate({
-      my.data <- AddTransformationColumns()
-      model.fit <- eval(GetFitCall(), envir = my.data)
-    # })
-    
-    return(model.fit)
-    
-  })
+  }
+
+
+EvalFit <- function(transformation){
+    my.data <- AddTransformationColumns()
+    model.fit <- eval(GetFitCall(transformation), envir = my.data)
+  return(model.fit)
+}
+
   
   GetFitExpr <- reactive({
-    # Returns the char of the expression used to evaluate the fit.
-    
-    # Run every time the "Run Analysis" button is pressed.
     input$run_analysis
-    
-    isolate({
-      x <- deparse(GetFitCall(), width.cutoff=500L)
-    })
-    
+    # isolate({
+      x <- deparse(GetFitCall(input$transformation), width.cutoff=500L)
+    # })
     return(x)
-    
   })
+
   
-  ModelFitWithoutError <- reactive({
-    # Returns the model fit from formulas with the ranef term removed
-    input$run_analysis
-    isolate(exp.design <- input$exp.design)
+  ModelFitWithoutError <- function(transformation){
+    exp.design <- input$exp.design
     my.data <- AddTransformationColumns()
     if (exp.design %in% c('SPCRD', 'SPRCBD')) {
-      model.fit <- aov(formula = as.formula(GenerateFormula()),
+      model.fit <- aov(formula = as.formula(GenerateFormula(transformation)),
                        data = my.data)
     } else {
-      model.fit <- EvalFit()
+      model.fit <- EvalFit(transformation)
     }
     return(model.fit)
-  })
+  }
   
-  GenerateIndividualFormulas <- reactive({
-    # Returns single variate formulas.
-    dep.var <- TransformedDepVarColName()
+  
+  GenerateIndividualFormulas <- function(transformation){
+    dep.var <- switch(transformation,
+                      'NoTfm' = input$dependent.variable,
+                      'PwrTfm' = paste0(input$dependent.variable, '.pow'),
+                      'LogTfm' = paste0(input$dependent.variable, '.log10'),
+                      'SqrtTfm' = paste0(input$dependent.variable, '.sqrt'))
     if (input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
       f <- paste0(dep.var, ' ~ ',
                   input$independent.variable.one)
@@ -330,33 +305,45 @@ shinyServer( function(input, output, session) {
       l[[f1]] <- as.formula(f1)
       l[[f2]] <- as.formula(f2)
       return(l)
-    }
-  })
-  
-  GenerateTukeyFormula <- reactive({
-    dep.var <- TransformedDepVarColName()
-    return(paste0(GenerateFormula(),
+  }}
+ 
+  GenerateTukeyFormula <- function(transformation){
+    dep.var <- switch(transformation,
+                      NoTfm = input$dependent.variable,
+                      PwrTfm = paste0(input$dependent.variable, '.pow'),
+                      LogTfm = paste0(input$dependent.variable, '.log10'),
+                      SqrtTfm = paste0(input$dependent.variable, '.sqrt'))
+    return(paste0(GenerateFormula(transformation),
                   ' + ', dep.var, '.pred.sq'))
-  })
+  }
   
-  GenerateAnalysisCode <- reactive({
-    # Returns the R code a user would type to run the analysis.
-    if (input$run_analysis==0) {
-      return(NULL)
-    } else {
+  
+  
+  GenerateAnalysisCodeFactors <- reactive({
+#     if (input$run_analysis == 0) {
+#       return(NULL)
+#     } else {
       # analysisCode for converting columns to factors
       factor.idx <- which(sapply(ConvertData(), is.factor))
       if (length(factor.idx) > 0) {
         factor.names <- names(ConvertData()[factor.idx])
-        analysisCode <- paste0('my.data$', factor.names, ' <- as.factor(my.data$',
-                               factor.names, ')', collapse='\n')
-        analysisCode <- paste0('# convert categorical variables to factors\n', analysisCode)
+        analysisCode <-
+          paste0(
+            'my.data$', factor.names, ' <- as.factor(my.data$',
+            factor.names, ')', collapse = '\n'
+          )
+        analysisCode <-
+          paste0('# convert categorical variables to factors\n', analysisCode)
       }
+      return(analysisCode)
+    # }
+  })
       
-      # analysisCode for the transformation
-      dep.var <- input$dependent.variable
-      if (input$transformation == 'Power') {
-        analysisCode <- paste0(analysisCode, '\n\n# transform the dependent variable\n')
+### analysisCode for the transformations ###
+  
+  GenerateAnalysisCodePwr <- reactive({
+      dep.var <- paste0(input$dependent.variable, '.pow')
+        analysisCode <- '\n\n# transform the dependent variable\n'
         if (input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
           analysisCode <- paste0(analysisCode, 'mean.data <- aggregate(', dep.var, ' ~ ',
                                  input$independent.variable.one)
@@ -373,40 +360,47 @@ shinyServer( function(input, output, session) {
                                'power <- 1 - summary(power.fit)$coefficients[2, 1] / 2\n',
                                'my.data$', dep.var, '.pow <- my.data$', dep.var,
                                '^power')
-      } 
-      if (input$transformation == 'Logarithmic') {
-        analysisCode <- paste0(analysisCode, '\n\n# transform the dependent variable\nmy.data$',
+        return(analysisCode)
+  })
+      
+      
+  GenerateAnalysisCodeLog <- reactive({
+ 
+        analysisCode <- paste0('\n\n# transform the dependent variable\nmy.data$',
                                input$dependent.variable, '.log10 <- log10(my.data$',
                                input$dependent.variable, ')')
-      } 
-      if (input$transformation == 'Square Root') {
-        analysisCode <- paste0(analysisCode, '\n\n# transform the dependent variable\nmy.data$',
+        return(analysisCode)
+      }) 
+  
+  
+  GenerateAnalysisCodeSqrt <- reactive({
+        analysisCode <- paste0('\n\n# transform the dependent variable\nmy.data$',
                                input$dependent.variable, '.sqrt <- sqrt(my.data$',
                                input$dependent.variable, ')')
-      }
+        return(analysisCode)
+      })
       
-      # analysisCode for the model fit and summary
-        summaryExpr <- 'Anova'
-      
-      analysisCode <- paste0(analysisCode, '\n\n# fit the model\n')
+  
+    GenerateAnalysisCodeANOVA <- reactive({
+      analysisCode <- paste0('# fit the model\n')
       analysisCode <- paste0(analysisCode, 'model.fit <- ', GetFitExpr())
-      analysisCode <- paste0(analysisCode, 
-                             sprintf('\n\n# print summary table\nlibrary(car)\n%s(model.fit)', summaryExpr))
+      analysisCode <- paste0(analysisCode, '\n\n# print summary table\nlibrary(car)\nAnova(model.fit, type = 3)')
+      return(analysisCode)
+    })
       
+    GenerateAnalysisAsump <- function(transformation){
       # analysisCode for the assumptions tests
       if (!input$exp.design %in% c('SPCRD', 'SPRCBD')) {
-        analysisCode <- paste0(analysisCode,
-                               '\n\n# assumptions tests\nshapiro.test(residuals(model.fit))')
+        analysisCode <- '\n\n# assumptions tests\nshapiro.test(residuals(model.fit))'
       }
-      
       if (input$exp.design != 'LR') {
-        formulas <- GenerateIndividualFormulas()
+        formulas <- GenerateIndividualFormulas(transformation)
         levene.calls <- paste0('leveneTest(', formulas, ', data = my.data)',
                                collapse = '\n')
         analysisCode <- paste0(analysisCode, "\n\n# Levene's Test\n", levene.calls)
       }
       
-      trans.dep.var <- TransformedDepVarColName()
+      # trans.dep.var <- TransformedDepVarColName()
       if (!input$exp.design %in% c('LR', 'CRD1', 'CRD2')) {
         # TODO : I'm not sure this is the correct thing to do for split plot
         # Tukey tests.
@@ -418,31 +412,100 @@ shinyServer( function(input, output, session) {
         fit.name <- 'model.fit'
         fit.line <- ''
         #         }
-        analysisCode <- paste0(analysisCode, "\n\n# Tukey's Test for Nonadditivity\n", fit.line,
-                               "my.data$", trans.dep.var,
+        analysisCode <- paste0("\n\n# Tukey's Test for Nonadditivity\n", fit.line,
+                               "my.data$", '%s', # %s = the transformed variable name
                                ".pred.sq <- predict(", fit.name, ")^2\n",
                                "tukey.one.df.fit <- lm(formula = ",
-                               GenerateTukeyFormula(),
-                               ", data = my.data)\nanova(tukey.one.df.fit)")
+                               GenerateTukeyFormula(transformation),
+                               ", data = my.data)\nAnova(tukey.one.df.fit, type = 3)")
+        dep.var <- switch(transformation,
+                          NoTfm = input$dependent.variable,
+                          PwrTfm = paste0(input$dependent.variable, '.pow'),
+                          LogTfm = paste0(input$dependent.variable, '.log10'),
+                          SqrtTfm = paste0(input$dependent.variable, '.sqrt'))
+        analysisCode <- sprintf(analysisCode, dep.var)
       }
-      # browser()
       return(analysisCode)
     }
-  })
   
-  observe({
-    # Updates the analysis code in the editor.
-    tryCatch({
-      GenerateAnalysisCode()
-      updateAceEditor(session, 'code_used_model',
-                      value=isolate(GenerateAnalysisCode()), readOnly=TRUE)
-    }, 
-      error = function(e){return(NULL)})
-  })
+    GenerateAnalysisCode <- reactive({
+      AnalysisCode <- GenerateAnalysisCodeFactors()
+      AnalysisCodeAsump <- list(GenerateAnalysisAsump('NoTfm'), 
+                                GenerateAnalysisAsump('PwrTfm'), 
+                                GenerateAnalysisAsump('LogTfm'), 
+                                GenerateAnalysisAsump('SqrtTfm'))
+      TransformCode <- list(NoTfm = paste(AnalysisCode, 
+                                          AnalysisCodeAsump[[1]], 
+                                          sep='\n'),
+                              PwrTfm = paste(AnalysisCode, 
+                                             GenerateAnalysisCodePwr(),
+                                             AnalysisCodeAsump[[2]],
+                                             sep='\n'),
+                              LogTfm = paste(AnalysisCode, 
+                                             GenerateAnalysisCodeLog(),
+                                             AnalysisCodeAsump[[3]],
+                                             sep='\n'),
+                              SqrtTfm = paste(AnalysisCode, 
+                                              GenerateAnalysisCodeSqrt(),
+                                              AnalysisCodeAsump[[4]],
+                                              sep='\n'))
+      return(TransformCode)
+    })
+    
+  
+    observe({
+        tryCatch({
+          updateAceEditor(
+            session, 'code_used_anova',
+            value = GenerateAnalysisCodeANOVA(), readOnly = TRUE
+          )
+        },
+        error = function(e) {
+          return(updateAceEditor(
+            session, 'code_used_anova',
+            value = '# code used to run ANOVA', readOnly = TRUE
+          ))}
+        )
+    })
+    
+    
+    observe({
+      input$run_analysis
+      isolate({
+      tryCatch({
+        updateAceEditor(session, 'no_code_used_model',
+                        value = GenerateAnalysisCode()[['NoTfm']], readOnly = TRUE)
+      },
+      error = function(e) {
+        return(NULL)
+      })
+      tryCatch({
+        updateAceEditor(session, 'pwr_code_used_model',
+                        value = GenerateAnalysisCode()[['PwrTfm']], readOnly = TRUE)
+      },
+      error = function(e) {
+        return(NULL)
+      })
+      tryCatch({
+        updateAceEditor(session, 'log_code_used_model',
+                        value = GenerateAnalysisCode()[['LogTfm']], readOnly = TRUE)
+      },
+      error = function(e) {
+        return(NULL)
+      })
+      tryCatch({
+        updateAceEditor(session, 'sqrt_code_used_model',
+                        value = GenerateAnalysisCode()[['SqrtTfm']], readOnly = TRUE)
+      },
+      error = function(e) {
+        return(NULL)
+      })
+      })
+    })
   
   # TODO : It could be useful to break this up into each plot and utilize this
   # code for actual evaluation later on to deduplicate the code.
-  MakePlotAnalysisCode <- reactive({
+  MakePlotAnalysisCode <- function(transformation){
     if (input$exp.design %in% c('SPCRD', 'SPRCBD')) {
       analysisCode <- paste0("# Residuals vs. Fitted\nplot(model.fit.no.error, which = 1)")
       analysisCode <- paste0(analysisCode, "\n\n# Kernel Density Plot",
@@ -454,9 +517,13 @@ shinyServer( function(input, output, session) {
     
     if (input$exp.design == 'LR') {
       analysisCode <- paste0(analysisCode, "\n\n# Best Fit Line\nplot(formula = ",
-                             GenerateFormula(), ", data = my.data)\nabline(model.fit)")
+                             GenerateFormula(transformation), ", data = my.data)\nabline(model.fit)")
     } else {
-      dep.var <- TransformedDepVarColName()
+      dep.var <- switch(transformation,
+                        NoTfm = input$dependent.variable,
+                        PwrTfm = paste0(input$dependent.variable, '.pow'),
+                        LogTfm = paste0(input$dependent.variable, '.log10'),
+                        SqrtTfm = paste0(input$dependent.variable, '.sqrt'))
       ind.var.one <- input$independent.variable.one
       ind.var.two <- input$independent.variable.two
       f1 <- paste0(dep.var, ' ~ ', ind.var.one)
@@ -487,9 +554,8 @@ shinyServer( function(input, output, session) {
                              ind.var.two, "', trace.label = '", ind.var.one,
                              "', ylab = '", dep.var, "')")
     }
-    
     return(analysisCode)
-  })
+  }
   
   #---------------------------------------------------------------------------#
   # UI elements for the analysis tab side panel.
@@ -655,188 +721,458 @@ shinyServer( function(input, output, session) {
   #---------------------------------------------------------------------------#
   
   output$formula <- renderText({
-    if(is.null(input$run_analysis) || input$run_analysis == 0) {
-      return(NULL)
-    } else {
+#     if(is.null(input$run_analysis) || input$run_analysis == 0) {
+#       return(NULL)
+#     } else {
       if (!input$exp.design %in% c('SPRCBD', 'SPCRD')) {
-        GenerateFormula()
+        GenerateFormula(input$transformation)
       } else {
-        paste('fixed  = ', GenerateFormula(), '\nrandom = ', GenerateRandomEffFormula())
+        paste('fixed  = ', GenerateFormula(input$transformation), '\nrandom = ', GenerateRandomEffFormula())
       }
-    }
+    # }
   })
   
   output$fitSummaryText <- renderPrint({
     input$run_analysis
-    isolate({
-      if(input$run_analysis == 0) {
-        return(NULL)
-      } else {
+    # isolate({
+#       if(input$run_analysis == 0) {
+#         return(NULL)
+#       } else {
         assign('my.data', AddTransformationColumns(), envir=.GlobalEnv)
-        fit.summary <- Anova(EvalFit(), type='III')
-      }
-    })
+        fit.summary <- Anova(EvalFit(input$transformation), type='III')
+      # }
+    # })
     return(fit.summary)
   })
   
   output$fit.summary <- renderUI({
-    if(is.null(input$run_analysis) || input$run_analysis == 0 || input$view_anova_table == 0) {
-      return(NULL)
-    } else {
+#     if(is.null(input$run_analysis) || input$run_analysis == 0 || input$view_anova_table == 0) {
+#       return(NULL)
+#     } else {
       input$view_anova_table
-      isolate({
+      # isolate({
       list(h2('Model Fit Summary'),
            if (input$exp.design != 'LR') { h3('ANOVA Table') } else{ NULL },
            verbatimTextOutput('fitSummaryText'))
-      })
-    }
+      # })
+    # }
   })
   
   output$exponent <- renderUI({
     # Renders a paragraph tag with the computed exponent value.
-    if (input$transformation == 'Power') {
       header <- h2('Exponent from Power Transformation')
-      text <- p(as.character(ComputeExponent()))
+      text <- h4(as.character(round(ComputeExponent(), 5)))
       return(list(header, text))
-    } else {
-      return(NULL)
-    }
   })
   
-  output$shapiro.wilk.results.text <- renderPrint({
-    input$run_analysis
+    shapiro.wilk.results.text <- function(transformation){
+    
     # NOTE : We don't do the Shapiro-Wilk test for the split plot designs
     # because it isn't straight forward to implement.
     if (!input$exp.design %in% c('SPCRD', 'SPRCBD')) {
-      isolate({fit <- EvalFit()})
-      return(shapiro.test(residuals(fit)))
+      fit <- EvalFit(transformation)
+      res <- shapiro.test(residuals(fit))
     } else {
-      return(cat(paste0("Shapiro-Wilk Normality Test is not performed because ",
-                        "it is not straightforward for split-plot designs.")))
+      res <- paste0("Shapiro-Wilk Normality Test is not performed because ",
+                        "it is not straightforward for split-plot designs.")
     }
-  })
+      return(res)
+  }
   
-  output$shapiro.wilk.results <- renderUI({
-    if(is.null(input$run_analysis) || input$run_analysis == 0) {
-      return(NULL)
-    } else {
-      list(h2('Shapiro-Wilk Normality Test Results'),
-           verbatimTextOutput('shapiro.wilk.results.text'))
-    }
+  output$no_shapiro.wilk.results.text <- renderPrint({
+    # input$run_analysis
+    # isolate({
+      # h3('Shapiro-Wilk Normality Test Results')
+      shapiro.wilk.results.text('NoTfm')
+    # })
   })
-  
-  output$levene.results.text <- renderPrint({
+  output$pwr_shapiro.wilk.results.text <- renderPrint({
     input$run_analysis
-    isolate({
-      formulas <- GenerateIndividualFormulas()
-      my.data <- AddTransformationColumns()
-    })
+    # isolate({
+    shapiro.wilk.results.text('PwrTfm')
+    # })
+  })
+  output$log_shapiro.wilk.results.text <- renderPrint({
+    input$run_analysis
+    # isolate({
+    shapiro.wilk.results.text('LogTfm')
+    # })
+  })
+  output$sqrt_shapiro.wilk.results.text <- renderPrint({
+    input$run_analysis
+    # isolate({
+    shapiro.wilk.results.text('SqrtTfm')
+    # })
+  })
+#   
+#   shapiro.wilk.results <- function(transformation){
+#       res <- switch(transformation, 
+#                     NoTfm = 'no_shapiro.wilk.results.text',
+#                     PwrTfm = 'pwr_shapiro.wilk.results.text',
+#                     LogTfm = 'log_shapiro.wilk.results.text',
+#                     SqrtTfm = 'sqrt_shapiro.wilk.results.text')
+#       list(h2('Shapiro-Wilk Normality Test Results'),
+#            verbatimTextOutput(res))
+#   }
+#   
+#   output$no_shapiro.wilk.results <- renderUI({
+# #     if(is.null(input$run_analysis) || input$run_analysis == 0) {
+# #       return(NULL)
+# #     } else {
+#     shapiro.wilk.results('NoTfm')
+#     # }
+#   })
+#   output$pwr_shapiro.wilk.results <- renderUI({
+# #     if(is.null(input$run_analysis) || input$run_analysis == 0) {
+# #       return(NULL)
+# #     } else {
+#     shapiro.wilk.results('PwrTfm')
+#     # }
+#   })
+#   output$log_shapiro.wilk.results <- renderUI({
+# #     if(is.null(input$run_analysis) || input$run_analysis == 0) {
+# #       return(NULL)
+# #     } else {
+#     shapiro.wilk.results('LogTfm')
+#     # }
+#   })
+#   output$sqrt_shapiro.wilk.results <- renderUI({
+# #     if(is.null(input$run_analysis) || input$run_analysis == 0) {
+# #       return(NULL)
+# #     } else {
+#     shapiro.wilk.results('SqrtTfm')
+#     # }
+#   })
+  
+  
+#   levene.results.text <- function(transformation){
+#       formulas <- GenerateIndividualFormulas(transformation)
+#       my.data <- AddTransformationColumns()
+#     return(lapply(formulas, leveneTest, data = my.data))
+#   }
+  
+  output$no_levene.results.text <- renderPrint({
+    formulas <- GenerateIndividualFormulas(transformation = 'NoTfm')
+    assign('my.data', AddTransformationColumns(), envir = .GlobalEnv)
     return(lapply(formulas, leveneTest, data = my.data))
   })
   
-  output$levene.results <- renderUI({
-    if(is.null(input$run_analysis) || input$run_analysis == 0) {
-      return(NULL)
-    } else {
-      if (input$exp.design != 'LR') {
-        list(h2("Levene's Test for Homogeneity of Variance"),
-             verbatimTextOutput('levene.results.text'))
-      } else {
-        return(NULL)
-      }
-    }
+  output$pwr_levene.results.text <- renderPrint({
+    formulas <- GenerateIndividualFormulas(transformation = 'PwrTfm')
+    assign('my.data', AddTransformationColumns(), envir = .GlobalEnv)
+    return(lapply(formulas, leveneTest, data = my.data))
+  })
+  output$log_levene.results.text <- renderPrint({
+    formulas <- GenerateIndividualFormulas(transformation = 'LogTfm')
+    assign('my.data', AddTransformationColumns(), envir = .GlobalEnv)
+    return(lapply(formulas, leveneTest, data = my.data))
+  })
+  output$sqrt_levene.results.text <- renderPrint({
+    formulas <- GenerateIndividualFormulas(transformation = 'SqrtTfm')
+    assign('my.data', AddTransformationColumns(), envir = .GlobalEnv)
+    return(lapply(formulas, leveneTest, data = my.data))
   })
   
-  output$tukey.results.text <- renderPrint({
-    input$run_analysis
-    isolate({
+#   
+#   
+#   levene.results <- function(transformation){
+#       res <- switch(transformation, 
+#                     NoTfm = 'no_levene.results.text',
+#                     PwrTfm = 'pwr_levene.results.text',
+#                     LogTfm = 'log_levene.results.text',
+#                     SqrtTfm = 'sqrt_levene.results.text')
+#       if (input$exp.design != 'LR') {
+#         list(h2("Levene's Test for Homogeneity of Variance"),
+#              verbatimTextOutput(res))
+#       } else {
+#         return(NULL)
+#       }
+#   }
+#   
+#   output$no_levene.results <- renderUI({
+#     if(is.null(input$run_analysis) || input$run_analysis == 0) {
+#       return(NULL)
+#     } else {
+#     list(h2("Levene's Test for Homogeneity of Variance"),
+#          verbatimTextOutput('no_levene.results.text'))
+#     }
+#   })
+#   output$pwr_levene.results <- renderUI({
+# #     if(is.null(input$run_analysis) || input$run_analysis == 0) {
+# #       return(NULL)
+# #     } else {
+#     levene.results('PwrTfm')
+#     # }
+#   })
+#   output$log_levene.results <- renderUI({
+# #     if(is.null(input$run_analysis) || input$run_analysis == 0) {
+# #       return(NULL)
+# #     } else {
+#     levene.results('LogTfm')
+#     # }
+#   })
+#   output$sqrt_levene.results <- renderUI({
+# #     if(is.null(input$run_analysis) || input$run_analysis == 0) {
+# #       return(NULL)
+# #     } else {
+#     levene.results('SqrtTfm')
+#     # }
+#   })
+#   
+  
+  tukey.results.text <- function(transformation){
       # TODO : Check to make sure this is what I'm supposed to use for the split
       # plot results.
-      fit <- ModelFitWithoutError()
+      fit <- ModelFitWithoutError(transformation)
       my.data <- AddTransformationColumns()
-      dep.var <- TransformedDepVarColName()
+      
+      dep.var <- switch(transformation,
+                        NoTfm = input$dependent.variable,
+                        PwrTfm = paste0(input$dependent.variable, '.pow'),
+                        LogTfm = paste0(input$dependent.variable, '.log10'),
+                        SqrtTfm = paste0(input$dependent.variable, '.sqrt'))
+      
       my.data[[paste0(dep.var, '.pred.sq')]] <- predict(fit)^2
-      f <- GenerateTukeyFormula()
+      f <- GenerateTukeyFormula(transformation)
       tukey.one.df.fit <- lm(formula = as.formula(f), data = my.data)
-    })
-    return(anova(tukey.one.df.fit))
-  })
+    return(Anova(tukey.one.df.fit, type = 3))
+  }
   
-  output$tukey.results <- renderUI({
-    if(is.null(input$run_analysis) || input$run_analysis == 0) {
-      return(NULL)
-    } else {
+  output$no_tukey.results.text <- renderPrint({
+    # input$run_analysis
+    # isolate({
+    tukey.results.text('NoTfm')
+    # })
+  })
+  output$pwr_tukey.results.text <- renderPrint({
+    input$run_analysis
+    # isolate({
+    tukey.results.text('PwrTfm')
+    # })
+  })
+  output$log_tukey.results.text <- renderPrint({
+    input$run_analysis
+    # isolate({
+    tukey.results.text('LogTfm')
+    # })
+  })
+  output$sqrt_tukey.results.text <- renderPrint({
+    input$run_analysis
+    # isolate({
+    tukey.results.text('SqrtTfm')
+    # })
+  })
+
+  tukey.results <- function(transformation){
       if (!input$exp.design %in% c('LR', 'CRD1', 'CRD2')) {
-        isolate({
-          dep.var <- TransformedDepVarColName()
+          dep.var <- switch(transformation,
+                            NoTfm = input$dependent.variable,
+                            PwrTfm = paste0(input$dependent.variable, '.pow'),
+                            LogTfm = paste0(input$dependent.variable, '.log10'),
+                            SqrtTfm = paste0(input$dependent.variable, '.sqrt'))
           pred.var <- paste0(dep.var, '.pred.sq')
-        })
+          
+          res <- switch(transformation,
+                        NoTfm = 'no_tukey.results.text',
+                        PwrTfm = 'pwr_tukey.results.text',
+                        LogTfm = 'log_tukey.results.text',
+                        SqrtTfm = 'sqrt_tukey.results.text')
+          
         list(h2("Tukey's Test for Nonadditivity"),
              p(strong(paste0("Attention: Refer only to the '", pred.var, "' ",
                              "row in this table, ignore all other rows."))),
-             verbatimTextOutput('tukey.results.text'))
+             verbatimTextOutput(res))
       } else {
         return(NULL)
       }
     }
+  
+  
+  output$no_tukey.results <- renderUI({
+#     if(is.null(input$run_analysis) || input$run_analysis == 0) {
+#       return(NULL)
+#     } else {
+    tukey.results('NoTfm')
+    # }
+  })
+  output$pwr_tukey.results <- renderUI({
+#     if(is.null(input$run_analysis) || input$run_analysis == 0) {
+#       return(NULL)
+#     } else {
+    tukey.results('PwrTfm')
+    # }
+  })
+  output$log_tukey.results <- renderUI({
+#     if(is.null(input$run_analysis) || input$run_analysis == 0) {
+#       return(NULL)
+#     } else {
+    tukey.results('LogTfm')
+    # }
+  })
+  output$sqrt_tukey.results <- renderUI({
+#     if(is.null(input$run_analysis) || input$run_analysis == 0) {
+#       return(NULL)
+#     } else {
+    tukey.results('SqrtTfm')
+    # }
   })
   
-  output$plot.residuals.vs.fitted <- renderPlot({
-    input$run_analysis
-    model.fit <- ModelFitWithoutError()
+  
+  plot.residuals.vs.fitted <- function(transformation){
+    model.fit <- ModelFitWithoutError(transformation)
     plot(model.fit, which = 1)
+  }
+  
+  output$no_plot.residuals.vs.fitted <- renderPlot({
+    plot.residuals.vs.fitted('NoTfm')
+  })
+  output$pwr_plot.residuals.vs.fitted <- renderPlot({
+    plot.residuals.vs.fitted('PwrTfm')
+  })
+  output$log_plot.residuals.vs.fitted <- renderPlot({
+    plot.residuals.vs.fitted('LogTfm')
+  })
+  output$sqrt_plot.residuals.vs.fitted <- renderPlot({
+    plot.residuals.vs.fitted('SqrtTfm')
   })
   
-  output$residuals.vs.fitted.plot <- renderUI({
-    if (is.null(input$run_analysis) || input$run_analysis == 0) {
-      return(NULL)
-    } else {
+  
+  residuals.vs.fitted.plot <- function(transformation){
+#     if (is.null(input$run_analysis) || input$run_analysis == 0) {
+#       return(NULL)
+#     } else {
+      res <- switch(transformation,
+                    NoTfm = 'no_plot.residuals.vs.fitted',
+                    PwrTfm = 'pwr_plot.residuals.vs.fitted',
+                    LogTfm = 'log_plot.residuals.vs.fitted',
+                    SqrtTfm = 'sqrt_plot.residuals.vs.fitted')
       list(h2('Residuals vs Fitted'),
-           plotOutput('plot.residuals.vs.fitted'))
-    }
+           plotOutput(res))
+    # }
+  }
+  
+  output$no_residuals.vs.fitted.plot <- renderUI({
+    residuals.vs.fitted.plot('NoTfm')
+  })
+  output$pwr_residuals.vs.fitted.plot <- renderUI({
+    residuals.vs.fitted.plot('PwrTfm')
+  })
+  output$log_residuals.vs.fitted.plot <- renderUI({
+    residuals.vs.fitted.plot('LogTfm')
+  })
+  output$sqrt_residuals.vs.fitted.plot <- renderUI({
+    residuals.vs.fitted.plot('SqrtTfm')
   })
   
-  output$plot.kernel.density <- renderPlot({
-    input$run_analysis
-    model.fit <- ModelFitWithoutError()
+  plot.kernel.density <- function(transformation){
+    model.fit <- ModelFitWithoutError(transformation)
     plot(density(residuals(model.fit)))
+  }
+  
+  output$no_plot.kernel.density <- renderPlot({
+    plot.kernel.density('NoTfm')
+  })
+  output$pwr_plot.kernel.density <- renderPlot({
+    plot.kernel.density('PwrTfm')
+  })
+  output$log_plot.kernel.density <- renderPlot({
+    plot.kernel.density('LogTfm')
+  })
+  output$sqrt_plot.kernel.density <- renderPlot({
+    plot.kernel.density('SqrtTfm')
   })
   
-  output$kernel.density.plot <- renderUI({
-    if (is.null(input$run_analysis) || input$run_analysis == 0) {
-      return(NULL)
-    } else {
+  kernel.density.plot <- function(transformation){
+#     if (is.null(input$run_analysis) || input$run_analysis == 0) {
+#       return(NULL)
+#     } else {
+      res <- switch(transformation,
+                    NoTfm = 'no_plot.kernel.density',
+                    PwrTfm = 'pwr_plot.kernel.density',
+                    LogTfm = 'log_plot.kernel.density',
+                    SqrtTfm = 'sqrt_plot.kernel.density')
       list(h2('Kernel Density of the Residuals'),
-           plotOutput('plot.kernel.density'))
-    }
+           plotOutput(res))
+    # }
+  }
+  
+  output$no_kernel.density.plot <- renderUI({
+    kernel.density.plot('NoTfm')
+  })
+  output$pwr_kernel.density.plot <- renderUI({
+    kernel.density.plot('PwrTfm')
+  })
+  output$log_kernel.density.plot <- renderUI({
+    kernel.density.plot('LogTfm')
+  })
+  output$sqrt_kernel.density.plot <- renderUI({
+    kernel.density.plot('SqrtTfm')
   })
   
-  output$plot.best.fit <- renderPlot({
-    input$run_analysis
-    f <- paste0(input$dependent.variable, ' ~ ',
+  plot.best.fit <- function(transformation){
+    dep.var <- switch(transformation,
+                      NoTfm = input$dependent.variable,
+                      PwrTfm = paste0(input$dependent.variable, '.pow'),
+                      LogTfm = paste0(input$dependent.variable, '.log10'),
+                      SqrtTfm = paste0(input$dependent.variable, '.sqrt'))
+    f <- paste0(dep.var, ' ~ ',
                 input$independent.variable.one)
     my.data <- AddTransformationColumns()
     plot(formula = as.formula(f), data = my.data)
-    model.fit <- ModelFitWithoutError()
+    model.fit <- ModelFitWithoutError(transformation)
     abline(model.fit)
+  }
+  
+  output$no_plot.best.fit <- renderPlot({
+    plot.best.fit('NoTfm')
+  })
+  output$pwr_plot.best.fit <- renderPlot({
+    plot.best.fit('PwrTfm')
+  })
+  output$log_plot.best.fit <- renderPlot({
+    plot.best.fit('LogTfm')
+  })
+  output$sqrt_plot.best.fit <- renderPlot({
+    plot.best.fit('SqrtTfm')
   })
   
-  output$best.fit.plot <- renderUI({
-    if (is.null(input$run_analysis) || input$run_analysis == 0) {
-      return(NULL)
-    } else {
+  best.fit.plot <- function(transformation){
+#     if (is.null(input$run_analysis) || input$run_analysis == 0) {
+#       return(NULL)
+#     } else {
       if (input$exp.design == 'LR') {
+        res <- switch(transformation,
+                      NoTfm = 'no_plot.best.fit',
+                      PwrTfm = 'pwr_plot.best.fit',
+                      LogTfm = 'log_plot.best.fit',
+                      SqrtTfm = 'sqrt_plot.best.fit')
         list(h2('Best Fit'),
-             plotOutput('plot.best.fit'))
+             plotOutput(res))
       } else {
         return(NULL)
       }
-    }
+    # }
+  }
+  output$no_best.fit.plot <- renderUI({
+    best.fit.plot('NoTfm')
+  })
+  output$pwr_best.fit.plot <- renderUI({
+    best.fit.plot('PwrTfm')
+  })
+  output$log_best.fit.plot <- renderUI({
+    best.fit.plot('LogTfm')
+  })
+  output$sqrt_best.fit.plot <- renderUI({
+    best.fit.plot('SqrtTfm')
   })
   
-  output$plot.boxplot.one <- renderPlot({
-    input$run_analysis
-    dep.var <- TransformedDepVarColName()
+  plot.boxplot.one <- function(transformation){
+    dep.var <- switch(transformation,
+                      NoTfm = input$dependent.variable,
+                      PwrTfm = paste0(input$dependent.variable, '.pow'),
+                      LogTfm = paste0(input$dependent.variable, '.log10'),
+                      SqrtTfm = paste0(input$dependent.variable, '.sqrt'))
+    
     if (input$exp.design != 'LR') {
       my.data <- AddTransformationColumns()
       f1 <- paste0(dep.var, ' ~ ',
@@ -847,11 +1183,14 @@ shinyServer( function(input, output, session) {
               xlab = input$independent.variable.one,
               ylab = dep.var)
     }
-  })
+  }
   
-  output$plot.boxplot.two <- renderPlot({
-    input$run_analysis
-    dep.var <- TransformedDepVarColName()
+  plot.boxplot.two <- function(transformation){
+    dep.var <- switch(transformation,
+                      NoTfm = input$dependent.variable,
+                      PwrTfm = paste0(input$dependent.variable, '.pow'),
+                      LogTfm = paste0(input$dependent.variable, '.log10'),
+                      SqrtTfm = paste0(input$dependent.variable, '.sqrt'))
     if (!input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
       my.data <- AddTransformationColumns()
       f2 <- paste0(dep.var, ' ~ ',
@@ -862,34 +1201,85 @@ shinyServer( function(input, output, session) {
               xlab = input$independent.variable.two,
               ylab = dep.var)
     }
+  }
+  
+  output$no_plot.boxplot.one <- renderPlot({
+    plot.boxplot.one('NoTfm')
+  })
+  output$pwr_plot.boxplot.one <- renderPlot({
+    plot.boxplot.one('PwrTfm')
+  })
+  output$log_plot.boxplot.one <- renderPlot({
+    plot.boxplot.one('LogTfm')
+  })
+  output$sqrt_plot.boxplot.one <- renderPlot({
+    plot.boxplot.one('SqrtTfm')
   })
   
-  output$boxplot.plot <- renderUI({
-    input$view_anova_table
-    if (is.null(input$run_analysis) || input$run_analysis == 0) {
-      return(NULL)
-    } else {
+  output$no_plot.boxplot.two <- renderPlot({
+    plot.boxplot.two('NoTfm')
+  })
+  output$pwr_plot.boxplot.two <- renderPlot({
+    plot.boxplot.two('PwrTfm')
+  })
+  output$log_plot.boxplot.two <- renderPlot({
+    plot.boxplot.two('LogTfm')
+  })
+  output$sqrt_plot.boxplot.two <- renderPlot({
+    plot.boxplot.two('SqrtTfm')
+  })
+  
+  boxplot.plot <- function(transformation){
+    input$run_analysis
+    bpe <- switch(transformation,
+                     NoTfm = 'no',
+                     PwrTfm = 'pwr',
+                     LogTfm = 'log',
+                     SqrtTfm = 'sqrt')
+    bp1 <- paste0(bpe, '_plot.boxplot.one')
+    bp2 <- paste0(bpe, '_plot.boxplot.two')
+    
+#     if (is.null(input$run_analysis) || input$run_analysis == 0) {
+#       return(NULL)
+#     } else {
       if (input$exp.design != 'LR') {
         if (!input$exp.design %in% c('CRD1', 'RCBD1')) {
           elements <- list(h2('Effects Box Plots'),
-                           plotOutput('plot.boxplot.one'),
-                           plotOutput('plot.boxplot.two'))
+                           plotOutput(bp1),
+                           plotOutput(bp2))
         } else {
           elements <- list(h2('Effects Box Plots'),
-                           plotOutput('plot.boxplot.one'))
+                           plotOutput(bp1))
         }
         return(elements)
       } else {
         return(NULL)
       }
-    }
+    # }
+  }
+
+  output$no_boxplot.plot <- renderUI({
+    boxplot.plot('NoTfm') 
+  })
+  output$pwr_boxplot.plot <- renderUI({
+    boxplot.plot('PwrTfm') 
+  })
+  output$log_boxplot.plot <- renderUI({
+    boxplot.plot('LogTfm') 
+  })
+  output$sqrt_boxplot.plot <- renderUI({
+    boxplot.plot('SqrtTfm') 
   })
   
   output$plot.interaction.one <- renderPlot({
     input$view_anova_table
-    isolate({
+    # isolate({
       if (!input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
-        dep.var <- TransformedDepVarColName()
+        dep.var <- switch(input$transformation,
+               NoTfm = input$dependent.variable,
+               PwrTfm = paste0(input$dependent.variable, '.pow'),
+               LogTfm = paste0(input$dependent.variable, '.log10'),
+               SqrtTfm = paste0(input$dependent.variable, '.sqrt'))
         ind.var.one <- input$independent.variable.one
         ind.var.two <- input$independent.variable.two
         my.data <- AddTransformationColumns()
@@ -897,14 +1287,18 @@ shinyServer( function(input, output, session) {
                          my.data[[dep.var]], xlab = ind.var.one, trace.label =
                            ind.var.two, ylab = dep.var)
       }
-    })
+    # })
   })
   
   output$plot.interaction.two <- renderPlot({
     input$view_anova_table
-    isolate({
+    # isolate({
       if (!input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
-        dep.var <- TransformedDepVarColName()
+        dep.var <-  switch(input$transformation,
+                           NoTfm = input$dependent.variable,
+                           PwrTfm = paste0(input$dependent.variable, '.pow'),
+                           LogTfm = paste0(input$dependent.variable, '.log10'),
+                           SqrtTfm = paste0(input$dependent.variable, '.sqrt'))
         ind.var.one <- input$independent.variable.one
         ind.var.two <- input$independent.variable.two
         my.data <- AddTransformationColumns()
@@ -912,14 +1306,14 @@ shinyServer( function(input, output, session) {
                          my.data[[dep.var]], xlab = ind.var.two, trace.label =
                            ind.var.one, ylab = dep.var)
       }
-    })
+    # })
   })
   
   output$interaction.plot <- renderUI({
     input$run_analysis
-    if (is.null(input$run_analysis) || input$run_analysis == 0) {
-      return(NULL)
-    } else {
+#     if (is.null(input$run_analysis) || input$run_analysis == 0) {
+#       return(NULL)
+#     } else {
       if (!input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
         return(list(h2('Interaction Plots'),
                     plotOutput('plot.interaction.one'),
@@ -927,7 +1321,7 @@ shinyServer( function(input, output, session) {
       } else {
         return(NULL)
       }
-    }
+    # }
   })
   
   
@@ -968,13 +1362,16 @@ shinyServer( function(input, output, session) {
   
   # TODO : Clean up this insane nested if statement! Sorry...
   output$lsd.results <- renderUI({
-    input$run_post_hoc_analysis
-    if (is.null(input$run_post_hoc_analysis) || input$run_post_hoc_analysis == 0) {
+    if (is.null(input$view_anova_table) || input$view_anova_table == 0) {
       return(NULL)
     } else {
       isolate({
         exp.design <- input$exp.design
-        dep.var <- TransformedDepVarColName()
+        dep.var <-  switch(input$transformation,
+                           NoTfm = input$dependent.variable,
+                           PwrTfm = paste0(input$dependent.variable, '.pow'),
+                           LogTfm = paste0(input$dependent.variable, '.log10'),
+                           SqrtTfm = paste0(input$dependent.variable, '.sqrt'))
         ind.var.one <- input$independent.variable.one
         if (exp.design %in% c('CRD1', 'RCBD1')) {
           ind.var.two <- NULL
@@ -983,7 +1380,7 @@ shinyServer( function(input, output, session) {
         }
         ind.vars <- c(ind.var.one, ind.var.two)
         my.data <- AddTransformationColumns()
-        fit <- EvalFit()
+        fit <- EvalFit(input$transformation)
       })
       alpha <- 0.05
       if (input$exp.design == 'LR') {
@@ -1083,7 +1480,9 @@ shinyServer( function(input, output, session) {
           #TODO : Compare between subplot levels across main plot levels
           return(stuff)
         } else {  # interaction is not significant
-          isolate({fit.without <- ModelFitWithoutError()})
+          # isolate({
+            fit.without <- ModelFitWithoutError(input$transformation)
+            # })
           text <- paste0("The interaction, ", paste(ind.vars, collapse = ":"),
                          ", is not significant (alpha = 0.05).")
           assign('my.data', AddTransformationColumns(), envir=.GlobalEnv)
@@ -1146,9 +1545,9 @@ shinyServer( function(input, output, session) {
       template <- paste(readLines('report-template.Rmd'), collapse='\n')
       filled.template <- gsub('replace_with_data_code', ReadCode(), template)
       filled.template <- gsub('replace_with_analysis_code',
-                              GenerateAnalysisCode(), filled.template)
+                              GenerateAnalysisCode(input$transformation), filled.template)
       filled.template <- gsub('replace_with_analysis_plot_code',
-                              MakePlotAnalysisCode(), filled.template)
+                              MakePlotAnalysisCode(input$transformation), filled.template)
       writeLines(filled.template, 'report.Rmd')
       src <- normalizePath('report.Rmd')
       file.copy(filled.template, 'report.Rmd')

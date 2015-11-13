@@ -36,10 +36,11 @@ load.data.side.panel <- sidebarPanel(
     condition="input.use_sample_data == true",
     radioButtons('sample_data_buttons',
                  'Select your sample data',
-                 choices=c('Split plot design'='plots',
-                           'Data of corn'='corn',
-                           'Data of cotton'='cotton',
-                           'Data of sweetpotato yield'='sweetpotato')
+                 choices=c('CRD 1 IV'='milk_crd1',
+                           'RCBD 1 IV'='wheat_rcbd1',
+                           'CRD 2 IVs'='clone_crd2',
+                           'RCBD 2 IVs'='clone_rcbd2',
+                           'SP-RCBD 2 IVs' = 'oats_sprcbd')
     )),
   bsTooltip('code_used_read',
             title='click for more information',
@@ -137,16 +138,146 @@ independent.panel <-
 # In this panel, the user can select a type of transformation to apply to the
 # dependent variable.
 transformation.panel <-
-  bsCollapsePanel(
-    '5. Transformations',
-    selectInput('transformation',
+    radioButtons('transformation',
                 'Select a transformation for the dependent variable:',
-                choices = c('None', 'Power', 'Logarithmic', 'Square Root'),
-                selected = 'None')
-  )
+                choices = c('None' = 'NoTfm', 
+                            'Power' = 'PwrTfm', 
+                            'Logarithmic' = 'LogTfm', 
+                            'Square Root' = 'SqrtTfm'),
+                selected = 'NoTfm')
 
-analysis.editor <- aceEditor('code_used_model', value='# code to run analysis',
+analysis.editorNoTfm <- aceEditor('no_code_used_model', value='# code to run analysis',
                              mode='r', readOnly=TRUE, height='150px')
+analysis.editorPwrTfm <- aceEditor('pwr_code_used_model', value='# code to run analysis',
+                             mode='r', readOnly=TRUE, height='150px')
+analysis.editorLogTfm <- aceEditor('log_code_used_model', value='# code to run analysis',
+                             mode='r', readOnly=TRUE, height='150px')
+analysis.editorSqrtTfm <- aceEditor('sqrt_code_used_model', value='# code to run analysis',
+                             mode='r', readOnly=TRUE, height='150px')
+analysis.editorANOVA <- aceEditor('code_used_anova', 
+                                  value = '# code used to run ANOVA',
+                                  mode = 'r', 
+                                  readOnly = TRUE, 
+                                  height = '150px')
+
+
+###########################
+##### transformations #####
+###########################
+
+### None ###
+
+noTrnsfrmTab <- tabPanel(
+  'No transformation',
+  analysis.editorNoTfm,
+  bsTooltip(
+    'code_used_modelNoTfm',
+    'Click for more information',
+    placement = 'top',
+    trigger = 'hover'
+  ),
+  bsPopover(
+    'code_used_modelNoTfm',
+    title = 'Analysis R code',
+    content = help.text$analysis.code.explanation,
+    placement = 'bottom',
+    trigger = 'click'
+  ),
+  conditionalPanel(
+    'input.run_analysis > 0',
+    uiOutput('no_residuals.vs.fitted.plot'),
+    uiOutput('no_kernel.density.plot'),
+    uiOutput('no_best.fit.plot'),
+    uiOutput('no_boxplot.plot'),
+    verbatimTextOutput('no_shapiro.wilk.results.text'),
+    h2('Levene\'s Test for Homogeneity of Variance'),
+    verbatimTextOutput('no_levene.results.text'),
+    # h2("Tukey's Test for Nonadditivity"),
+    uiOutput('no_tukey.results')
+  )
+)
+
+### Power ###
+
+pwrTrnsfrmTab <- tabPanel(
+  'Power transformation',
+  analysis.editorPwrTfm,
+  bsTooltip(
+    'code_used_modelPwrTfm',
+    'Click for more information',
+    placement = 'top',
+    trigger = 'hover'
+  ),
+  bsPopover(
+    'code_used_modelPwrTfm',
+    title = 'Analysis R code',
+    content = help.text$analysis.code.explanation,
+    placement = 'bottom',
+    trigger = 'click'
+  ),
+  uiOutput('exponent'),
+  uiOutput('pwr_residuals.vs.fitted.plot'),
+  uiOutput('pwr_kernel.density.plot'),
+  uiOutput('pwr_best.fit.plot'),
+  uiOutput('pwr_boxplot.plot'),
+  verbatimTextOutput('pwr_shapiro.wilk.results.text'),
+  verbatimTextOutput('pwr_levene.results.text'),
+  uiOutput('pwr_tukey.results')
+)
+
+
+### Log ###
+logTrnsfrmTab <- tabPanel(
+  'Logarithmic transformation',
+  analysis.editorLogTfm,
+  bsTooltip(
+    'code_used_modelLogTfm',
+    'Click for more information',
+    placement = 'top',
+    trigger = 'hover'
+  ),
+  bsPopover(
+    'code_used_modelLogTfm',
+    title = 'Analysis R code',
+    content = help.text$analysis.code.explanation,
+    placement = 'bottom',
+    trigger = 'click'
+  ),
+  uiOutput('log_residuals.vs.fitted.plot'),
+  uiOutput('log_kernel.density.plot'),
+  uiOutput('log_best.fit.plot'),
+  uiOutput('log_boxplot.plot'),
+  verbatimTextOutput('log_shapiro.wilk.results.text'),
+  verbatimTextOutput('log_levene.results.text'),
+  uiOutput('log_tukey.results')
+)
+
+
+### Square Root ###
+sqrtTrnsfrmTab <- tabPanel(
+  'Square root transformation',
+  analysis.editorSqrtTfm,
+  bsTooltip(
+    'code_used_modelSqrtTfm',
+    'Click for more information',
+    placement = 'top',
+    trigger = 'hover'
+  ),
+  bsPopover(
+    'code_used_modelSqrtTfm',
+    title = 'Analysis R code',
+    content = help.text$analysis.code.explanation,
+    placement = 'bottom',
+    trigger = 'click'
+  ),
+  uiOutput('sqrt_residuals.vs.fitted.plot'),
+  uiOutput('sqrt_kernel.density.plot'),
+  uiOutput('sqrt_best.fit.plot'),
+  uiOutput('sqrt_boxplot.plot'),
+  verbatimTextOutput('sqrt_shapiro.wilk.results.text'),
+  verbatimTextOutput('sqrt_levene.results.text'),
+  uiOutput('sqrt_tukey.results')
+)
 
 data.analysis.tab <-
   tabPanel(
@@ -159,46 +290,19 @@ data.analysis.tab <-
           experimental.design.panel,
           variable.type.panel,
           dependent.panel,
-          independent.panel,
-          transformation.panel
+          independent.panel
         ),
-        actionButton('run_analysis', 'Run analysis')
+        actionButton('run_analysis', 'Check Assumptions')
       ),
       mainPanel(
+        transformation.panel,
         # verbatimTextOutput('debug'),
-        analysis.editor,
-        bsTooltip('code_used_model',
-                  'Click for more information',
-                  placement = 'top',
-                  trigger = 'hover'),
-        bsPopover('code_used_model',
-                  title = 'Analysis R code',
-                  content = help.text$analysis.code.explanation,
-                  placement = 'bottom',
-                  trigger = 'click'),
-        conditionalPanel('input.run_analysis !== 0', 
-        h2('Model Formula'),
-        verbatimTextOutput('formula')
-        ),
-        uiOutput('exponent'),
-#         uiOutput('fit.summary'),
-#         bsTooltip('fit.summary',
-#                   'Click for more information',
-#                   placement = 'top',
-#                   trigger = 'hover'),
-#         bsPopover('fit.summary',
-#                   title = 'Standard output',
-#                   help.text$fit.explanation,
-#                   placement = 'left',
-#                   trigger = 'click'),
-        uiOutput('residuals.vs.fitted.plot'),
-        uiOutput('kernel.density.plot'),
-        uiOutput('best.fit.plot'),
-        uiOutput('boxplot.plot'),
-        uiOutput('shapiro.wilk.results'),
-        uiOutput('levene.results'),
-        uiOutput('tukey.results') #,
-        # uiOutput('interaction.plot')
+      tabsetPanel(
+        noTrnsfrmTab,
+        pwrTrnsfrmTab,
+        logTrnsfrmTab,
+        sqrtTrnsfrmTab
+      )
       )
     )
   )
@@ -210,14 +314,17 @@ data.analysis.tab <-
 posthoc.tab <-
   tabPanel('3. Results and Post-hoc tests',
            sidebarLayout(
-             sidebarPanel(actionButton('view_anova_table',
-                                       'View model fit summary'),
-                          br(),
-                          actionButton('run_post_hoc_analysis',
-                                       'Run post hoc analysis')),
+             sidebarPanel(
+               actionButton('view_anova_table',
+                                       'Run Data Analysis'),
+                          conditionalPanel('input.view_anova_table != 0', 
+                                           h2('Model Formula'),
+                                           verbatimTextOutput('formula')
+                          )),
              mainPanel(tabsetPanel(
                tabPanel('Model Fit Summary',
                 conditionalPanel('input.view_anova_table > 0',
+                                 analysis.editorANOVA,
                        uiOutput('fit.summary'),
                        bsTooltip('fit.summary',
                                  'Click for more information',
@@ -230,7 +337,7 @@ posthoc.tab <-
                                  trigger = 'click'),
                        uiOutput('interaction.plot'))),
                 tabPanel('Post-hoc Tests',        
-               conditionalPanel('input.run_post_hoc_analysis > 0',
+               conditionalPanel('input.view_anova_table > 0',
                        h3('Post hoc tests and figures')
                        ),
                        uiOutput('lsd.results'))))
