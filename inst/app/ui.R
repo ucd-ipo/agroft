@@ -40,7 +40,8 @@ load.data.side.panel <- sidebarPanel(
                            'RCBD 1 IV'='wheat_rcbd1',
                            'CRD 2 IVs'='clone_crd2',
                            'RCBD 2 IVs'='clone_rcbd2',
-                           'SP-RCBD 2 IVs' = 'oats_sprcbd')
+                           'SP-RCBD 2 IVs' = 'oats_sprcbd',
+                           'Multisite RCBD 2 IVs' = 'multisite_RCBD')
     )),
   bsTooltip('code_used_read',
             title='click for more information',
@@ -76,6 +77,8 @@ experimental.design.panel <-
     '1. Experimental Design',
     h5('Choose an experimental design that matches your data.'),
     uiOutput('selectDesign'),
+    checkboxInput('is_multisite',
+                  'Multisite experiment'),
     bsButton('exp_design_info_button',
              "Experimental Design Information"),
     bsModal('exp_design_info_content',
@@ -147,13 +150,13 @@ transformation.panel <-
                 selected = 'NoTfm')
 
 analysis.editorNoTfm <- aceEditor('no_code_used_model', value='# code to run analysis',
-                             mode='r', readOnly=TRUE, height='150px')
+                             mode='r', readOnly=TRUE, height='200px')
 analysis.editorPwrTfm <- aceEditor('pwr_code_used_model', value='# code to run analysis',
-                             mode='r', readOnly=TRUE, height='150px')
+                             mode='r', readOnly=TRUE, height='200px')
 analysis.editorLogTfm <- aceEditor('log_code_used_model', value='# code to run analysis',
-                             mode='r', readOnly=TRUE, height='150px')
+                             mode='r', readOnly=TRUE, height='200px')
 analysis.editorSqrtTfm <- aceEditor('sqrt_code_used_model', value='# code to run analysis',
-                             mode='r', readOnly=TRUE, height='150px')
+                             mode='r', readOnly=TRUE, height='200px')
 analysis.editorANOVA <- aceEditor('code_used_anova', 
                                   value = '# code used to run ANOVA',
                                   mode = 'r', 
@@ -189,6 +192,7 @@ noTrnsfrmTab <- tabPanel(
     uiOutput('no_kernel.density.plot'),
     uiOutput('no_best.fit.plot'),
     uiOutput('no_boxplot.plot'),
+    h2('Shapiro-Wilk Normality Test Results'),
     verbatimTextOutput('no_shapiro.wilk.results.text'),
     h2('Levene\'s Test for Homogeneity of Variance'),
     verbatimTextOutput('no_levene.results.text'),
@@ -215,15 +219,19 @@ pwrTrnsfrmTab <- tabPanel(
     placement = 'bottom',
     trigger = 'click'
   ),
+  conditionalPanel(
+    'input.run_analysis > 0',
   uiOutput('exponent'),
   uiOutput('pwr_residuals.vs.fitted.plot'),
   uiOutput('pwr_kernel.density.plot'),
   uiOutput('pwr_best.fit.plot'),
   uiOutput('pwr_boxplot.plot'),
+  h2('Shapiro-Wilk Normality Test Results'),
   verbatimTextOutput('pwr_shapiro.wilk.results.text'),
+  h2('Levene\'s Test for Homogeneity of Variance'),
   verbatimTextOutput('pwr_levene.results.text'),
   uiOutput('pwr_tukey.results')
-)
+))
 
 
 ### Log ###
@@ -243,13 +251,18 @@ logTrnsfrmTab <- tabPanel(
     placement = 'bottom',
     trigger = 'click'
   ),
+  conditionalPanel(
+    'input.run_analysis > 0',
   uiOutput('log_residuals.vs.fitted.plot'),
   uiOutput('log_kernel.density.plot'),
   uiOutput('log_best.fit.plot'),
   uiOutput('log_boxplot.plot'),
+  h2('Shapiro-Wilk Normality Test Results'),
   verbatimTextOutput('log_shapiro.wilk.results.text'),
+  h2('Levene\'s Test for Homogeneity of Variance'),
   verbatimTextOutput('log_levene.results.text'),
   uiOutput('log_tukey.results')
+  )
 )
 
 
@@ -270,13 +283,18 @@ sqrtTrnsfrmTab <- tabPanel(
     placement = 'bottom',
     trigger = 'click'
   ),
+  conditionalPanel(
+    'input.run_analysis > 0',
   uiOutput('sqrt_residuals.vs.fitted.plot'),
   uiOutput('sqrt_kernel.density.plot'),
   uiOutput('sqrt_best.fit.plot'),
   uiOutput('sqrt_boxplot.plot'),
+  h2('Shapiro-Wilk Normality Test Results'),
   verbatimTextOutput('sqrt_shapiro.wilk.results.text'),
+  h2('Levene\'s Test for Homogeneity of Variance'),
   verbatimTextOutput('sqrt_levene.results.text'),
   uiOutput('sqrt_tukey.results')
+  )
 )
 
 data.analysis.tab <-
