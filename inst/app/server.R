@@ -19,7 +19,7 @@ library(car)  # for leveneTest() and Anova()
 
 library(Rmisc)  # for summarySE()
 
-library(ggplot2)  # for ggplot(), etc.
+# library(ggplot2)  # for ggplot(), etc.
 
 library(nlme) #for split plot designs
 
@@ -35,7 +35,7 @@ shinyServer( function(input, output, session) {
   #############################################################################
   
   output$debug <- renderText({
-    # GenerateAnalysisCode()
+    GenerateAnalysisCodeANOVA2()
   })
   
   GetLoadCall <- reactive({
@@ -207,17 +207,13 @@ shinyServer( function(input, output, session) {
     if (input$exp.design %in% c('LR', 'CRD1')) {
       right.side <- input$independent.variable.one
     } else if (input$exp.design == 'CRD2') {
-      right.side <- paste0(input$independent.variable.one, ' + ',
-                           input$independent.variable.two, ' + ',
-                           input$independent.variable.one, ':',
+      right.side <- paste0(input$independent.variable.one, ' * ',
                            input$independent.variable.two)
     } else if (input$exp.design == 'RCBD1') {
       right.side <- paste0(input$independent.variable.one, ' + ',
                            input$independent.variable.blk)
     } else if (input$exp.design == 'RCBD2') {
-      right.side <- paste0(input$independent.variable.one, ' + ',
-                           input$independent.variable.two, ' + ',
-                           input$independent.variable.one, ':',
+      right.side <- paste0(input$independent.variable.one, ' * ',
                            input$independent.variable.two, ' + ',
                            input$independent.variable.blk)
     } else if (input$exp.design == 'SPRCBD') {
@@ -228,6 +224,10 @@ shinyServer( function(input, output, session) {
       right.side <- paste0(input$independent.variable.one, ' * ',
                            input$independent.variable.two)
     }
+    if(input$is_multisite){
+      right.side <- paste0(right.side, ' + ',
+                           input$independent.variable.site)
+    }
     form <- paste(left.side, right.side, sep=' ~ ')
     return(form)
   } 
@@ -236,11 +236,17 @@ shinyServer( function(input, output, session) {
     if(input$exp.design %in% c('SPRCBD', 'SPCRD')){
       f <- paste0('~ 1|', input$independent.variable.blk, '/', input$independent.variable.one)
     } 
+    if (input$is_multisite & input$exp.design %in% c('RCBD1', 'RCBD2', 'SPRCBD')){
+      f <- paste0('~ 1|', input$independent.variable.site, '/', input$independent.variable.blk)
+    }
+    if (input$is_multisite & ! input$exp.design %in% c('RCBD1', 'RCBD2', 'SPRCBD')){
+      f <- paste0('~ 1|', input$independent.variable.site)
+    }
     return(f)
   })
   
   GetFitCall <- function(transformation){
-      if (input$exp.design %in%  c('SPRCBD', 'SPCRD')){
+      if (input$exp.design %in%  c('SPRCBD', 'SPCRD') | input$is_multisite){
         fit <- call('lme',
                     fixed   = as.formula(GenerateFormula(transformation)),
                     random  = as.formula(GenerateRandomEffFormula()),
@@ -262,7 +268,7 @@ EvalFit <- function(transformation){
 
   
   GetFitExpr <- reactive({
-    input$run_analysis
+    input$view_anova_table
     # isolate({
       x <- deparse(GetFitCall(input$transformation), width.cutoff=500L)
     # })
@@ -387,6 +393,12 @@ EvalFit <- function(transformation){
       analysisCode <- paste0(analysisCode, '\n\n# print summary table\nlibrary(car)\nAnova(model.fit, type = 3)')
       return(analysisCode)
     })
+    
+    GenerateAnalysisCodeANOVA2 <- function(transformation){
+      paste0('model.fit <- ', deparse(GetFitCall(transformation), width.cutoff=500L))
+    }
+    
+    
       
     GenerateAnalysisAsump <- function(transformation){
       # analysisCode for the assumptions tests
@@ -435,17 +447,21 @@ EvalFit <- function(transformation){
                                 GenerateAnalysisAsump('LogTfm'), 
                                 GenerateAnalysisAsump('SqrtTfm'))
       TransformCode <- list(NoTfm = paste(AnalysisCode, 
+                                          GenerateAnalysisCodeANOVA2('NoTfm'),
                                           AnalysisCodeAsump[[1]], 
                                           sep='\n'),
                               PwrTfm = paste(AnalysisCode, 
+                                             GenerateAnalysisCodeANOVA2('PwrTfm'),
                                              GenerateAnalysisCodePwr(),
                                              AnalysisCodeAsump[[2]],
                                              sep='\n'),
                               LogTfm = paste(AnalysisCode, 
+                                             GenerateAnalysisCodeANOVA2('LogTfm'),
                                              GenerateAnalysisCodeLog(),
                                              AnalysisCodeAsump[[3]],
                                              sep='\n'),
                               SqrtTfm = paste(AnalysisCode, 
+                                              GenerateAnalysisCodeANOVA2('SqrtTfm'),
                                               GenerateAnalysisCodeSqrt(),
                                               AnalysisCodeAsump[[4]],
                                               sep='\n'))
@@ -454,6 +470,8 @@ EvalFit <- function(transformation){
     
   
     observe({
+      input$view_anova_table
+      isolate({
         tryCatch({
           updateAceEditor(
             session, 'code_used_anova',
@@ -466,6 +484,7 @@ EvalFit <- function(transformation){
             value = '# code used to run ANOVA', readOnly = TRUE
           ))}
         )
+      })
     })
     
     
@@ -572,7 +591,7 @@ EvalFit <- function(transformation){
                    'Randomized Complete Block Design (RCBD) with One Treatment' = 'RCBD1',
                    'Randomized Complete Block Design (RCBD) with Two Treatments' = 'RCBD2',
                    'Split-Plot Completely Randomized Design (Split-Plot CRD)' = 'SPCRD',
-                   'Split-Plot Randomized Complete Block Design (Split-Plot R)' = 'SPRCBD')
+                   'Split-Plot Randomized Complete Block Design (Split-Plot RCBD)' = 'SPRCBD')
 
       selectInput('exp.design',
                   'Select Your Experimental Design',
@@ -585,6 +604,8 @@ EvalFit <- function(transformation){
       
     }
   })
+  
+  
   
   output$selectDependent <- renderUI({
     # Renders a dropdown for selecting the dependent variable from the loaded
@@ -607,6 +628,7 @@ EvalFit <- function(transformation){
     if (is.null(input$dependent.variable)) {
       return(NULL)
     } else {
+      input1 <- input2 <- input3 <- input4 <- NULL
       all.col.names <- names(ConvertData())
       choices = all.col.names[!(all.col.names %in% input$dependent.variable)]
       if (input$exp.design == 'LR') {
@@ -628,7 +650,7 @@ EvalFit <- function(transformation){
                               'Select the second independent factor variable:',
                               choices = choices,
                               selected = NULL)
-        return(list(input1, input2))
+        # return(list(input1, input2))
       } else if (input$exp.design == 'RCBD1') {
         input1 <- selectInput('independent.variable.one',
                               'Select the first independent factor variable:',
@@ -638,7 +660,7 @@ EvalFit <- function(transformation){
                               'Select the blocking factor variable:',
                               choices = choices,
                               selected = NULL)
-        return(list(input1, input2))
+        # return(list(input1, input2))
       } else if (input$exp.design == 'RCBD2') {
         input1 <- selectInput('independent.variable.one',
                               'Select the first independent factor variable:',
@@ -652,7 +674,7 @@ EvalFit <- function(transformation){
                               'Select the blocking factor variable:',
                               choices = choices,
                               selected = NULL)
-        return(list(input1, input2, input3))
+        # return(list(input1, input2, input3))
       } else if (input$exp.design == 'SPCRD') {
         input1 <- selectInput('independent.variable.one',
                               'Select the main plot treatment:',
@@ -666,7 +688,7 @@ EvalFit <- function(transformation){
                               'Select the repetition:',
                               choices = choices,
                               selected = NULL)
-        return(list(input1, input2, input3))
+        # return(list(input1, input2, input3))
       } else if (input$exp.design == 'SPRCBD') {
         input1 <- selectInput('independent.variable.one',
                               'Select the main plot treatment:',
@@ -680,8 +702,15 @@ EvalFit <- function(transformation){
                               'Select the blocking factor variable:',
                               choices = choices,
                               selected = NULL)
-        return(list(input1, input2, input3))
+        # return(list(input1, input2, input3))
       }
+      if (input$is_multisite){
+        input4 <- selectInput('independent.variable.site',
+                              'Select the site variable',
+                              choices = choices, 
+                              selected = NULL)
+      }
+      return(list(input1, input2, input3, input4))
     }
   })
   
@@ -734,14 +763,14 @@ EvalFit <- function(transformation){
   
   output$fitSummaryText <- renderPrint({
     input$run_analysis
-    # isolate({
+    isolate({
 #       if(input$run_analysis == 0) {
 #         return(NULL)
 #       } else {
         assign('my.data', AddTransformationColumns(), envir=.GlobalEnv)
         fit.summary <- Anova(EvalFit(input$transformation), type='III')
       # }
-    # })
+    })
     return(fit.summary)
   })
   
@@ -750,11 +779,11 @@ EvalFit <- function(transformation){
 #       return(NULL)
 #     } else {
       input$view_anova_table
-      # isolate({
+      isolate({
       list(h2('Model Fit Summary'),
            if (input$exp.design != 'LR') { h3('ANOVA Table') } else{ NULL },
            verbatimTextOutput('fitSummaryText'))
-      # })
+      })
     # }
   })
   
@@ -804,53 +833,7 @@ EvalFit <- function(transformation){
     shapiro.wilk.results.text('SqrtTfm')
     # })
   })
-#   
-#   shapiro.wilk.results <- function(transformation){
-#       res <- switch(transformation, 
-#                     NoTfm = 'no_shapiro.wilk.results.text',
-#                     PwrTfm = 'pwr_shapiro.wilk.results.text',
-#                     LogTfm = 'log_shapiro.wilk.results.text',
-#                     SqrtTfm = 'sqrt_shapiro.wilk.results.text')
-#       list(h2('Shapiro-Wilk Normality Test Results'),
-#            verbatimTextOutput(res))
-#   }
-#   
-#   output$no_shapiro.wilk.results <- renderUI({
-# #     if(is.null(input$run_analysis) || input$run_analysis == 0) {
-# #       return(NULL)
-# #     } else {
-#     shapiro.wilk.results('NoTfm')
-#     # }
-#   })
-#   output$pwr_shapiro.wilk.results <- renderUI({
-# #     if(is.null(input$run_analysis) || input$run_analysis == 0) {
-# #       return(NULL)
-# #     } else {
-#     shapiro.wilk.results('PwrTfm')
-#     # }
-#   })
-#   output$log_shapiro.wilk.results <- renderUI({
-# #     if(is.null(input$run_analysis) || input$run_analysis == 0) {
-# #       return(NULL)
-# #     } else {
-#     shapiro.wilk.results('LogTfm')
-#     # }
-#   })
-#   output$sqrt_shapiro.wilk.results <- renderUI({
-# #     if(is.null(input$run_analysis) || input$run_analysis == 0) {
-# #       return(NULL)
-# #     } else {
-#     shapiro.wilk.results('SqrtTfm')
-#     # }
-#   })
-  
-  
-#   levene.results.text <- function(transformation){
-#       formulas <- GenerateIndividualFormulas(transformation)
-#       my.data <- AddTransformationColumns()
-#     return(lapply(formulas, leveneTest, data = my.data))
-#   }
-  
+
   output$no_levene.results.text <- renderPrint({
     formulas <- GenerateIndividualFormulas(transformation = 'NoTfm')
     assign('my.data', AddTransformationColumns(), envir = .GlobalEnv)
@@ -872,53 +855,7 @@ EvalFit <- function(transformation){
     assign('my.data', AddTransformationColumns(), envir = .GlobalEnv)
     return(lapply(formulas, leveneTest, data = my.data))
   })
-  
-#   
-#   
-#   levene.results <- function(transformation){
-#       res <- switch(transformation, 
-#                     NoTfm = 'no_levene.results.text',
-#                     PwrTfm = 'pwr_levene.results.text',
-#                     LogTfm = 'log_levene.results.text',
-#                     SqrtTfm = 'sqrt_levene.results.text')
-#       if (input$exp.design != 'LR') {
-#         list(h2("Levene's Test for Homogeneity of Variance"),
-#              verbatimTextOutput(res))
-#       } else {
-#         return(NULL)
-#       }
-#   }
-#   
-#   output$no_levene.results <- renderUI({
-#     if(is.null(input$run_analysis) || input$run_analysis == 0) {
-#       return(NULL)
-#     } else {
-#     list(h2("Levene's Test for Homogeneity of Variance"),
-#          verbatimTextOutput('no_levene.results.text'))
-#     }
-#   })
-#   output$pwr_levene.results <- renderUI({
-# #     if(is.null(input$run_analysis) || input$run_analysis == 0) {
-# #       return(NULL)
-# #     } else {
-#     levene.results('PwrTfm')
-#     # }
-#   })
-#   output$log_levene.results <- renderUI({
-# #     if(is.null(input$run_analysis) || input$run_analysis == 0) {
-# #       return(NULL)
-# #     } else {
-#     levene.results('LogTfm')
-#     # }
-#   })
-#   output$sqrt_levene.results <- renderUI({
-# #     if(is.null(input$run_analysis) || input$run_analysis == 0) {
-# #       return(NULL)
-# #     } else {
-#     levene.results('SqrtTfm')
-#     # }
-#   })
-#   
+ 
   
   tukey.results.text <- function(transformation){
       # TODO : Check to make sure this is what I'm supposed to use for the split
@@ -1341,23 +1278,16 @@ EvalFit <- function(transformation){
       x.label = ind.var
     }
     merged.table <- merge(summary.stats, lsd.results$groups, by = "trt")
-    ggplot(merged.table, aes(x = trt, y = means, ymin = 0,
-                             ymax = 1.35 * max(means))) +
-      geom_bar(stat = "identity", fill = "gray50", colour = "black", width = 0.7) +
-      geom_errorbar(aes(ymax = means + se, ymin = means - se), width = 0.0,
-                    size = 0.5, color = "black") +
-      geom_text(aes(label = M, y = means + se / 1.8, vjust = -2.5)) +
-      labs(x = x.label, y = dep.var) +
-      theme_bw() +
-      theme(panel.grid.major.x = element_blank(),
-            panel.grid.major.y = element_line(colour = "grey80"),
-            plot.title = element_text(size = rel(1.5),
-                                      face = "bold", vjust = 1.5),
-            axis.title = element_text(face = "bold"),
-            axis.title.y = element_text(vjust= 1.8),
-            axis.title.x = element_text(vjust= -0.5),
-            panel.border = element_rect(colour = "black"),
-            text = element_text(size = 20))
+    dat <- merged.table$yield
+    names(dat) <- merged.table$trt
+    b <- barplot(dat, xlab = x.label, ylab = dep.var,
+                 ylim = c(0, max(dat + (merged.table$se*1.96))),
+                 cex.names = .8)
+    abline(h=0)
+    arrows(x0 = b, 
+           y0 = dat - (merged.table$se*1.96), 
+           y1 = dat + (merged.table$se*1.96),
+           code = 3, angle = 90, length=.1)
   }
   
   # TODO : Clean up this insane nested if statement! Sorry...
@@ -1401,11 +1331,12 @@ EvalFit <- function(transformation){
           return(p(paste0(ind.vars, ' is not significant.')))
         }
       } else if (input$exp.design %in% c('CRD2', 'RCBD2')) {
-        var.one.p.value <- summary(fit)[[1]]$'Pr(>F)'[1]
-        var.two.p.value <- summary(fit)[[1]]$'Pr(>F)'[2]
-        if (exp.design == 'CRD2') {
-          assign('my.data', AddTransformationColumns(), envir=.GlobalEnv)
-          interaction.p.value <- Anova(fit, type='III')[4, 'Pr(>F)']
+        assign('my.data', AddTransformationColumns(), envir=.GlobalEnv)
+        var.one.p.value <- Anova(fit, type = 3)[input$independent.variable.one, 'Pr(>F)']
+        var.two.p.value <- Anova(fit, type = 3)[input$independent.variable.two, 'Pr(>F)']
+        interact.index <- grep(':', row.names(Anova(fit, type=3)))
+        # if (exp.design == 'CRD2') {
+          interaction.p.value <- Anova(fit, type='III')[interact.index, 'Pr(>F)']
         if (interaction.p.value < .05) {
           text <- paste0("The interaction, ", paste(ind.vars, collapse = ":"),
                          ", is significant (alpha = 0.05).")
@@ -1437,7 +1368,7 @@ EvalFit <- function(transformation){
                           'hoc analyses for this scenario are not ',
                           'implemented.')))
         }
-      }
+      # }
       } else if (input$exp.design %in% c('SPCRD', 'SPRCBD')) {
           assign('my.data', AddTransformationColumns(), envir=.GlobalEnv)
           interaction.p.value <- Anova(fit, type='III')[4, 'Pr(>Chisq)']
