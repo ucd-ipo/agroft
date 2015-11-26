@@ -1278,16 +1278,20 @@ EvalFit <- function(transformation){
       x.label = ind.var
     }
     merged.table <- merge(summary.stats, lsd.results$groups, by = "trt")
-    dat <- merged.table$yield
+    dat <- merged.table$means
     names(dat) <- merged.table$trt
     b <- barplot(dat, xlab = x.label, ylab = dep.var,
-                 ylim = c(0, max(dat + (merged.table$se*1.96))),
+                 ylim = c(0, max(dat + (merged.table$se*1.96))+max(dat + (merged.table$se*1.96))*.07),
                  cex.names = .8)
     abline(h=0)
     arrows(x0 = b, 
            y0 = dat - (merged.table$se*1.96), 
            y1 = dat + (merged.table$se*1.96),
            code = 3, angle = 90, length=.1)
+    
+    text(x=b, y=dat + (merged.table$se*1.96) + max(dat + (merged.table$se*1.96))*.05 ,
+         labels = merged.table$M)
+    
   }
   
   # TODO : Clean up this insane nested if statement! Sorry...
