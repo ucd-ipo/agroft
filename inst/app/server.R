@@ -1,32 +1,12 @@
 library(shiny)
-
-# This package has bindings for some cool twitter bootstrap UI stuff that shiny
-# doesn't include. Includes the modals, collapse panels, and tool tips.
 library(shinyBS)
-
-# for displaying R code
-library(shinyAce)
-
-# for reading in excel files,
-# It is a package that has no Java dependencies (only c++), so once
-# binaries are on CRAN, anyone can install it (no JRE required!) and the app can
-# have functionality to read in excel files.
-#library(readxl)
-
+library(shinyAce) # for displaying R code
 library(agricolae) # for LSD.Test()
-
 library(car)  # for leveneTest() and Anova()
-
 library(Rmisc)  # for summarySE()
-
-# library(ggplot2)  # for ggplot(), etc.
-
 library(nlme) #for split plot designs
-
-# for loading dynamic reports. I don't use rmarkdown because that requires that
-# pandoc be installed which is a whole different ballgame. knitr doesn't require
-# dependencies like that
-library(knitr)
+library(knitr) # for loading dynamic reports.
+#library(readxl) # for reading in excel files (not yet implimented)
 
 shinyServer( function(input, output, session) {
   
