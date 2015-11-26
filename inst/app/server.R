@@ -13,7 +13,7 @@ library(shinyAce)
 # have functionality to read in excel files.
 #library(readxl)
 
-library(agricolae) # for sample datasets and LSD.Test()
+library(agricolae) # for LSD.Test()
 
 library(car)  # for leveneTest() and Anova()
 
@@ -279,7 +279,7 @@ EvalFit <- function(transformation){
   ModelFitWithoutError <- function(transformation){
     exp.design <- input$exp.design
     my.data <- AddTransformationColumns()
-    if (exp.design %in% c('SPCRD', 'SPRCBD')) {
+    if (exp.design %in% c('SPCRD', 'SPRCBD') | input$is_multisite) {
       model.fit <- aov(formula = as.formula(GenerateFormula(transformation)),
                        data = my.data)
     } else {
@@ -1315,18 +1315,21 @@ EvalFit <- function(transformation){
         ind.vars <- c(ind.var.one, ind.var.two)
         my.data <- AddTransformationColumns()
         fit <- EvalFit(input$transformation)
+        fit.without.error <- ModelFitWithoutError(input$transformation)
       })
+      probcol <- ifelse(input$is_multisite | input$exp.design %in% c('SPRCBD', 'SPCRD'), 
+                        'Pr(>Chisq)', 'Pr(>F)')
       alpha <- 0.05
       if (input$exp.design == 'LR') {
         return(p('Post hoc tests are not run for simple linear regression.'))
       } else if (exp.design %in% c('CRD1', 'RCBD1')) {
-        p.value <- summary(fit)[[1]]$'Pr(>F)'[1]
+        p.value <- summary(fit)[[1]][probcol][1]
         if (p.value < alpha) {
           output$lsd.results.text <- renderPrint({
-            LSD.test(fit, ind.vars, console = TRUE)
+            LSD.test(fit.without.error, ind.vars, console = TRUE)
           })
           output$lsd.bar.plot <- renderPlot({
-            MakePostHocPlot(my.data, fit, dep.var, ind.vars)
+            MakePostHocPlot(my.data, fit.without.error, dep.var, ind.vars)
           })
           return(list(p(paste0(ind.vars, ' is significant (alpha=0.05).')),
                       verbatimTextOutput('lsd.results.text'),
@@ -1336,11 +1339,10 @@ EvalFit <- function(transformation){
         }
       } else if (input$exp.design %in% c('CRD2', 'RCBD2')) {
         assign('my.data', AddTransformationColumns(), envir=.GlobalEnv)
-        var.one.p.value <- Anova(fit, type = 3)[input$independent.variable.one, 'Pr(>F)']
-        var.two.p.value <- Anova(fit, type = 3)[input$independent.variable.two, 'Pr(>F)']
+        var.one.p.value <- Anova(fit, type = 3)[input$independent.variable.one, probcol]
+        var.two.p.value <- Anova(fit, type = 3)[input$independent.variable.two, probcol]
         interact.index <- grep(':', row.names(Anova(fit, type=3)))
-        # if (exp.design == 'CRD2') {
-          interaction.p.value <- Anova(fit, type='III')[interact.index, 'Pr(>F)']
+          interaction.p.value <- Anova(fit, type='III')[interact.index, probcol]
         if (interaction.p.value < .05) {
           text <- paste0("The interaction, ", paste(ind.vars, collapse = ":"),
                          ", is significant (alpha = 0.05).")
@@ -1358,10 +1360,10 @@ EvalFit <- function(transformation){
             return(p(text))
           }
           output$lsd.results.text <- renderPrint({
-            LSD.test(fit, lsd.vars, console = TRUE)
+            LSD.test(fit.without.error, lsd.vars, console = TRUE)
           })
           output$lsd.bar.plot <- renderPlot({
-            MakePostHocPlot(my.data, fit, dep.var, lsd.vars)
+            MakePostHocPlot(my.data, fit.without.error, dep.var, lsd.vars)
           })
           return(list(p(text),
                       verbatimTextOutput('lsd.results.text'),
@@ -1372,21 +1374,20 @@ EvalFit <- function(transformation){
                           'hoc analyses for this scenario are not ',
                           'implemented.')))
         }
-      # }
       } else if (input$exp.design %in% c('SPCRD', 'SPRCBD')) {
           assign('my.data', AddTransformationColumns(), envir=.GlobalEnv)
-          interaction.p.value <- Anova(fit, type='III')[4, 'Pr(>Chisq)']
+          interaction.p.value <- Anova(fit, type='III')[4, probcol]
         if (interaction.p.value < .05) {
           stuff <- list()
           for (ivars in list(ind.vars, rev(ind.vars))) {
             f <- paste0(dep.var, ' ~ ', ivars[2])
-            if (exp.design %in%  c('SPRCBD', 'SPCRD')) {
+            if (exp.design =='SPRCBD') {
               f <- paste0(f, ' + ', input$independent.variable.blk)
             }
             for (level in levels(my.data[[ivars[1]]])) {
               sub.data <- my.data[my.data[[ivars[1]]] == level, ]
               sub.model.fit <- aov(as.formula(f), sub.data)
-              sub.p.value <- summary(sub.model.fit)[[1]][["Pr(>F)"]][1]
+              sub.p.value <- summary(sub.model.fit)[[1]][[probcol]][1]
               output.name <- paste0('lsd.results.text.', ivars[1], '.', level)
               stuff[[paste0(output.name, '.heading')]] <-
                 h4(paste0('Subset of ', ivars[1], ':', level))
@@ -1421,8 +1422,8 @@ EvalFit <- function(transformation){
           text <- paste0("The interaction, ", paste(ind.vars, collapse = ":"),
                          ", is not significant (alpha = 0.05).")
           assign('my.data', AddTransformationColumns(), envir=.GlobalEnv)
-          main.plot.p.value <- Anova(fit, type='III')[ind.var.one, 'Pr(>Chisq)']
-          sub.plot.p.value <- Anova(fit, type='III')[ind.var.two, 'Pr(>Chisq)']
+          main.plot.p.value <- Anova(fit, type='III')[ind.var.one, probcol]
+          sub.plot.p.value <- Anova(fit, type='III')[ind.var.two, probcol]
           if (main.plot.p.value < alpha) {
             text <- paste0(text, " ", ind.var.one, " is significant.")
             output$lsd.results.text.one <- renderPrint({
