@@ -147,7 +147,8 @@ transformation.panel <-
                             'Power' = 'PwrTfm', 
                             'Logarithmic' = 'LogTfm', 
                             'Square Root' = 'SqrtTfm'),
-                selected = 'NoTfm')
+                selected = 'NoTfm',
+                inline=TRUE)
 
 analysis.editorNoTfm <- aceEditor('no_code_used_model', value='# code to run analysis',
                              mode='r', readOnly=TRUE, height='200px')
