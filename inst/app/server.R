@@ -1486,6 +1486,70 @@ EvalFit <- function(transformation){
     content  = function(file) file.copy('www/AIP Workshop Day 2.pdf', file, overwrite = FALSE)
   )
   
+  #############################################################################
+  ##### UI elements                                                       #####
+  #############################################################################
+  output$logTrnsfrmTab <- renderUI({
+    if(input$run_analysis == 0){
+      return(NULL)
+    } else {
+    if(min(AddTransformationColumns()[,input$dependent.variable], na.rm=TRUE)>=1){
+      return(list(
+    bsTooltip(
+      'code_used_modelLogTfm',
+      'Click for more information',
+      placement = 'top',
+      trigger = 'hover'
+    ),
+    bsPopover(
+      'code_used_modelLogTfm',
+      title = 'Analysis R code',
+      content = help.text$analysis.code.explanation,
+      placement = 'bottom',
+      trigger = 'click'
+    ),
+    conditionalPanel(
+      'input.run_analysis > 0',
+      uiOutput('log_residuals.vs.fitted.plot'),
+      uiOutput('log_kernel.density.plot'),
+      uiOutput('log_best.fit.plot'),
+      uiOutput('log_boxplot.plot'),
+      h2('Shapiro-Wilk Normality Test Results'),
+      verbatimTextOutput('log_shapiro.wilk.results.text'),
+      h2('Levene\'s Test for Homogeneity of Variance'),
+      verbatimTextOutput('log_levene.results.text'),
+      uiOutput('log_tukey.results')
+    )
+  ))
+    } else {
+      return(tabPanel(
+        'Logarithmic transformation',
+        h2('Your dependent variable has values less than 1. So that the log transformation is done correctly, please make sure all values in your dependent variable are greater than one by multiplying and/or adding a constant to that variable')))
+    }
+    }
+  })
+  
+  output$transformation.panel <- renderUI({
+    if(input$run_analysis == 0){
+      return(NULL)
+    }
+    if(min(AddTransformationColumns()[,input$dependent.variable], na.rm=TRUE)>=1){
+      choices <- c('None' = 'NoTfm', 
+                  'Power' = 'PwrTfm', 
+                  'Logarithmic' = 'LogTfm', 
+                  'Square Root' = 'SqrtTfm')
+    } else {
+      choices <-  c('None' = 'NoTfm', 
+                    'Power' = 'PwrTfm', 
+                    'Square Root' = 'SqrtTfm')
+    }
+    radioButtons('transformation',
+                 'Select a transformation for the dependent variable:',
+                 choices = choices,
+                 selected = 'NoTfm',
+                 inline=TRUE)
+  })
+
   
   
   #############################################################################

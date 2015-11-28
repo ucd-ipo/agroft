@@ -10,8 +10,8 @@ library(yaml)
 # Loads in the help and information text.
 # The shinyBS popovers can't handle line returns in the strings so a special
 # handler is needed.
-str.handler <- function(x) { gsub("[\r\n]", "", x) }
-help.text <- yaml.load_file('help-text.yaml', handlers = list(str = str.handler))
+# str.handler <- function(x) { gsub("[\r\n]", "", x) }
+# help.text <- yaml.load_file('help-text.yaml', handlers = list(str = str.handler))
 
 ###############################################################################
 # Load Data Tab
@@ -140,15 +140,15 @@ independent.panel <-
 
 # In this panel, the user can select a type of transformation to apply to the
 # dependent variable.
-transformation.panel <-
-    radioButtons('transformation',
-                'Select a transformation for the dependent variable:',
-                choices = c('None' = 'NoTfm', 
-                            'Power' = 'PwrTfm', 
-                            'Logarithmic' = 'LogTfm', 
-                            'Square Root' = 'SqrtTfm'),
-                selected = 'NoTfm',
-                inline=TRUE)
+# transformation.panel <-
+#     radioButtons('transformation',
+#                 'Select a transformation for the dependent variable:',
+#                 choices = c('None' = 'NoTfm', 
+#                             'Power' = 'PwrTfm', 
+#                             'Logarithmic' = 'LogTfm', 
+#                             'Square Root' = 'SqrtTfm'),
+#                 selected = 'NoTfm',
+#                 inline=TRUE)
 
 analysis.editorNoTfm <- aceEditor('no_code_used_model', value='# code to run analysis',
                              mode='r', readOnly=TRUE, height='200px')
@@ -236,35 +236,37 @@ pwrTrnsfrmTab <- tabPanel(
 
 
 ### Log ###
-logTrnsfrmTab <- tabPanel(
-  'Logarithmic transformation',
-  analysis.editorLogTfm,
-  bsTooltip(
-    'code_used_modelLogTfm',
-    'Click for more information',
-    placement = 'top',
-    trigger = 'hover'
-  ),
-  bsPopover(
-    'code_used_modelLogTfm',
-    title = 'Analysis R code',
-    content = help.text$analysis.code.explanation,
-    placement = 'bottom',
-    trigger = 'click'
-  ),
-  conditionalPanel(
-    'input.run_analysis > 0',
-  uiOutput('log_residuals.vs.fitted.plot'),
-  uiOutput('log_kernel.density.plot'),
-  uiOutput('log_best.fit.plot'),
-  uiOutput('log_boxplot.plot'),
-  h2('Shapiro-Wilk Normality Test Results'),
-  verbatimTextOutput('log_shapiro.wilk.results.text'),
-  h2('Levene\'s Test for Homogeneity of Variance'),
-  verbatimTextOutput('log_levene.results.text'),
-  uiOutput('log_tukey.results')
-  )
-)
+# moved to server side so if data are nevative, warning pops up instead of other stuff
+# 
+# logTrnsfrmTab <- tabPanel(
+#   'Logarithmic transformation',
+#   analysis.editorLogTfm,
+#   bsTooltip(
+#     'code_used_modelLogTfm',
+#     'Click for more information',
+#     placement = 'top',
+#     trigger = 'hover'
+#   ),
+#   bsPopover(
+#     'code_used_modelLogTfm',
+#     title = 'Analysis R code',
+#     content = help.text$analysis.code.explanation,
+#     placement = 'bottom',
+#     trigger = 'click'
+#   ),
+#   conditionalPanel(
+#     'input.run_analysis > 0',
+#   uiOutput('log_residuals.vs.fitted.plot'),
+#   uiOutput('log_kernel.density.plot'),
+#   uiOutput('log_best.fit.plot'),
+#   uiOutput('log_boxplot.plot'),
+#   h2('Shapiro-Wilk Normality Test Results'),
+#   verbatimTextOutput('log_shapiro.wilk.results.text'),
+#   h2('Levene\'s Test for Homogeneity of Variance'),
+#   verbatimTextOutput('log_levene.results.text'),
+#   uiOutput('log_tukey.results')
+#   )
+# )
 
 
 ### Square Root ###
@@ -314,12 +316,15 @@ data.analysis.tab <-
         actionButton('run_analysis', 'Check Assumptions')
       ),
       mainPanel(
-        transformation.panel,
+        uiOutput('transformation.panel'),
         # verbatimTextOutput('debug'),
       tabsetPanel(
         noTrnsfrmTab,
         pwrTrnsfrmTab,
-        logTrnsfrmTab,
+        tabPanel(
+          'Logarithmic transformation',
+          analysis.editorLogTfm,
+          uiOutput('logTrnsfrmTab')),
         sqrtTrnsfrmTab
       )
       )
