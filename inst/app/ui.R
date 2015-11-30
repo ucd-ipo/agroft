@@ -165,6 +165,7 @@ analysis.editorANOVA <- aceEditor('code_used_anova',
                                   height = '150px')
 
 
+
 ###########################
 ##### transformations #####
 ###########################
@@ -237,36 +238,6 @@ pwrTrnsfrmTab <- tabPanel(
 
 ### Log ###
 # moved to server side so if data are nevative, warning pops up instead of other stuff
-# 
-# logTrnsfrmTab <- tabPanel(
-#   'Logarithmic transformation',
-#   analysis.editorLogTfm,
-#   bsTooltip(
-#     'code_used_modelLogTfm',
-#     'Click for more information',
-#     placement = 'top',
-#     trigger = 'hover'
-#   ),
-#   bsPopover(
-#     'code_used_modelLogTfm',
-#     title = 'Analysis R code',
-#     content = help.text$analysis.code.explanation,
-#     placement = 'bottom',
-#     trigger = 'click'
-#   ),
-#   conditionalPanel(
-#     'input.run_analysis > 0',
-#   uiOutput('log_residuals.vs.fitted.plot'),
-#   uiOutput('log_kernel.density.plot'),
-#   uiOutput('log_best.fit.plot'),
-#   uiOutput('log_boxplot.plot'),
-#   h2('Shapiro-Wilk Normality Test Results'),
-#   verbatimTextOutput('log_shapiro.wilk.results.text'),
-#   h2('Levene\'s Test for Homogeneity of Variance'),
-#   verbatimTextOutput('log_levene.results.text'),
-#   uiOutput('log_tukey.results')
-#   )
-# )
 
 
 ### Square Root ###
@@ -334,6 +305,12 @@ data.analysis.tab <-
 ###############################################################################
 # Results and Post-hoc Tests Tab
 ###############################################################################
+analysis.editor.posthoc <- aceEditor('code_used_posthoc',
+                                     value = '# code used to run post-hoc tests',
+                                     mode = 'r',
+                                     readOnly = TRUE, 
+                                     height = '75px')
+
 
 posthoc.tab <-
   tabPanel('3. Results and Post-hoc tests',
@@ -362,7 +339,8 @@ posthoc.tab <-
                        uiOutput('interaction.plot'))),
                 tabPanel('Post-hoc Tests',        
                conditionalPanel('input.view_anova_table > 0',
-                       h3('Post hoc tests and figures')
+                       h3('Post hoc tests and figures'),
+                       analysis.editor.posthoc
                        ),
                        uiOutput('lsd.results'))))
            )

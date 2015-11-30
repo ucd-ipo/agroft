@@ -3,9 +3,9 @@ library(shinyBS)
 library(shinyAce) # for displaying R code
 library(agricolae) # for LSD.Test()
 library(car)  # for leveneTest() and Anova()
-library(Rmisc)  # for summarySE()
 library(nlme) #for split plot designs
 library(knitr) # for loading dynamic reports.
+library(lsmeans)
 #library(readxl) # for reading in excel files (not yet implimented)
 
 shinyServer( function(input, output, session) {
@@ -203,10 +203,6 @@ shinyServer( function(input, output, session) {
     } else if (input$exp.design == 'SPCRD'){
       right.side <- paste0(input$independent.variable.one, ' * ',
                            input$independent.variable.two)
-    }
-    if(input$is_multisite){
-      right.side <- paste0(right.side, ' + ',
-                           input$independent.variable.site)
     }
     form <- paste(left.side, right.side, sep=' ~ ')
     return(form)
@@ -1246,36 +1242,62 @@ EvalFit <- function(transformation){
   # Post hoc tab
   #############################################################################
   
-  MakePostHocPlot <- function(data, fit, dep.var, ind.var) {
-    lsd.results <- LSD.test(fit, ind.var)
-    summary.stats <- summarySE(data = data, dep.var, groupvars = ind.var)
+  MakePostHocPlot <- function(fit, dep.var, ind.var, type = 'fixef') {
     if (length(ind.var) == 2) {
-      summary.stats$trt <- apply(summary.stats[ , ind.var], 1, paste,
-                                 collapse = ":")
       x.label = paste(ind.var, collapse = ":")
     } else {
-      summary.stats$trt <- summary.stats[[ind.var]]
       x.label = ind.var
     }
-    merged.table <- merge(summary.stats, lsd.results$groups, by = "trt")
-    dat <- merged.table$means
-    names(dat) <- merged.table$trt
+    
+    strp <- function(x){ gsub('^\\s*|\\s*$', '', x) }
+    
+    if(type == 'fixef'){
+    lsd.results <- LSD.test(fit, ind.var)
+    lsd.results$means$trt <- row.names(lsd.results$means)
+    lsd.results <- merge(lsd.results$groups, lsd.results$means, by = 'trt')
+    dat <- lsd.results[,dep.var]
+    
+    names(dat) <- lsd.results$trt
     b <- barplot(dat, xlab = x.label, ylab = dep.var,
-                 ylim = c(0, max(dat + (merged.table$se*1.96))+max(dat + (merged.table$se*1.96))*.07),
+                 ylim = c(0, max(lsd.results$UCL)+max(lsd.results$UCL)*.10),
                  cex.names = .8)
     abline(h=0)
     arrows(x0 = b, 
-           y0 = dat - (merged.table$se*1.96), 
-           y1 = dat + (merged.table$se*1.96),
+           y0 = lsd.results$LCL, 
+           y1 = lsd.results$UCL,
            code = 3, angle = 90, length=.1)
     
-    text(x=b, y=dat + (merged.table$se*1.96) + max(dat + (merged.table$se*1.96))*.05 ,
-         labels = merged.table$M)
-    
+    text(x=b, y=lsd.results$UCL+(lsd.results$UCL*.08) ,
+         labels = lsd.results$M)
+    }
+    if(type == 'ranef'){
+      f <- as.formula(paste0('~', paste0(ind.var, collapse='+')))
+      lsd.results <- cld(lsmeans(fit, f), Letters=letters)
+      lsd.results <- lsd.results[order(lsd.results[,1], lsd.results[,2]),]
+      dat <- lsd.results$lsmean
+      if (length(ind.var) == 2) {
+        names(dat) <- paste0(as.character(lsd.results[,ind.var[1]]), ":", 
+                            as.character(lsd.results[,ind.var[2]]))
+      } else {
+        names(dat) <- as.character(lsd.results[,ind.var]) 
+      }
+      b <- barplot(dat, xlab = x.label, ylab = dep.var,
+                   ylim = c(0, max(lsd.results$upper.CL)+max(lsd.results$upper.CL)*.10),
+                   cex.names = .8)
+      abline(h=0)
+      arrows(x0 = b, 
+             y0 = lsd.results$lower.CL, 
+             y1 = lsd.results$upper.CL,
+             code = 3, angle = 90, length=.1)
+      
+      text(x=b, y=lsd.results$upper.CL+(lsd.results$upper.CL*.08) ,
+           labels = strp(lsd.results$.group))
+    }
   }
   
-  # TODO : Clean up this insane nested if statement! Sorry...
-  output$lsd.results <- renderUI({
+  ##### code to run post-hoc tests #####
+  
+  lsd.code <- reactive({
     if (is.null(input$view_anova_table) || input$view_anova_table == 0) {
       return(NULL)
     } else {
@@ -1294,35 +1316,35 @@ EvalFit <- function(transformation){
         }
         ind.vars <- c(ind.var.one, ind.var.two)
         my.data <- AddTransformationColumns()
-        fit <- EvalFit(input$transformation)
-        fit.without.error <- ModelFitWithoutError(input$transformation)
+        model.fit <- EvalFit(input$transformation)
       })
       probcol <- ifelse(input$is_multisite | input$exp.design %in% c('SPRCBD', 'SPCRD'), 
                         'Pr(>Chisq)', 'Pr(>F)')
       alpha <- 0.05
       if (input$exp.design == 'LR') {
-        return(p('Post hoc tests are not run for simple linear regression.'))
+        return(list(text='Post hoc tests are not run for simple linear regression.'))
       } else if (exp.design %in% c('CRD1', 'RCBD1')) {
-        p.value <- summary(fit)[[1]][probcol][1]
+        p.value <- Anova(model.fit, type = 3)[2, probcol]
         if (p.value < alpha) {
-          output$lsd.results.text <- renderPrint({
-            LSD.test(fit.without.error, ind.vars, console = TRUE)
-          })
-          output$lsd.bar.plot <- renderPlot({
-            MakePostHocPlot(my.data, fit.without.error, dep.var, ind.vars)
-          })
-          return(list(p(paste0(ind.vars, ' is significant (alpha=0.05).')),
-                      verbatimTextOutput('lsd.results.text'),
-                      plotOutput('lsd.bar.plot')))
+          lsd.results.text <- quote(
+            LSD.test(model.fit, ind.vars, console = TRUE)
+          )
+          lsd.bar.plot <- quote(
+            MakePostHocPlot(model.fit, dep.var, ind.vars)
+          )
+          return(list(text=paste0(ind.vars, ' is significant'),
+                      res = lsd.results.text, 
+                      plt = lsd.bar.plot,
+                      model.fit=model.fit, dep.var=dep.var, ind.vars=ind.vars))
         } else {
-          return(p(paste0(ind.vars, ' is not significant.')))
+          return(list(text=paste0(ind.vars, ' is not significant.')))
         }
-      } else if (input$exp.design %in% c('CRD2', 'RCBD2')) {
+      } else if (input$exp.design %in% c('CRD2', 'RCBD2') & !input$is_multisite) {
         assign('my.data', AddTransformationColumns(), envir=.GlobalEnv)
-        var.one.p.value <- Anova(fit, type = 3)[input$independent.variable.one, probcol]
-        var.two.p.value <- Anova(fit, type = 3)[input$independent.variable.two, probcol]
-        interact.index <- grep(':', row.names(Anova(fit, type=3)))
-          interaction.p.value <- Anova(fit, type='III')[interact.index, probcol]
+        var.one.p.value <- Anova(model.fit, type = 3)[input$independent.variable.one, probcol]
+        var.two.p.value <- Anova(model.fit, type = 3)[input$independent.variable.two, probcol]
+        interact.index <- grep(':', row.names(Anova(model.fit, type=3)))
+        interaction.p.value <- Anova(model.fit, type='III')[interact.index, probcol]
         if (interaction.p.value < .05) {
           text <- paste0("The interaction, ", paste(ind.vars, collapse = ":"),
                          ", is significant (alpha = 0.05).")
@@ -1337,103 +1359,113 @@ EvalFit <- function(transformation){
             lsd.vars <- ind.var.two
           } else {
             text <- paste0(text, " Neither factor is significant.")
-            return(p(text))
+            return(list(text=text))
           }
-          output$lsd.results.text <- renderPrint({
-            LSD.test(fit.without.error, lsd.vars, console = TRUE)
-          })
-          output$lsd.bar.plot <- renderPlot({
-            MakePostHocPlot(my.data, fit.without.error, dep.var, lsd.vars)
-          })
-          return(list(p(text),
-                      verbatimTextOutput('lsd.results.text'),
-                      plotOutput('lsd.bar.plot')))
+          lsd.results.text <- quote(
+            LSD.test(model.fit, lsd.vars, console = TRUE)
+          )
+          lsd.bar.plot <- quote(
+            MakePostHocPlot(model.fit, dep.var, lsd.vars)
+          )
+          return(list(text=text,
+                      res=lsd.results.text,
+                      plt=lsd.bar.plot,
+                      model.fit=model.fit, dep.var=dep.var, lsd.vars=lsd.vars))
         } else {
           # TODO : Implement what happens here.
-          return(p(paste0('The interaction is not significant and the post ',
-                          'hoc analyses for this scenario are not ',
-                          'implemented.')))
+          return(list(text=paste0('The interaction is not significant and the post ',
+                                  'hoc analyses for this scenario are not ',
+                                  'implemented.')))
         }
-      } else if (input$exp.design %in% c('SPCRD', 'SPRCBD')) {
-          assign('my.data', AddTransformationColumns(), envir=.GlobalEnv)
-          interaction.p.value <- Anova(fit, type='III')[4, probcol]
+      } else if (input$exp.design %in% c('SPCRD', 'SPRCBD')){
+        assign('my.data', AddTransformationColumns(), envir=.GlobalEnv)
+        var.one.p.value <- Anova(model.fit, type = 3)[input$independent.variable.one, probcol]
+        var.two.p.value <- Anova(model.fit, type = 3)[input$independent.variable.two, probcol]
+        interact.index <- grep(':', row.names(Anova(model.fit, type=3)))
+        interaction.p.value <- Anova(model.fit, type='III')[interact.index, probcol]
         if (interaction.p.value < .05) {
-          stuff <- list()
-          for (ivars in list(ind.vars, rev(ind.vars))) {
-            f <- paste0(dep.var, ' ~ ', ivars[2])
-            if (exp.design =='SPRCBD') {
-              f <- paste0(f, ' + ', input$independent.variable.blk)
-            }
-            for (level in levels(my.data[[ivars[1]]])) {
-              sub.data <- my.data[my.data[[ivars[1]]] == level, ]
-              sub.model.fit <- aov(as.formula(f), sub.data)
-              sub.p.value <- summary(sub.model.fit)[[1]][[probcol]][1]
-              output.name <- paste0('lsd.results.text.', ivars[1], '.', level)
-              stuff[[paste0(output.name, '.heading')]] <-
-                h4(paste0('Subset of ', ivars[1], ':', level))
-              if (sub.p.value < alpha) {
-                stuff[[output.name]] <- pre(
-                  paste(capture.output(LSD.test(sub.model.fit, ivars[2], console
-                                                = TRUE)), collapse = "\n"))
-                # TODO : These plots work except that the plots created in the
-                # first pass of this loop (for ivars...) are overwritten by
-                # those from the second pass. This also happened when I was
-                # using renderPrint/verbatimTextOutput for the text output and I
-                # couldn't debug it. It seems like the output variable is being
-                # overwritten or that the reactiveness of the functions does
-                # something weird.
-                #output[[paste0(output.name, '.plot')]] <- renderPlot({
-                #MakePostHocPlot(sub.data, sub.model.fit, dep.var, ivars[2])
-                #})
-                #stuff[[paste0(output.name, '.plot')]] <-
-                #plotOutput(paste0(output.name, '.plot'))
-              } else {
-                stuff[[output.name]] <- pre(paste0(ivars[2],
-                                                   ' effect not significant, thus no LSD is performed.\n'))
-              }
-            }
-          }
-          #TODO : Compare between subplot levels across main plot levels
-          return(stuff)
-        } else {  # interaction is not significant
-          # isolate({
-            fit.without <- ModelFitWithoutError(input$transformation)
-            # })
           text <- paste0("The interaction, ", paste(ind.vars, collapse = ":"),
-                         ", is not significant (alpha = 0.05).")
-          assign('my.data', AddTransformationColumns(), envir=.GlobalEnv)
-          main.plot.p.value <- Anova(fit, type='III')[ind.var.one, probcol]
-          sub.plot.p.value <- Anova(fit, type='III')[ind.var.two, probcol]
-          if (main.plot.p.value < alpha) {
-            text <- paste0(text, " ", ind.var.one, " is significant.")
-            output$lsd.results.text.one <- renderPrint({
-              LSD.test(fit.without, ind.var.one, console = TRUE)
-            })
-            output$lsd.bar.plot.one <- renderPlot({
-              MakePostHocPlot(my.data, fit.without, dep.var, ind.var.one)
-            })
-          } else if (sub.plot.p.value < alpha) {
-            text <- paste0(text, " ", ind.var.two, " is significant.")
-            output$lsd.results.text.two <- renderPrint({
-              LSD.test(fit.without, ind.var.two, console = TRUE)
-            })
-            output$lsd.bar.plot.two <- renderPlot({
-              MakePostHocPlot(my.data, fit.without, dep.var, ind.var.two)
-            })
+                         ", is significant (alpha = 0.05).")
+          if (var.one.p.value < alpha && var.two.p.value < alpha){
+            lsd.vars <- ind.vars
+            text <- paste0(text, " Both factors are significant.")
+          } else if (var.one.p.value < alpha) {
+            text <- paste0(text, " Only ", ind.var.one, " is significant.")
+            lsd.vars <- ind.var.one
+          } else if (var.two.p.value < alpha) {
+            text <- paste0(text, " Only ", ind.var.two, " is significant.")
+            lsd.vars <- ind.var.two
           } else {
-            text <- paste0(text,
-                           " Neither the main plot or sub plot is significant.")
-            return(p(text))
+            text <- paste0(text, " Neither factor is significant.")
+            return(list(text=text))
           }
-          return(list(p(text),
-                      verbatimTextOutput('lsd.results.text.one'),
-                      plotOutput('lsd.bar.plot.one'),
-                      verbatimTextOutput('lsd.results.text.two'),
-                      plotOutput('lsd.bar.plot.two')))
+          f <- as.formula(paste0('~ ', paste0(lsd.vars, collapse = ' + ')))
+          lsd.results.text <- quote(
+            cld(lsmeans(model.fit, f), Letters=letters)
+          )
+          lsd.bar.plot <- quote(
+            MakePostHocPlot(model.fit, dep.var, lsd.vars, type = 'ranef')
+          )
+          return(list(text = text, 
+                      res = lsd.results.text, 
+                      plt = lsd.bar.plot,
+                      f=f, model.fit=model.fit, dep.var=dep.var, lsd.vars=lsd.vars))
+        } else {
+          return(list(text=paste0('The interaction is not significant and the post ',
+                                  'hoc analyses for this scenario are not ',
+                                  'implemented.')))
         }
       }
     }
   })
+  
+  output$lsd.results <- renderUI({
+    if (input$view_anova_table == 0){
+      return(NULL)
+    }
+    input$view_anova_table
+    isolate({
+      obj <- lsd.code()
+      if(!is.null(obj$text)){
+        txt <- obj$text
+      }
+      if(!is.null(obj$res)){
+        output$lsd.results.text <- renderPrint(eval(obj$res, envir = obj))
+      }
+      if(!is.null(obj$plt)){
+        output$lsd.bar.plot <- renderPlot(eval(obj$plt, envir = obj))
+      }
+    })
+    return(list(p(txt),
+                verbatimTextOutput('lsd.results.text'),
+                plotOutput('lsd.bar.plot')))
+  })
+  
+  lsd.displaycode <- reactive({
+    obj <- lsd.code()
+    if (!is.null(obj$res)){
+      txt <- deparse(obj$res)
+      if (input$exp.design %in% c('SPCRD', 'SPRCBD')) {
+        txt <- gsub('f(?=\\)\\, Letters)', deparse(obj$f), txt, perl=TRUE)
+        txt <- paste0('library(lsmeans)\n', txt)
+      }
+      if (input$exp.design %in% c('CRD1', 'CRD2', 'RCBD1', 'RCBD2')){
+        txt <- gsub('ind.vars', deparse(call('c', obj$ind.vars)[[-1]]), txt)
+      }
+      return(txt)
+    }
+  })
+  
+  observe({
+    input$view_anova_table
+    isolate({
+      updateAceEditor(session, 
+                      editorId='code_used_posthoc',
+                      value = lsd.displaycode(),
+                      readOnly = TRUE)
+    })
+  })
+  
   
   #############################################################################
   # Report tab
