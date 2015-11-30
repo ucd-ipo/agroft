@@ -14,8 +14,7 @@ library(nlme)
 library(agricolae)  # for LSD.test()
 library(car)  # for leveneTest()
 library(HH)   # for intxplot()
-library(lsmeans) #for Tukey or LSD test
-library(multcompView) #for cld (compact letter display) methods 
+library(lsmeans) #for Tukey or LSD test and cld()
 #-----------------------------------------------------------------------------#
 
 sep <- function(n){
@@ -101,7 +100,7 @@ cat('Tukey method for multiple mean comparison of mainplot: Interaction Insignfi
 sep(79)
 #-----------------------------------------------------------------------------#
 # Comparisons among main plot levels
-cld(lsmeans(model, tukey ~ SeedLotA)) #does number groupings - can we switch to letters?
+cld(lsmeans(model,  ~ SeedLotA), Letters=letters)
 #-----------------------------------------------------------------------------#
 sep(79)
 # If the interaction between main-plot : subplot is NOT significant AND the
@@ -110,7 +109,7 @@ cat('Tukey method for multiple mean comparison of sub-plot: Interaction Insignfi
 sep(79)
 #-----------------------------------------------------------------------------#
 # Comparisons among sub-plot levels
-cld(lsmeans(model, tukey ~ TrtmtB)) #does number groupings - can we switch to letters?
+cld(lsmeans(model, tukey ~ TrtmtB), Letters=letters)
 #-----------------------------------------------------------------------------#
 sep(79)
 # ANOVA table shows significant interaction ==> must do Tukey on simple effects
@@ -119,6 +118,6 @@ cat('Least Significant Difference: Interaction Signficant\n')
 sep(79)
 #-----------------------------------------------------------------------------#
 # Comparisons among all combinations of mainplot and subplot levels
-cld(lsmeans(model, tukey ~ SeedLotA + TrtmtB))
+cld(lsmeans(model,  ~ SeedLotA + TrtmtB), Letters=letters)
 
 
