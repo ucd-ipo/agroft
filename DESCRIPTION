@@ -1,22 +1,20 @@
 Package: AIP
 Version: 0.1.1
-Date: 2015-10-06
+Date: 2015-11-29
 Title: Agricultural Field Trial Statistics Package
 Authors@R: c(
   person("Ian", "Kyle", email = "iankyle1@gmail.com", role = c("cre", "aut")),
   person("Jason", "Moore", email = "moorepants@gmail.com", role = "aut"))
 Imports:
-  shiny (>= 0.12),
-  shinyAce (>= 0.1),
-  shinyBS (>= 0.61),
-  knitr (>= 1.9),
-  agricolae (>= 1.2),
-  car (>= 2.0),
-  yaml (>= 2.1.13),
-  xtable (>= 1.7),
-  Rmisc (>= 1.5),
-  ggplot2 (>= 1.0.1),
-  nlme
+  shiny,
+  shinyAce,
+  shinyBS,
+  knitr,
+  agricolae,
+  car,
+  yaml,
+  nlme,
+  lsmeans
 Description: Package for supporting the USAID agricultural data analysis training.
 License: BSD_3_clause
 URL: https://github.com/ucd-ipo/aip-analysis
