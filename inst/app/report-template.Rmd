@@ -13,6 +13,14 @@ replace_with_data_code
 replace_with_analysis_code
 ```
 
+## Plot Results
+
 ```{r, warning=FALSE, error=FALSE, message=FALSE}
 replace_with_analysis_plot_code
+```
+
+## Post-hoc Analysis
+
+```{r warning=FALSE, error=FALSE, message=FALSE}
+replace_with_post_hoc_code
 ```
