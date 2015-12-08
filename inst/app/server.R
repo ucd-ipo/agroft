@@ -378,7 +378,7 @@ EvalFit <- function(transformation){
       
     GenerateAnalysisAsump <- function(transformation){
       # analysisCode for the assumptions tests
-      if (!input$exp.design %in% c('SPCRD', 'SPRCBD')) {
+      if (!input$exp.design %in% c('SPCRD', 'SPRCBD') & !input$is_multisite) {
         analysisCode <- '\n\n# assumptions tests\nshapiro.test(residuals(model.fit))'
       }
       if (input$exp.design != 'LR') {
@@ -1491,11 +1491,13 @@ EvalFit <- function(transformation){
     },
     content = function(file) {
       template <- paste(readLines('report-template.Rmd'), collapse='\n')
-      filled.template <- gsub('replace_with_data_code', ReadCode(), template)
-      filled.template <- gsub('replace_with_analysis_code',
-                              GenerateAnalysisCode(input$transformation), filled.template)
-      filled.template <- gsub('replace_with_analysis_plot_code',
+      filled.template <- sub('replace_with_data_code', ReadCode(), template)
+      filled.template <- sub('replace_with_analysis_code',
+                              GenerateAnalysisCode()[[input$transformation]], filled.template)
+      filled.template <- sub('replace_with_analysis_plot_code',
                               MakePlotAnalysisCode(input$transformation), filled.template)
+      filled.template <- sub('replace_with_post_hoc_code', 
+                             lsd.displaycode(), filled.template)
       writeLines(filled.template, 'report.Rmd')
       src <- normalizePath('report.Rmd')
       file.copy(filled.template, 'report.Rmd')

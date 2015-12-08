@@ -21,6 +21,11 @@ replace_with_analysis_plot_code
 
 ## Post-hoc Analysis
 
-```{r warning=FALSE, error=FALSE, message=FALSE}
+```{r eval=FALSE}
 replace_with_post_hoc_code
+```
+
+```{r echo=FALSE, warning=FALSE, error=FALSE, message=FALSE}
+obj <- lsd.code()
+eval(obj$res, envir = obj)
 ```
