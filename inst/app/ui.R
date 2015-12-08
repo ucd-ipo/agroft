@@ -1,17 +1,6 @@
 library(shiny)
 library(shinyBS)
 library(shinyAce)
-library(yaml)
-
-###############################################################################
-# Setup
-###############################################################################
-
-# Loads in the help and information text.
-# The shinyBS popovers can't handle line returns in the strings so a special
-# handler is needed.
-# str.handler <- function(x) { gsub("[\r\n]", "", x) }
-# help.text <- yaml.load_file('help-text.yaml', handlers = list(str = str.handler))
 
 ###############################################################################
 # Load Data Tab
@@ -162,7 +151,7 @@ analysis.editorANOVA <- aceEditor('code_used_anova',
                                   value = '# code used to run ANOVA',
                                   mode = 'r', 
                                   readOnly = TRUE, 
-                                  height = '150px')
+                                  height = '75px')
 
 
 
@@ -309,7 +298,7 @@ analysis.editor.posthoc <- aceEditor('code_used_posthoc',
                                      value = '# code used to run post-hoc tests',
                                      mode = 'r',
                                      readOnly = TRUE, 
-                                     height = '75px')
+                                     height = '50px')
 
 
 posthoc.tab <-
