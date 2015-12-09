@@ -1425,20 +1425,32 @@ EvalFit <- function(transformation){
     }
     input$view_anova_table
     isolate({
+      modelSpecificationMsg <- NULL
       obj <- lsd.code()
       if(!is.null(obj$text)){
         txt <- obj$text
       }
       if(!is.null(obj$res)){
         output$lsd.results.text <- renderPrint(eval(obj$res, envir = obj))
+        if (any(eval(obj$res, envir = obj)$df == 0)) {
+          BlockWarning <- TRUE
+        } else {
+          BlockWarning <- FALSE
+        }
       }
       if(!is.null(obj$plt)){
         output$lsd.bar.plot <- renderPlot(eval(obj$plt, envir = obj))
       }
+      if (exists('BlockWarning') && BlockWarning){
+        plt <- h4(paste('Your model may be overspecified.',
+                        'Try using a Split-plot CRD model rather than a Split-plot RCBD'))
+      } else {
+        plt <- plotOutput('lsd.bar.plot')
+      }
     })
     return(list(p(txt),
                 verbatimTextOutput('lsd.results.text'),
-                plotOutput('lsd.bar.plot')))
+                plt))
   })
   
   lsd.displaycode <- reactive({
@@ -1459,10 +1471,12 @@ EvalFit <- function(transformation){
   observe({
     input$view_anova_table
     isolate({
+      tryCatch({
       updateAceEditor(session, 
                       editorId='code_used_posthoc',
                       value = lsd.displaycode(),
                       readOnly = TRUE)
+      }, error=function(e){NULL})
     })
   })
   
