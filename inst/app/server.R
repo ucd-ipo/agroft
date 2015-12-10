@@ -1442,7 +1442,7 @@ EvalFit <- function(transformation){
         output$lsd.bar.plot <- renderPlot(eval(obj$plt, envir = obj))
       }
       if (exists('BlockWarning') && BlockWarning){
-        plt <- h4(paste('Your model may be overspecified.',
+        plt <- h4(paste('WARNING: Your model may be overspecified.',
                         'Try using a Split-plot CRD model rather than a Split-plot RCBD'))
       } else {
         plt <- plotOutput('lsd.bar.plot')
@@ -1462,7 +1462,7 @@ EvalFit <- function(transformation){
         txt <- paste0('library(lsmeans)\n', txt)
       }
       if (input$exp.design %in% c('CRD1', 'CRD2', 'RCBD1', 'RCBD2')){
-        txt <- gsub('ind.vars', deparse(call('c', obj$ind.vars)[[-1]]), txt)
+        txt <- gsub('lsd.vars', deparse(call('c', obj$lsd.vars)[[-1]]), txt)
       }
       return(txt)
     }
