@@ -569,15 +569,23 @@ EvalFit <- function(transformation){
                                   'Completly Random Design' = 'CRD'))
       
       n_iv <- conditionalPanel('input.analysis_type != "LR" && input.analysis_subtype != "SP"', 
-                               radioButtons('n_ivs', "Select the number of IVs in your analysis", 
+                               radioButtons('n_ivs', "Select the number of treatments in your analysis", 
                                             choices = 1:2, 
                                             inline = TRUE))
+      n_iv_msg1 <- conditionalPanel('input.analysis_type == "LR"',
+                                    h4('You may only run Linear Regression with one treatment')) 
+      n_iv_msg2 <- conditionalPanel('input.analysis_subtype == "SP"',
+                                    h4('You must use two treatments in split-plot design')) 
       
-      alys_subtype <- radioButtons('analysis_subtype', 'Select Analysis Subtype',
+      alys_subtype <- conditionalPanel('input.analysis_type == "RCBD" || input.analysis_type == "CRD"', 
+                                       radioButtons('analysis_subtype', 'Select Analysis Subtype',
                                    c('Not Applicable' = 'NA',
                                      'Split-plot Design' = 'SP',
-                                     'Multisite experiment' = 'multisite'))
-      return(list(alys_type, alys_subtype, n_iv))
+                                     'Multisite experiment' = 'multisite')))
+      subtype_msg <- conditionalPanel("input.analysis_type == 'LR' && input.analysis_subtype != 'NA'", 
+                                      h4('Split-plot and multisite analysis sub-types not available in linear regression'))
+      
+      return(list(alys_type, alys_subtype, n_iv, n_iv_msg1, n_iv_msg2, subtype_msg))
       
     }
   })
@@ -1330,7 +1338,8 @@ EvalFit <- function(transformation){
         my.data <- AddTransformationColumns()
         model.fit <- EvalFit(input$transformation)
       })
-      probcol <- ifelse(exp.design()[['is_multisite']] | exp.design()[['exp.design']] %in% c('SPRCBD', 'SPCRD'), 
+      probcol <- ifelse(exp.design()[['is_multisite']] | 
+                          exp.design()[['exp.design']] %in% c('SPRCBD', 'SPCRD'), 
                         'Pr(>Chisq)', 'Pr(>F)')
       alpha <- 0.05
       if (exp.design()[['exp.design']] == 'LR') {
@@ -1357,7 +1366,7 @@ EvalFit <- function(transformation){
         var.two.p.value <- Anova(model.fit, type = 3)[input$independent.variable.two, probcol]
         interact.index <- grep(':', row.names(Anova(model.fit, type=3)))
         interaction.p.value <- Anova(model.fit, type='III')[interact.index, probcol]
-        if (interaction.p.value < .05) {
+        if (interaction.p.value < .05 && (var.one.p.value < .05 || var.two.p.value < .05)) {
           text <- paste0("The interaction, ", paste(ind.vars, collapse = ":"),
                          ", is significant (alpha = 0.05).")
           if (var.one.p.value < alpha && var.two.p.value < alpha){
@@ -1383,7 +1392,35 @@ EvalFit <- function(transformation){
                       res=lsd.results.text,
                       plt=lsd.bar.plot,
                       model.fit=model.fit, dep.var=dep.var, lsd.vars=lsd.vars))
-        } else {
+        } else if (var.one.p.value < .05 & var.two.p.value >= .05) {
+          lsd.results.text <- quote(
+            LSD.test(model.fit, ind.var.one, console = TRUE)
+          )
+          lsd.bar.plot <- quote(
+            MakePostHocPlot(model.fit, dep.var, ind.var.one)
+          )
+          text <- paste('Only', ind.var.one, 'is significant')
+          return(list(text=text,
+                      res=lsd.results.text,
+                      plt=lsd.bar.plot,
+                      model.fit=model.fit, dep.var=dep.var, 
+                      ind.var.one = ind.var.one))
+          
+          } else if (var.one.p.value >= .05 & var.two.p.value < .05) {
+            lsd.results.text <- quote(
+              LSD.test(model.fit, ind.var.two, console = TRUE)
+            )
+            lsd.bar.plot <- quote(
+              MakePostHocPlot(model.fit, dep.var, ind.var.two)
+            )
+            text <- paste('Only', ind.var.two, 'is significant')
+            return(list(text=text,
+                        res=lsd.results.text,
+                        plt=lsd.bar.plot,
+                        model.fit=model.fit, dep.var=dep.var, 
+                        ind.var.two = ind.var.two))
+            
+          } else {
           # TODO : Implement what happens here.
           return(list(text=paste0('The interaction is not significant and the post ',
                                   'hoc analyses for this scenario are not ',
@@ -1475,6 +1512,8 @@ EvalFit <- function(transformation){
       }
       if (exp.design()[['exp.design']] %in% c('CRD1', 'CRD2', 'RCBD1', 'RCBD2')){
         txt <- gsub('lsd.vars', deparse(call('c', obj$lsd.vars)[[-1]]), txt)
+        txt <- gsub('ind.var.one', ind.var.one, txt)
+        txt <- gsub('ind.var.two', ind.var.two, txt)
       }
       return(txt)
     }
