@@ -15,7 +15,7 @@ shinyServer( function(input, output, session) {
   #############################################################################
   
   output$debug <- renderText({
-    GenerateAnalysisCodeANOVA2()
+    exp.design()[['exp.design']] 
   })
   
   GetLoadCall <- reactive({
@@ -150,7 +150,7 @@ shinyServer( function(input, output, session) {
   
   ComputeExponent <- reactive({
     # Returns the exponent numeric to be used in the power transformation.
-    if (input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
+    if (exp.design()[['exp.design']] %in% c('LR', 'CRD1', 'RCBD1')) {
       form = paste(input$dependent.variable, '~',
                    input$independent.variable.one)
     } else {
@@ -184,23 +184,23 @@ shinyServer( function(input, output, session) {
                       PwrTfm = paste0(input$dependent.variable, '.pow'),
                       LogTfm = paste0(input$dependent.variable, '.log10'),
                       SqrtTfm = paste0(input$dependent.variable, '.sqrt'))
-    if (input$exp.design %in% c('LR', 'CRD1')) {
+    if (exp.design()[['exp.design']] %in% c('LR', 'CRD1')) {
       right.side <- input$independent.variable.one
-    } else if (input$exp.design == 'CRD2') {
+    } else if (exp.design()[['exp.design']] == 'CRD2') {
       right.side <- paste0(input$independent.variable.one, ' * ',
                            input$independent.variable.two)
-    } else if (input$exp.design == 'RCBD1') {
+    } else if (exp.design()[['exp.design']] == 'RCBD1') {
       right.side <- paste0(input$independent.variable.one, ' + ',
                            input$independent.variable.blk)
-    } else if (input$exp.design == 'RCBD2') {
+    } else if (exp.design()[['exp.design']] == 'RCBD2') {
       right.side <- paste0(input$independent.variable.one, ' * ',
                            input$independent.variable.two, ' + ',
                            input$independent.variable.blk)
-    } else if (input$exp.design == 'SPRCBD') {
+    } else if (exp.design()[['exp.design']] == 'SPRCBD') {
       right.side <- paste0(input$independent.variable.one, ' * ',
                            input$independent.variable.two, ' + ',
                            input$independent.variable.blk)
-    } else if (input$exp.design == 'SPCRD'){
+    } else if (exp.design()[['exp.design']] == 'SPCRD'){
       right.side <- paste0(input$independent.variable.one, ' * ',
                            input$independent.variable.two)
     }
@@ -209,20 +209,20 @@ shinyServer( function(input, output, session) {
   } 
 
   GenerateRandomEffFormula <- reactive({
-    if(input$exp.design %in% c('SPRCBD', 'SPCRD')){
+    if(exp.design()[['exp.design']] %in% c('SPRCBD', 'SPCRD')){
       f <- paste0('~ 1|', input$independent.variable.blk, '/', input$independent.variable.one)
     } 
-    if (input$is_multisite & input$exp.design %in% c('RCBD1', 'RCBD2', 'SPRCBD')){
+    if (exp.design()[['is_multisite']] & exp.design()[['exp.design']] %in% c('RCBD1', 'RCBD2', 'SPRCBD')){
       f <- paste0('~ 1|', input$independent.variable.site, '/', input$independent.variable.blk)
     }
-    if (input$is_multisite & ! input$exp.design %in% c('RCBD1', 'RCBD2', 'SPRCBD')){
+    if (exp.design()[['is_multisite']] & ! exp.design()[['exp.design']] %in% c('RCBD1', 'RCBD2', 'SPRCBD')){
       f <- paste0('~ 1|', input$independent.variable.site)
     }
     return(f)
   })
   
   GetFitCall <- function(transformation){
-      if (input$exp.design %in%  c('SPRCBD', 'SPCRD') | input$is_multisite){
+      if (exp.design()[['exp.design']] %in%  c('SPRCBD', 'SPCRD') | exp.design()[['is_multisite']]){
         fit <- call('lme',
                     fixed   = as.formula(GenerateFormula(transformation)),
                     random  = as.formula(GenerateRandomEffFormula()),
@@ -253,9 +253,9 @@ EvalFit <- function(transformation){
 
   
   ModelFitWithoutError <- function(transformation){
-    exp.design <- input$exp.design
+    exp.design <- exp.design()[['exp.design']]
     my.data <- AddTransformationColumns()
-    if (exp.design %in% c('SPCRD', 'SPRCBD') | input$is_multisite) {
+    if (exp.design %in% c('SPCRD', 'SPRCBD') | exp.design()[['is_multisite']]) {
       model.fit <- aov(formula = as.formula(GenerateFormula(transformation)),
                        data = my.data)
     } else {
@@ -271,7 +271,7 @@ EvalFit <- function(transformation){
                       'PwrTfm' = paste0(input$dependent.variable, '.pow'),
                       'LogTfm' = paste0(input$dependent.variable, '.log10'),
                       'SqrtTfm' = paste0(input$dependent.variable, '.sqrt'))
-    if (input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
+    if (exp.design()[['exp.design']] %in% c('LR', 'CRD1', 'RCBD1')) {
       f <- paste0(dep.var, ' ~ ',
                   input$independent.variable.one)
       l <- list()
@@ -326,7 +326,7 @@ EvalFit <- function(transformation){
   GenerateAnalysisCodePwr <- reactive({
       dep.var <- paste0(input$dependent.variable, '.pow')
         analysisCode <- '\n\n# transform the dependent variable\n'
-        if (input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
+        if (exp.design()[['exp.design']] %in% c('LR', 'CRD1', 'RCBD1')) {
           analysisCode <- paste0(analysisCode, 'mean.data <- aggregate(', dep.var, ' ~ ',
                                  input$independent.variable.one)
         } else {
@@ -378,10 +378,10 @@ EvalFit <- function(transformation){
       
     GenerateAnalysisAsump <- function(transformation){
       # analysisCode for the assumptions tests
-      if (!input$exp.design %in% c('SPCRD', 'SPRCBD') & !input$is_multisite) {
+      if (!exp.design()[['exp.design']] %in% c('SPCRD', 'SPRCBD') & !exp.design()[['is_multisite']]) {
         analysisCode <- '\n\n# assumptions tests\nshapiro.test(residuals(model.fit))'
       }
-      if (input$exp.design != 'LR') {
+      if (exp.design()[['exp.design']] != 'LR') {
         formulas <- GenerateIndividualFormulas(transformation)
         levene.calls <- paste0('leveneTest(', formulas, ', data = my.data)',
                                collapse = '\n')
@@ -389,10 +389,10 @@ EvalFit <- function(transformation){
       }
       
       # trans.dep.var <- TransformedDepVarColName()
-      if (!input$exp.design %in% c('LR', 'CRD1', 'CRD2')) {
+      if (!exp.design()[['exp.design']] %in% c('LR', 'CRD1', 'CRD2')) {
         # TODO : I'm not sure this is the correct thing to do for split plot
         # Tukey tests.
-        #         if (input$exp.design %in% c('SPCRD', 'SPRCBD')) {
+        #         if (exp.design()[['exp.design']] %in% c('SPCRD', 'SPRCBD')) {
         #           fit.name <- 'model.fit.no.error'
         #           fit.line <- paste0(fit.name, ' <- aov(',
         #                              GenerateFormula(), ', data = my.data)\n')
@@ -501,7 +501,7 @@ EvalFit <- function(transformation){
   # TODO : It could be useful to break this up into each plot and utilize this
   # code for actual evaluation later on to deduplicate the code.
   MakePlotAnalysisCode <- function(transformation){
-    if (input$exp.design %in% c('SPCRD', 'SPRCBD')) {
+    if (exp.design()[['exp.design']] %in% c('SPCRD', 'SPRCBD')) {
       analysisCode <- paste0("# Residuals vs. Fitted\nplot(model.fit.no.error, which = 1)")
       analysisCode <- paste0(analysisCode, "\n\n# Kernel Density Plot",
                              "\nplot(density(residuals(model.fit.no.error)))")
@@ -510,7 +510,7 @@ EvalFit <- function(transformation){
       analysisCode <- paste0(analysisCode, "\n\n# Kernel Density Plot\nplot(density(residuals(model.fit)))")
     }
     
-    if (input$exp.design == 'LR') {
+    if (exp.design()[['exp.design']] == 'LR') {
       analysisCode <- paste0(analysisCode, "\n\n# Best Fit Line\nplot(formula = ",
                              GenerateFormula(transformation), ", data = my.data)\nabline(model.fit)")
     } else {
@@ -528,7 +528,7 @@ EvalFit <- function(transformation){
                              "boxplot(", f1, ", data = my.data, main = '", main,
                              "', xlab = '", ind.var.one,
                              "', ylab = '", dep.var,  "')")
-      if (!input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
+      if (!exp.design()[['exp.design']] %in% c('LR', 'CRD1', 'RCBD1')) {
         f2 <- paste0(dep.var, ' ~ ', ind.var.two)
         main <- paste0("Effect of ", ind.var.two, " on ",
                        dep.var)
@@ -538,7 +538,7 @@ EvalFit <- function(transformation){
       }
     }
     
-    if (!input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
+    if (!exp.design()[['exp.design']] %in% c('LR', 'CRD1', 'RCBD1')) {
       analysisCode <- paste0(analysisCode, "\n# Interaction Plots\n",
                              "interaction.plot(my.data$", ind.var.one, ", my.data$",
                              ind.var.two, ", my.data$", dep.var, ", xlab = '",
@@ -561,32 +561,44 @@ EvalFit <- function(transformation){
     if(is.null(LoadData())){
       h4('Please upload or select data first.')
     } else {
-      choices <- c('Two Continous Variables' = 'LR',
-                   'Completely Randomized Design (CRD) with One Treatment' = 'CRD1',
-                   'Completely Randomized Design (CRD) with Two Treatments' = 'CRD2',
-                   'Randomized Complete Block Design (RCBD) with One Treatment' = 'RCBD1',
-                   'Randomized Complete Block Design (RCBD) with Two Treatments' = 'RCBD2',
-                   'Split-Plot Completely Randomized Design (Split-Plot CRD)' = 'SPCRD',
-                   'Split-Plot Randomized Complete Block Design (Split-Plot RCBD)' = 'SPRCBD')
-
-      selectInput('exp.design',
-                  'Select Your Experimental Design',
-                  choices = choices,
-                  selected = NULL)
       
-      # TODO : When this is selected it should clear all of the analysis related
-      # input variables so nothing lingers from previous analyses, e.g.
-      # independent.variable.two.
+      alys_type <- radioButtons('analysis_type', 
+                                'Select your experimental design', 
+                                c('Linear Regression' = 'LR',
+                                  'Randomized Complete Block Design' = 'RCBD',
+                                  'Completly Random Design' = 'CRD'))
+      
+      n_iv <- conditionalPanel('input.analysis_type != "LR" && input.analysis_subtype != "SP"', 
+                               radioButtons('n_ivs', "Select the number of IVs in your analysis", 
+                                            choices = 1:2, 
+                                            inline = TRUE))
+      
+      alys_subtype <- radioButtons('analysis_subtype', 'Select Analysis Subtype',
+                                   c('Not Applicable' = 'NA',
+                                     'Split-plot Design' = 'SP',
+                                     'Multisite experiment' = 'multisite'))
+      return(list(alys_type, alys_subtype, n_iv))
       
     }
   })
   
-  
+  exp.design <- reactive({
+    if(is.null(input$analysis_type) && is.null(input$n_ivs) && is.null(input$analysis_subtype)){
+      return(NULL)
+    }
+    subtype <- ifelse(input$analysis_subtype %in% c('multisite', 'NA') | input$analysis_type == 'LR', 
+                      '', input$analysis_subtype)
+    is_multisite <- input$analysis_subtype == 'multisite'
+    n_iv <- ifelse(input$analysis_type == 'LR' | input$analysis_subtype == 'SP', '', input$n_ivs)
+    dsng <- paste0(subtype, input$analysis_type, n_iv)
+    return(list(exp.design = dsng, 
+                is_multisite = is_multisite))
+  })
   
   output$selectDependent <- renderUI({
     # Renders a dropdown for selecting the dependent variable from the loaded
     # data.
-    if (is.null(input$exp.design)) {
+    if (is.null(exp.design()[['exp.design']])) {
       h4('Please select an experimental design first.')
       input$dependent.variable = NULL
     } else {
@@ -607,17 +619,17 @@ EvalFit <- function(transformation){
       input1 <- input2 <- input3 <- input4 <- NULL
       all.col.names <- names(ConvertData())
       choices = all.col.names[!(all.col.names %in% input$dependent.variable)]
-      if (input$exp.design == 'LR') {
+      if (exp.design()[['exp.design']] == 'LR') {
         selectInput('independent.variable.one',
                     'Select a single continous independent variable:',
                     choices = choices,
                     selected = NULL)
-      } else if (input$exp.design == 'CRD1') {
+      } else if (exp.design()[['exp.design']] == 'CRD1') {
         selectInput('independent.variable.one',
                     'Select a single independent factor variable:',
                     choices = choices,
                     selected = NULL)
-      } else if (input$exp.design == 'CRD2') {
+      } else if (exp.design()[['exp.design']] == 'CRD2') {
         input1 <- selectInput('independent.variable.one',
                               'Select the first independent factor variable:',
                               choices = choices,
@@ -627,7 +639,7 @@ EvalFit <- function(transformation){
                               choices = choices,
                               selected = NULL)
         # return(list(input1, input2))
-      } else if (input$exp.design == 'RCBD1') {
+      } else if (exp.design()[['exp.design']] == 'RCBD1') {
         input1 <- selectInput('independent.variable.one',
                               'Select the first independent factor variable:',
                               choices = choices,
@@ -637,7 +649,7 @@ EvalFit <- function(transformation){
                               choices = choices,
                               selected = NULL)
         # return(list(input1, input2))
-      } else if (input$exp.design == 'RCBD2') {
+      } else if (exp.design()[['exp.design']] == 'RCBD2') {
         input1 <- selectInput('independent.variable.one',
                               'Select the first independent factor variable:',
                               choices = choices,
@@ -651,7 +663,7 @@ EvalFit <- function(transformation){
                               choices = choices,
                               selected = NULL)
         # return(list(input1, input2, input3))
-      } else if (input$exp.design == 'SPCRD') {
+      } else if (exp.design()[['exp.design']] == 'SPCRD') {
         input1 <- selectInput('independent.variable.one',
                               'Select the main plot treatment:',
                               choices = choices,
@@ -665,7 +677,7 @@ EvalFit <- function(transformation){
                               choices = choices,
                               selected = NULL)
         # return(list(input1, input2, input3))
-      } else if (input$exp.design == 'SPRCBD') {
+      } else if (exp.design()[['exp.design']] == 'SPRCBD') {
         input1 <- selectInput('independent.variable.one',
                               'Select the main plot treatment:',
                               choices = choices,
@@ -680,7 +692,7 @@ EvalFit <- function(transformation){
                               selected = NULL)
         # return(list(input1, input2, input3))
       }
-      if (input$is_multisite){
+      if (exp.design()[['is_multisite']]){
         input4 <- selectInput('independent.variable.site',
                               'Select the site variable',
                               choices = choices, 
@@ -729,7 +741,7 @@ EvalFit <- function(transformation){
 #     if(is.null(input$run_analysis) || input$run_analysis == 0) {
 #       return(NULL)
 #     } else {
-      if (!input$exp.design %in% c('SPRCBD', 'SPCRD')) {
+      if (!exp.design()[['exp.design']] %in% c('SPRCBD', 'SPCRD')) {
         GenerateFormula(input$transformation)
       } else {
         paste('fixed  = ', GenerateFormula(input$transformation), '\nrandom = ', GenerateRandomEffFormula())
@@ -757,7 +769,7 @@ EvalFit <- function(transformation){
       input$view_anova_table
       isolate({
       list(h2('Model Fit Summary'),
-           if (input$exp.design != 'LR') { h3('ANOVA Table') } else{ NULL },
+           if (exp.design()[['exp.design']] != 'LR') { h3('ANOVA Table') } else{ NULL },
            verbatimTextOutput('fitSummaryText'))
       })
     # }
@@ -774,7 +786,7 @@ EvalFit <- function(transformation){
     
     # NOTE : We don't do the Shapiro-Wilk test for the split plot designs
     # because it isn't straight forward to implement.
-    if (!input$exp.design %in% c('SPCRD', 'SPRCBD')) {
+    if (!exp.design()[['exp.design']] %in% c('SPCRD', 'SPRCBD')) {
       fit <- EvalFit(transformation)
       res <- shapiro.test(residuals(fit))
     } else {
@@ -877,7 +889,7 @@ EvalFit <- function(transformation){
   })
 
   tukey.results <- function(transformation){
-      if (!input$exp.design %in% c('LR', 'CRD1', 'CRD2')) {
+      if (!exp.design()[['exp.design']] %in% c('LR', 'CRD1', 'CRD2')) {
           dep.var <- switch(transformation,
                             NoTfm = input$dependent.variable,
                             PwrTfm = paste0(input$dependent.variable, '.pow'),
@@ -1053,7 +1065,7 @@ EvalFit <- function(transformation){
 #     if (is.null(input$run_analysis) || input$run_analysis == 0) {
 #       return(NULL)
 #     } else {
-      if (input$exp.design == 'LR') {
+      if (exp.design()[['exp.design']] == 'LR') {
         res <- switch(transformation,
                       NoTfm = 'no_plot.best.fit',
                       PwrTfm = 'pwr_plot.best.fit',
@@ -1086,7 +1098,7 @@ EvalFit <- function(transformation){
                       LogTfm = paste0(input$dependent.variable, '.log10'),
                       SqrtTfm = paste0(input$dependent.variable, '.sqrt'))
     
-    if (input$exp.design != 'LR') {
+    if (exp.design()[['exp.design']] != 'LR') {
       my.data <- AddTransformationColumns()
       f1 <- paste0(dep.var, ' ~ ',
                    input$independent.variable.one)
@@ -1104,7 +1116,7 @@ EvalFit <- function(transformation){
                       PwrTfm = paste0(input$dependent.variable, '.pow'),
                       LogTfm = paste0(input$dependent.variable, '.log10'),
                       SqrtTfm = paste0(input$dependent.variable, '.sqrt'))
-    if (!input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
+    if (!exp.design()[['exp.design']] %in% c('LR', 'CRD1', 'RCBD1')) {
       my.data <- AddTransformationColumns()
       f2 <- paste0(dep.var, ' ~ ',
                    input$independent.variable.two)
@@ -1155,8 +1167,8 @@ EvalFit <- function(transformation){
 #     if (is.null(input$run_analysis) || input$run_analysis == 0) {
 #       return(NULL)
 #     } else {
-      if (input$exp.design != 'LR') {
-        if (!input$exp.design %in% c('CRD1', 'RCBD1')) {
+      if (exp.design()[['exp.design']] != 'LR') {
+        if (!exp.design()[['exp.design']] %in% c('CRD1', 'RCBD1')) {
           elements <- list(h2('Effects Box Plots'),
                            plotOutput(bp1),
                            plotOutput(bp2))
@@ -1187,7 +1199,7 @@ EvalFit <- function(transformation){
   output$plot.interaction.one <- renderPlot({
     input$view_anova_table
     # isolate({
-      if (!input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
+      if (!exp.design()[['exp.design']] %in% c('LR', 'CRD1', 'RCBD1')) {
         dep.var <- switch(input$transformation,
                NoTfm = input$dependent.variable,
                PwrTfm = paste0(input$dependent.variable, '.pow'),
@@ -1206,7 +1218,7 @@ EvalFit <- function(transformation){
   output$plot.interaction.two <- renderPlot({
     input$view_anova_table
     # isolate({
-      if (!input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
+      if (!exp.design()[['exp.design']] %in% c('LR', 'CRD1', 'RCBD1')) {
         dep.var <-  switch(input$transformation,
                            NoTfm = input$dependent.variable,
                            PwrTfm = paste0(input$dependent.variable, '.pow'),
@@ -1227,7 +1239,7 @@ EvalFit <- function(transformation){
 #     if (is.null(input$run_analysis) || input$run_analysis == 0) {
 #       return(NULL)
 #     } else {
-      if (!input$exp.design %in% c('LR', 'CRD1', 'RCBD1')) {
+      if (!exp.design()[['exp.design']] %in% c('LR', 'CRD1', 'RCBD1')) {
         return(list(h2('Interaction Plots'),
                     plotOutput('plot.interaction.one'),
                     plotOutput('plot.interaction.two')))
@@ -1302,7 +1314,7 @@ EvalFit <- function(transformation){
       return(NULL)
     } else {
       isolate({
-        exp.design <- input$exp.design
+        exp.design <- exp.design()[['exp.design']]
         dep.var <-  switch(input$transformation,
                            NoTfm = input$dependent.variable,
                            PwrTfm = paste0(input$dependent.variable, '.pow'),
@@ -1318,10 +1330,10 @@ EvalFit <- function(transformation){
         my.data <- AddTransformationColumns()
         model.fit <- EvalFit(input$transformation)
       })
-      probcol <- ifelse(input$is_multisite | input$exp.design %in% c('SPRCBD', 'SPCRD'), 
+      probcol <- ifelse(exp.design()[['is_multisite']] | exp.design()[['exp.design']] %in% c('SPRCBD', 'SPCRD'), 
                         'Pr(>Chisq)', 'Pr(>F)')
       alpha <- 0.05
-      if (input$exp.design == 'LR') {
+      if (exp.design()[['exp.design']] == 'LR') {
         return(list(text='Post hoc tests are not run for simple linear regression.'))
       } else if (exp.design %in% c('CRD1', 'RCBD1')) {
         p.value <- Anova(model.fit, type = 3)[2, probcol]
@@ -1339,7 +1351,7 @@ EvalFit <- function(transformation){
         } else {
           return(list(text=paste0(ind.vars, ' is not significant.')))
         }
-      } else if (input$exp.design %in% c('CRD2', 'RCBD2') & !input$is_multisite) {
+      } else if (exp.design()[['exp.design']] %in% c('CRD2', 'RCBD2') & !exp.design()[['is_multisite']]) {
         assign('my.data', AddTransformationColumns(), envir=.GlobalEnv)
         var.one.p.value <- Anova(model.fit, type = 3)[input$independent.variable.one, probcol]
         var.two.p.value <- Anova(model.fit, type = 3)[input$independent.variable.two, probcol]
@@ -1377,7 +1389,7 @@ EvalFit <- function(transformation){
                                   'hoc analyses for this scenario are not ',
                                   'implemented.')))
         }
-      } else if (input$exp.design %in% c('SPCRD', 'SPRCBD')){
+      } else if (exp.design()[['exp.design']] %in% c('SPCRD', 'SPRCBD')){
         assign('my.data', AddTransformationColumns(), envir=.GlobalEnv)
         var.one.p.value <- Anova(model.fit, type = 3)[input$independent.variable.one, probcol]
         var.two.p.value <- Anova(model.fit, type = 3)[input$independent.variable.two, probcol]
@@ -1457,11 +1469,11 @@ EvalFit <- function(transformation){
     obj <- lsd.code()
     if (!is.null(obj$res)){
       txt <- deparse(obj$res)
-      if (input$exp.design %in% c('SPCRD', 'SPRCBD')) {
+      if (exp.design()[['exp.design']] %in% c('SPCRD', 'SPRCBD')) {
         txt <- gsub('f(?=\\)\\, Letters)', deparse(obj$f), txt, perl=TRUE)
         txt <- paste0('library(lsmeans)\n', txt)
       }
-      if (input$exp.design %in% c('CRD1', 'CRD2', 'RCBD1', 'RCBD2')){
+      if (exp.design()[['exp.design']] %in% c('CRD1', 'CRD2', 'RCBD1', 'RCBD2')){
         txt <- gsub('lsd.vars', deparse(call('c', obj$lsd.vars)[[-1]]), txt)
       }
       return(txt)

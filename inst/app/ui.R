@@ -66,8 +66,6 @@ experimental.design.panel <-
     '1. Experimental Design',
     h5('Choose an experimental design that matches your data.'),
     uiOutput('selectDesign'),
-    checkboxInput('is_multisite',
-                  'Multisite experiment'),
     bsButton('exp_design_info_button',
              "Experimental Design Information"),
     bsModal('exp_design_info_content',
