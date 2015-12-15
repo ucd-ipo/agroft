@@ -15,7 +15,7 @@ shinyServer( function(input, output, session) {
   #############################################################################
   
   output$debug <- renderText({
-    exp.design()[['exp.design']] 
+    lsd.displaycode()
   })
   
   GetLoadCall <- reactive({
@@ -1343,16 +1343,16 @@ EvalFit <- function(transformation){
         interact.index <- grep(':', row.names(Anova(model.fit, type=3)))
         interaction.p.value <- Anova(model.fit, type='III')[interact.index, probcol]
         if (interaction.p.value < .05 && (var.one.p.value < .05 || var.two.p.value < .05)) {
-          text <- paste0("The interaction, ", paste(ind.vars, collapse = ":"),
+          text <- paste0("The interaction effect ", paste(ind.vars, collapse = ":"),
                          ", is significant (alpha = 0.05).")
           if (var.one.p.value < alpha && var.two.p.value < alpha){
             lsd.vars <- ind.vars
-            text <- paste0(text, " Both factors are significant.")
+            text <- paste0(text, " Both main effects are significant.")
           } else if (var.one.p.value < alpha) {
-            text <- paste0(text, " Only ", ind.var.one, " is significant.")
+            text <- paste0(text, " Only the ", ind.var.one, " main effect is significant.")
             lsd.vars <- ind.var.one
           } else if (var.two.p.value < alpha) {
-            text <- paste0(text, " Only ", ind.var.two, " is significant.")
+            text <- paste0(text, " Only the ", ind.var.two, " main effect is significant.")
             lsd.vars <- ind.var.two
           } else {
             text <- paste0(text, " Neither factor is significant.")
@@ -1369,13 +1369,14 @@ EvalFit <- function(transformation){
                       plt=lsd.bar.plot,
                       model.fit=model.fit, dep.var=dep.var, lsd.vars=lsd.vars))
         } else if (var.one.p.value < .05 & var.two.p.value >= .05) {
+          lsd.vars <- ind.var.one
           lsd.results.text <- quote(
-            LSD.test(model.fit, ind.var.one, console = TRUE)
+            LSD.test(model.fit, lsd.vars, console = TRUE)
           )
           lsd.bar.plot <- quote(
-            MakePostHocPlot(model.fit, dep.var, ind.var.one)
+            MakePostHocPlot(model.fit, dep.var, lsd.vars)
           )
-          text <- paste('Only', ind.var.one, 'is significant')
+          text <- paste('Only the ', ind.var.one, ' main effect is significant.')
           return(list(text=text,
                       res=lsd.results.text,
                       plt=lsd.bar.plot,
@@ -1383,13 +1384,14 @@ EvalFit <- function(transformation){
                       ind.var.one = ind.var.one))
           
           } else if (var.one.p.value >= .05 & var.two.p.value < .05) {
+            lsd.vars <- ind.var.two
             lsd.results.text <- quote(
-              LSD.test(model.fit, ind.var.two, console = TRUE)
+              LSD.test(model.fit, lsd.vars, console = TRUE)
             )
             lsd.bar.plot <- quote(
-              MakePostHocPlot(model.fit, dep.var, ind.var.two)
+              MakePostHocPlot(model.fit, dep.var, lsd.vars)
             )
-            text <- paste('Only', ind.var.two, 'is significant')
+            text <- paste('Only the ', ind.var.two, ' main effect is significant')
             return(list(text=text,
                         res=lsd.results.text,
                         plt=lsd.bar.plot,
@@ -1409,19 +1411,19 @@ EvalFit <- function(transformation){
         interact.index <- grep(':', row.names(Anova(model.fit, type=3)))
         interaction.p.value <- Anova(model.fit, type='III')[interact.index, probcol]
         if (interaction.p.value < .05) {
-          text <- paste0("The interaction, ", paste(ind.vars, collapse = ":"),
+          text <- paste0("The interaction effect", paste(ind.vars, collapse = ":"),
                          ", is significant (alpha = 0.05).")
           if (var.one.p.value < alpha && var.two.p.value < alpha){
             lsd.vars <- ind.vars
             text <- paste0(text, " Both factors are significant.")
           } else if (var.one.p.value < alpha) {
-            text <- paste0(text, " Only ", ind.var.one, " is significant.")
+            text <- paste0(text, " Only the ", ind.var.one, " main effect is significant.")
             lsd.vars <- ind.var.one
           } else if (var.two.p.value < alpha) {
-            text <- paste0(text, " Only ", ind.var.two, " is significant.")
+            text <- paste0(text, " Only the ", ind.var.two, " main effect is significant.")
             lsd.vars <- ind.var.two
           } else {
-            text <- paste0(text, " Neither factor is significant.")
+            text <- paste0(text, " Neither main effect is significant.")
             return(list(text=text))
           }
           f <- as.formula(paste0('~ ', paste0(lsd.vars, collapse = ' + ')))
@@ -1437,7 +1439,7 @@ EvalFit <- function(transformation){
                       f=f, model.fit=model.fit, dep.var=dep.var, lsd.vars=lsd.vars))
         } else if (var.one.p.value < .05 & var.two.p.value >= .05) {
           lsd.vars <- ind.var.one
-          text <- paste0('Only ', lsd.vars, 'Is significant')
+          text <- paste0('Only the ', lsd.vars, ' main effect is significant. ')
           f <- as.formula(paste0('~ ', lsd.vars))
           lsd.results.text <- quote(
             cld(lsmeans(model.fit, f), Letters=letters)
@@ -1452,7 +1454,7 @@ EvalFit <- function(transformation){
           
         } else if (var.one.p.value >= .05 & var.two.p.value < .05) {
           lsd.vars <- ind.var.two
-          text <- paste0('Only ', lsd.vars, 'Is significant')
+          text <- paste0('Only the ', lsd.vars, ' main effect is significant.')
           f <- as.formula(paste0('~ ', lsd.vars))
           lsd.results.text <- quote(
             cld(lsmeans(model.fit, f), Letters=letters)
@@ -1516,9 +1518,11 @@ EvalFit <- function(transformation){
         txt <- paste0('library(lsmeans)\n', txt)
       }
       if (exp.design()[['exp.design']] %in% c('CRD1', 'CRD2', 'RCBD1', 'RCBD2')){
-        txt <- gsub('lsd.vars', deparse(call('c', obj$lsd.vars)[[-1]]), txt)
-        txt <- gsub('ind.var.one', ind.var.one, txt)
-        txt <- gsub('ind.var.two', ind.var.two, txt)
+        if (length(obj$lsd.vars)==2){
+          txt <- gsub('lsd.vars', deparse(call('c', obj$lsd.vars)[[-1]]), txt)
+        } else {
+          txt <- gsub('lsd.vars', obj$lsd.vars, txt)
+        }
       }
       return(txt)
     }
