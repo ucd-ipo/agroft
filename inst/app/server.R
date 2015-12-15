@@ -325,7 +325,7 @@ EvalFit <- function(transformation){
   
   GenerateAnalysisCodePwr <- reactive({
       dep.var <- paste0(input$dependent.variable, '.pow')
-        analysisCode <- '\n\n# transform the dependent variable\n'
+        analysisCode <- '\n# transform the dependent variable\n'
         if (exp.design()[['exp.design']] %in% c('LR', 'CRD1', 'RCBD1')) {
           analysisCode <- paste0(analysisCode, 'mean.data <- aggregate(', dep.var, ' ~ ',
                                  input$independent.variable.one)
@@ -348,7 +348,7 @@ EvalFit <- function(transformation){
       
   GenerateAnalysisCodeLog <- reactive({
  
-        analysisCode <- paste0('\n\n# transform the dependent variable\nmy.data$',
+        analysisCode <- paste0('\n# transform the dependent variable\nmy.data$',
                                input$dependent.variable, '.log10 <- log10(my.data$',
                                input$dependent.variable, ')')
         return(analysisCode)
@@ -356,7 +356,7 @@ EvalFit <- function(transformation){
   
   
   GenerateAnalysisCodeSqrt <- reactive({
-        analysisCode <- paste0('\n\n# transform the dependent variable\nmy.data$',
+        analysisCode <- paste0('\n# transform the dependent variable\nmy.data$',
                                input$dependent.variable, '.sqrt <- sqrt(my.data$',
                                input$dependent.variable, ')')
         return(analysisCode)
@@ -371,7 +371,8 @@ EvalFit <- function(transformation){
     })
     
     GenerateAnalysisCodeANOVA2 <- function(transformation){
-      paste0('model.fit <- ', deparse(GetFitCall(transformation), width.cutoff=500L))
+      paste0('\n# fit the model\n',
+             'model.fit <- ', deparse(GetFitCall(transformation), width.cutoff=500L))
     }
     
     
@@ -427,18 +428,18 @@ EvalFit <- function(transformation){
                                           AnalysisCodeAsump[[1]], 
                                           sep='\n'),
                               PwrTfm = paste(AnalysisCode, 
-                                             GenerateAnalysisCodeANOVA2('PwrTfm'),
                                              GenerateAnalysisCodePwr(),
+                                             GenerateAnalysisCodeANOVA2('PwrTfm'),
                                              AnalysisCodeAsump[[2]],
                                              sep='\n'),
                               LogTfm = paste(AnalysisCode, 
-                                             GenerateAnalysisCodeANOVA2('LogTfm'),
                                              GenerateAnalysisCodeLog(),
+                                             GenerateAnalysisCodeANOVA2('LogTfm'),
                                              AnalysisCodeAsump[[3]],
                                              sep='\n'),
                               SqrtTfm = paste(AnalysisCode, 
-                                              GenerateAnalysisCodeANOVA2('SqrtTfm'),
                                               GenerateAnalysisCodeSqrt(),
+                                              GenerateAnalysisCodeANOVA2('SqrtTfm'),
                                               AnalysisCodeAsump[[4]],
                                               sep='\n'))
       return(TransformCode)
@@ -448,7 +449,7 @@ EvalFit <- function(transformation){
     observe({
       input$view_anova_table
       isolate({
-        tryCatch({
+      tryCatch({
           updateAceEditor(
             session, 'code_used_anova',
             value = GenerateAnalysisCodeANOVA(), readOnly = TRUE
@@ -628,12 +629,12 @@ EvalFit <- function(transformation){
       all.col.names <- names(ConvertData())
       choices = all.col.names[!(all.col.names %in% input$dependent.variable)]
       if (exp.design()[['exp.design']] == 'LR') {
-        selectInput('independent.variable.one',
+        input1 <- selectInput('independent.variable.one',
                     'Select a single continous independent variable:',
                     choices = choices,
                     selected = NULL)
       } else if (exp.design()[['exp.design']] == 'CRD1') {
-        selectInput('independent.variable.one',
+        input1 <- selectInput('independent.variable.one',
                     'Select a single independent factor variable:',
                     choices = choices,
                     selected = NULL)
@@ -646,7 +647,6 @@ EvalFit <- function(transformation){
                               'Select the second independent factor variable:',
                               choices = choices,
                               selected = NULL)
-        # return(list(input1, input2))
       } else if (exp.design()[['exp.design']] == 'RCBD1') {
         input1 <- selectInput('independent.variable.one',
                               'Select the first independent factor variable:',
@@ -656,7 +656,6 @@ EvalFit <- function(transformation){
                               'Select the blocking factor variable:',
                               choices = choices,
                               selected = NULL)
-        # return(list(input1, input2))
       } else if (exp.design()[['exp.design']] == 'RCBD2') {
         input1 <- selectInput('independent.variable.one',
                               'Select the first independent factor variable:',
@@ -670,7 +669,6 @@ EvalFit <- function(transformation){
                               'Select the blocking factor variable:',
                               choices = choices,
                               selected = NULL)
-        # return(list(input1, input2, input3))
       } else if (exp.design()[['exp.design']] == 'SPCRD') {
         input1 <- selectInput('independent.variable.one',
                               'Select the main plot treatment:',
@@ -684,7 +682,6 @@ EvalFit <- function(transformation){
                               'Select the repetition:',
                               choices = choices,
                               selected = NULL)
-        # return(list(input1, input2, input3))
       } else if (exp.design()[['exp.design']] == 'SPRCBD') {
         input1 <- selectInput('independent.variable.one',
                               'Select the main plot treatment:',
@@ -698,8 +695,7 @@ EvalFit <- function(transformation){
                               'Select the blocking factor variable:',
                               choices = choices,
                               selected = NULL)
-        # return(list(input1, input2, input3))
-      }
+        }
       if (exp.design()[['is_multisite']]){
         input4 <- selectInput('independent.variable.site',
                               'Select the site variable',
@@ -758,15 +754,8 @@ EvalFit <- function(transformation){
   })
   
   output$fitSummaryText <- renderPrint({
-    input$run_analysis
-    isolate({
-#       if(input$run_analysis == 0) {
-#         return(NULL)
-#       } else {
         assign('my.data', AddTransformationColumns(), envir=.GlobalEnv)
         fit.summary <- Anova(EvalFit(input$transformation), type='III')
-      # }
-    })
     return(fit.summary)
   })
   
