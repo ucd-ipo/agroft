@@ -1448,8 +1448,37 @@ EvalFit <- function(transformation){
                       res = lsd.results.text, 
                       plt = lsd.bar.plot,
                       f=f, model.fit=model.fit, dep.var=dep.var, lsd.vars=lsd.vars))
+        } else if (var.one.p.value < .05 & var.two.p.value >= .05) {
+          lsd.vars <- ind.var.one
+          text <- paste0('Only ', lsd.vars, 'Is significant')
+          f <- as.formula(paste0('~ ', lsd.vars))
+          lsd.results.text <- quote(
+            cld(lsmeans(model.fit, f), Letters=letters)
+          )
+          lsd.bar.plot <- quote(
+            MakePostHocPlot(model.fit, dep.var, lsd.vars, type = 'ranef')
+          )
+          return(list(text = text, 
+                      res = lsd.results.text, 
+                      plt = lsd.bar.plot,
+                      f=f, model.fit=model.fit, dep.var=dep.var, lsd.vars=lsd.vars))
+          
+        } else if (var.one.p.value >= .05 & var.two.p.value < .05) {
+          lsd.vars <- ind.var.two
+          text <- paste0('Only ', lsd.vars, 'Is significant')
+          f <- as.formula(paste0('~ ', lsd.vars))
+          lsd.results.text <- quote(
+            cld(lsmeans(model.fit, f), Letters=letters)
+          )
+          lsd.bar.plot <- quote(
+            MakePostHocPlot(model.fit, dep.var, lsd.vars, type = 'ranef')
+          )
+          return(list(text = text, 
+                      res = lsd.results.text, 
+                      plt = lsd.bar.plot,
+                      f=f, model.fit=model.fit, dep.var=dep.var, lsd.vars=lsd.vars))
         } else {
-          return(list(text=paste0('The interaction is not significant and the post ',
+          return(list(text=paste0('No effects are significant and post ',
                                   'hoc analyses for this scenario are not ',
                                   'implemented.')))
         }
