@@ -30,7 +30,10 @@ load.data.side.panel <- sidebarPanel(
                            'CRD 2 IVs'='clone_crd2',
                            'RCBD 2 IVs'='clone_rcbd2',
                            'SP-RCBD 2 IVs' = 'oats_sprcbd',
-                           'Multisite RCBD 2 IVs' = 'multisite_RCBD')
+                           'Multisite RCBD 2 IVs' = 'multisite_RCBD', 
+                           'Transformation Data 1' = 'crd_transformed1', 
+                           'Transformation Data 2' = 'crd_transformed2',
+                           'Transformation Data 3' = 'crd_transformed3')
     )),
   bsTooltip('code_used_read',
             title='click for more information',
