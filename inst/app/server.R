@@ -379,7 +379,7 @@ EvalFit <- function(transformation){
       
     GenerateAnalysisAsump <- function(transformation){
       # analysisCode for the assumptions tests
-      if (!exp.design()[['exp.design']] %in% c('SPCRD', 'SPRCBD') & !exp.design()[['is_multisite']]) {
+      if (!(exp.design()[['exp.design']] %in% c('SPCRD', 'SPRCBD') || exp.design()[['is_multisite']])) {
         analysisCode <- '\n\n# assumptions tests\nshapiro.test(residuals(model.fit))'
       }
       if (exp.design()[['exp.design']] != 'LR') {
@@ -390,17 +390,9 @@ EvalFit <- function(transformation){
       }
       
       # trans.dep.var <- TransformedDepVarColName()
-      if (!exp.design()[['exp.design']] %in% c('LR', 'CRD1', 'CRD2')) {
-        # TODO : I'm not sure this is the correct thing to do for split plot
-        # Tukey tests.
-        #         if (exp.design()[['exp.design']] %in% c('SPCRD', 'SPRCBD')) {
-        #           fit.name <- 'model.fit.no.error'
-        #           fit.line <- paste0(fit.name, ' <- aov(',
-        #                              GenerateFormula(), ', data = my.data)\n')
-        #         } else {
+      if (!exp.design()[['exp.design']] %in% c('LR', 'CRD1', 'CRD2', 'RCBD1', 'RCBD2')) {
         fit.name <- 'model.fit'
         fit.line <- ''
-        #         }
         analysisCode <- paste0("\n\n# Tukey's Test for Nonadditivity\n", fit.line,
                                "my.data$", '%s', # %s = the transformed variable name
                                ".pred.sq <- predict(", fit.name, ")^2\n",
@@ -502,14 +494,9 @@ EvalFit <- function(transformation){
   # TODO : It could be useful to break this up into each plot and utilize this
   # code for actual evaluation later on to deduplicate the code.
   MakePlotAnalysisCode <- function(transformation){
-    if (exp.design()[['exp.design']] %in% c('SPCRD', 'SPRCBD')) {
-      analysisCode <- paste0("# Residuals vs. Fitted\nplot(model.fit.no.error, which = 1)")
-      analysisCode <- paste0(analysisCode, "\n\n# Kernel Density Plot",
-                             "\nplot(density(residuals(model.fit.no.error)))")
-    } else {
+    
       analysisCode <- paste0("# Residuals vs. Fitted\nplot(model.fit, which = 1)")
       analysisCode <- paste0(analysisCode, "\n\n# Kernel Density Plot\nplot(density(residuals(model.fit)))")
-    }
     
     if (exp.design()[['exp.design']] == 'LR') {
       analysisCode <- paste0(analysisCode, "\n\n# Best Fit Line\nplot(formula = ",
