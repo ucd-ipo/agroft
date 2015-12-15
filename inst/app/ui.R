@@ -312,7 +312,8 @@ posthoc.tab <-
                                            h2('Model Formula'),
                                            verbatimTextOutput('formula')
                           )),
-             mainPanel(tabsetPanel(
+             mainPanel(#verbatimTextOutput('debug'),
+                       tabsetPanel(
                tabPanel('Model Fit Summary',
                 conditionalPanel('input.view_anova_table > 0',
                                  analysis.editorANOVA,
