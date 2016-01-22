@@ -366,7 +366,7 @@ EvalFit <- function(transformation){
     GenerateAnalysisCodeANOVA <- reactive({
       analysisCode <- paste0('# fit the model\n')
       analysisCode <- paste0(analysisCode, 'model.fit <- ', GetFitExpr())
-      analysisCode <- paste0(analysisCode, '\n\n# print summary table\nlibrary(car)\nAnova(model.fit, type = 3)')
+      analysisCode <- paste0(analysisCode, '\n\n# print summary table\nlibrary(car)\nAnova(model.fit, type = 3, singular.ok=TRUE)')
       return(analysisCode)
     })
     
@@ -398,7 +398,7 @@ EvalFit <- function(transformation){
                                ".pred.sq <- predict(", fit.name, ")^2\n",
                                "tukey.one.df.fit <- lm(formula = ",
                                GenerateTukeyFormula(transformation),
-                               ", data = my.data)\nAnova(tukey.one.df.fit, type = 3)")
+                               ", data = my.data)\nAnova(tukey.one.df.fit, type = 3, singular.ok=TRUE)")
         dep.var <- switch(transformation,
                           NoTfm = input$dependent.variable,
                           PwrTfm = paste0(input$dependent.variable, '.pow'),
@@ -742,7 +742,7 @@ EvalFit <- function(transformation){
   
   output$fitSummaryText <- renderPrint({
         assign('my.data', AddTransformationColumns(), envir=.GlobalEnv)
-        fit.summary <- Anova(EvalFit(input$transformation), type='III')
+        fit.summary <- Anova(EvalFit(input$transformation), type='III', singular.ok = TRUE)
     return(fit.summary)
   })
   
@@ -844,7 +844,7 @@ EvalFit <- function(transformation){
       my.data[[paste0(dep.var, '.pred.sq')]] <- predict(fit)^2
       f <- GenerateTukeyFormula(transformation)
       tukey.one.df.fit <- lm(formula = as.formula(f), data = my.data)
-    return(Anova(tukey.one.df.fit, type = 3))
+    return(Anova(tukey.one.df.fit, type = 3, singular.ok = TRUE))
   }
   
   output$no_tukey.results.text <- renderPrint({
@@ -1321,7 +1321,7 @@ EvalFit <- function(transformation){
       if (exp.design()[['exp.design']] == 'LR') {
         return(list(text='Post hoc tests are not run for simple linear regression.'))
       } else if (exp.design %in% c('CRD1', 'RCBD1')) {
-        p.value <- Anova(model.fit, type = 3)[2, probcol]
+        p.value <- Anova(model.fit, type = 3, singular.ok=TRUE)[2, probcol]
         if (p.value < alpha) {
           lsd.results.text <- quote(
             LSD.test(model.fit, ind.vars, console = TRUE)
@@ -1338,10 +1338,12 @@ EvalFit <- function(transformation){
         }
       } else if (exp.design()[['exp.design']] %in% c('CRD2', 'RCBD2') & !exp.design()[['is_multisite']]) {
         assign('my.data', AddTransformationColumns(), envir=.GlobalEnv)
-        var.one.p.value <- Anova(model.fit, type = 3)[input$independent.variable.one, probcol]
-        var.two.p.value <- Anova(model.fit, type = 3)[input$independent.variable.two, probcol]
-        interact.index <- grep(':', row.names(Anova(model.fit, type=3)))
-        interaction.p.value <- Anova(model.fit, type='III')[interact.index, probcol]
+        var.one.p.value <- Anova(model.fit, type = 3, 
+                                 singular.ok=TRUE)[input$independent.variable.one, probcol]
+        var.two.p.value <- Anova(model.fit, type = 3, 
+                                 singular.ok=TRUE)[input$independent.variable.two, probcol]
+        interact.index <- grep(':', row.names(Anova(model.fit, type=3, singular.ok=TRUE)))
+        interaction.p.value <- Anova(model.fit, type='III', singular.ok=TRUE)[interact.index, probcol]
         if (interaction.p.value < .05 && (var.one.p.value < .05 || var.two.p.value < .05)) {
           text <- paste0("The interaction effect ", paste(ind.vars, collapse = ":"),
                          ", is significant (alpha = 0.05).")
@@ -1406,10 +1408,12 @@ EvalFit <- function(transformation){
         }
       } else if (exp.design()[['exp.design']] %in% c('SPCRD', 'SPRCBD')){
         assign('my.data', AddTransformationColumns(), envir=.GlobalEnv)
-        var.one.p.value <- Anova(model.fit, type = 3)[input$independent.variable.one, probcol]
-        var.two.p.value <- Anova(model.fit, type = 3)[input$independent.variable.two, probcol]
-        interact.index <- grep(':', row.names(Anova(model.fit, type=3)))
-        interaction.p.value <- Anova(model.fit, type='III')[interact.index, probcol]
+        var.one.p.value <- Anova(model.fit, type = 3, 
+                                 singular.ok=TRUE)[input$independent.variable.one, probcol]
+        var.two.p.value <- Anova(model.fit, type = 3, 
+                                 singular.ok=TRUE)[input$independent.variable.two, probcol]
+        interact.index <- grep(':', row.names(Anova(model.fit, type=3, singular.ok=TRUE)))
+        interaction.p.value <- Anova(model.fit, type='III', singular.ok=TRUE)[interact.index, probcol]
         if (interaction.p.value < .05) {
           text <- paste0("The interaction effect", paste(ind.vars, collapse = ":"),
                          ", is significant (alpha = 0.05).")
