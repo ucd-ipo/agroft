@@ -42,7 +42,7 @@ shinyServer( function(input, output, session) {
         # make the call "read.csv". It is set up like this so that when the
         # readxl is enabled, we can change the call depeding on the file tpe
         # uploaded
-        # # this is sep us as a call rather than just the function so it is easy
+        # # this is set up as a call rather than just the function so it is easy
         # to print to the example code section of the app via deparse()
         readcall <- 'read.csv'
         load.call <- call(readcall, file=input$data_file$datapath)
@@ -90,9 +90,7 @@ shinyServer( function(input, output, session) {
     if (!input$use_sample_data) {
       return(deparse(GetLoadCall()))
     } else {
-      l <- "# load the AIP package for the sample data"
-      l <- paste0(l, "\nlibrary('AIP')")
-      l <- paste0(l, "\ndata('",input$sample_data_buttons,  "')")
+      l <- paste0(l, "\ndata('",input$sample_data_buttons,  "', package='AIP')")
       l <- paste0(l, '\nmy.data <- ', input$sample_data_buttons)
     }
   })
