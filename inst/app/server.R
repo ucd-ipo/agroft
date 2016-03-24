@@ -1527,11 +1527,11 @@ EvalFit <- function(transformation){
     obj <- lsd.code()
     if (!is.null(obj$res)){
       txt <- deparse(obj$res)
-      if (exp.design()[['exp.design']] %in% c('SPCRD', 'SPRCBD')) {
+      if (exp.design()[['exp.design']] %in% c('SPCRD', 'SPRCBD') || 
+          exp.design()[['is_multisite']]) {
         txt <- gsub('f(?=\\)\\, Letters)', deparse(obj$f), txt, perl=TRUE)
         txt <- paste0('library(lsmeans)\n', txt)
-      }
-      if (exp.design()[['exp.design']] %in% c('CRD1', 'CRD2', 'RCBD1', 'RCBD2')){
+      } else if (exp.design()[['exp.design']] %in% c('CRD1', 'CRD2', 'RCBD1', 'RCBD2')){
         if (length(obj$lsd.vars)==2){
           txt <- gsub('lsd.vars', deparse(call('c', obj$lsd.vars)[[-1]]), txt)
         } else {
