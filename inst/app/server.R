@@ -1345,7 +1345,7 @@ EvalFit <- function(transformation){
         } else {
           return(list(text=paste0(ind.vars, ' is not significant.')))
         }
-      } else if (exp.design()[['exp.design']] %in% c('CRD2', 'RCBD2') & !exp.design()[['is_multisite']]) {
+      } else if (exp.design()[['exp.design']] %in% c('CRD2', 'RCBD2')) {
         assign('my.data', AddTransformationColumns(), envir=.GlobalEnv)
         var.one.p.value <- Anova(model.fit, type = 3, 
                                  singular.ok=TRUE)[input$independent.variable.one, probcol]
@@ -1367,21 +1367,37 @@ EvalFit <- function(transformation){
             text <- paste0(text, " Neither factor main effect is significant.")
             return(list(text=text))
           }
-          lsd.results.text <- quote(
-            LSD.test(model.fit, lsd.vars, console = TRUE)
-          )
+          f <- as.formula(paste0('~ ', paste0(ind.vars, collapse = ' + ')))
+          if (type == 'fixef') {
+            lsd.results.text <- quote(
+              LSD.test(model.fit, ind.vars, console = TRUE)
+            )
+          } 
+          if (type == 'ranef') {
+            lsd.results.text <- quote(
+              cld(lsmeans(model.fit, f), Letters=letters)
+            )
+          }
           lsd.bar.plot <- quote(
             MakePostHocPlot(model.fit, dep.var, lsd.vars, type)
           )
           return(list(text=text,
-                      res=lsd.results.text,
+                      res=lsd.results.text, f=f,
                       plt=lsd.bar.plot, type=type,
                       model.fit=model.fit, dep.var=dep.var, lsd.vars=lsd.vars))
         } else if (var.one.p.value < .05 & var.two.p.value >= .05) {
           lsd.vars <- ind.var.one
-          lsd.results.text <- quote(
-            LSD.test(model.fit, lsd.vars, console = TRUE)
-          )
+          f <- as.formula(paste0('~ ', paste0(ind.vars, collapse = ' + ')))
+          if (type == 'fixef') {
+            lsd.results.text <- quote(
+              LSD.test(model.fit, ind.vars, console = TRUE)
+            )
+          } 
+          if (type == 'ranef') {
+            lsd.results.text <- quote(
+              cld(lsmeans(model.fit, f), Letters=letters)
+            )
+          }
           lsd.bar.plot <- quote(
             MakePostHocPlot(model.fit, dep.var, lsd.vars, type)
           )
@@ -1394,9 +1410,17 @@ EvalFit <- function(transformation){
           
           } else if (var.one.p.value >= .05 & var.two.p.value < .05) {
             lsd.vars <- ind.var.two
-            lsd.results.text <- quote(
-              LSD.test(model.fit, lsd.vars, console = TRUE)
-            )
+            f <- as.formula(paste0('~ ', paste0(ind.vars, collapse = ' + ')))
+            if (type == 'fixef') {
+              lsd.results.text <- quote(
+                LSD.test(model.fit, ind.vars, console = TRUE)
+              )
+            } 
+            if (type == 'ranef') {
+              lsd.results.text <- quote(
+                cld(lsmeans(model.fit, f), Letters=letters)
+              )
+            }
             lsd.bar.plot <- quote(
               MakePostHocPlot(model.fit, dep.var, lsd.vars, type)
             )
