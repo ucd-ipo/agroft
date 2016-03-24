@@ -196,8 +196,7 @@ shinyServer( function(input, output, session) {
                            input$independent.variable.blk)
     } else if (exp.design()[['exp.design']] == 'SPRCBD') {
       right.side <- paste0(input$independent.variable.one, ' * ',
-                           input$independent.variable.two, ' + ',
-                           input$independent.variable.blk)
+                           input$independent.variable.two)
     } else if (exp.design()[['exp.design']] == 'SPCRD'){
       right.side <- paste0(input$independent.variable.one, ' * ',
                            input$independent.variable.two)
