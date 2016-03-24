@@ -1342,20 +1342,18 @@ EvalFit <- function(transformation){
                                  singular.ok=TRUE)[input$independent.variable.two, probcol]
         interact.index <- grep(':', row.names(Anova(model.fit, type=3, singular.ok=TRUE)))
         interaction.p.value <- Anova(model.fit, type='III', singular.ok=TRUE)[interact.index, probcol]
-        if (interaction.p.value < .05 && (var.one.p.value < .05 || var.two.p.value < .05)) {
+        if (interaction.p.value < .05) {
           text <- paste0("The interaction effect ", paste(ind.vars, collapse = ":"),
                          ", is significant (alpha = 0.05).")
+          lsd.vars <- ind.vars
           if (var.one.p.value < alpha && var.two.p.value < alpha){
-            lsd.vars <- ind.vars
             text <- paste0(text, " Both main effects are significant.")
           } else if (var.one.p.value < alpha) {
             text <- paste0(text, " Only the ", ind.var.one, " main effect is significant.")
-            lsd.vars <- ind.var.one
           } else if (var.two.p.value < alpha) {
             text <- paste0(text, " Only the ", ind.var.two, " main effect is significant.")
-            lsd.vars <- ind.var.two
           } else {
-            text <- paste0(text, " Neither factor is significant.")
+            text <- paste0(text, " Neither factor main effect is significant.")
             return(list(text=text))
           }
           lsd.results.text <- quote(
