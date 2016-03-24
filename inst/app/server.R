@@ -90,7 +90,7 @@ shinyServer( function(input, output, session) {
     if (!input$use_sample_data) {
       return(deparse(GetLoadCall()))
     } else {
-      l <- paste0(l, "\ndata('",input$sample_data_buttons,  "', package='AIP')")
+      l <- paste0("\ndata('",input$sample_data_buttons,  "', package='AIP')")
       l <- paste0(l, '\nmy.data <- ', input$sample_data_buttons)
     }
   })
