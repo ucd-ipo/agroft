@@ -1249,6 +1249,7 @@ EvalFit <- function(transformation){
     if(type == 'fixef'){
     lsd.results <- LSD.test(fit, ind.var)
     lsd.results$means$trt <- row.names(lsd.results$means)
+    lsd.results$groups$trt <- strp(as.character(lsd.results$groups$trt))
     lsd.results <- merge(lsd.results$groups, lsd.results$means, by = 'trt')
     dat <- lsd.results[,dep.var]
     
@@ -1285,7 +1286,7 @@ EvalFit <- function(transformation){
              y1 = lsd.results$upper.CL,
              code = 3, angle = 90, length=.1)
       
-      text(x=b, y=lsd.results$upper.CL+(lsd.results$upper.CL*.08) ,
+      text(x=b, y=lsd.results$upper.CL*1.08,
            labels = strp(lsd.results$.group))
     }
   }
@@ -1325,7 +1326,7 @@ EvalFit <- function(transformation){
       } else if (exp.design %in% c('CRD1', 'RCBD1')) {
         p.value <- Anova(model.fit, type = 3, singular.ok=TRUE)[2, probcol]
         if (p.value < alpha) {
-          f <- as.formula(paste0('~ ', paste0(ind.vars, collapse = ' + ')))
+          f <- as.formula(paste0('~ ', ind.vars))
           if (type == 'fixef') {
           lsd.results.text <- quote(
             LSD.test(model.fit, ind.vars, console = TRUE)
