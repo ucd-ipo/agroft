@@ -378,6 +378,8 @@ EvalFit <- function(transformation){
       # analysisCode for the assumptions tests
       if (!(exp.design()[['exp.design']] %in% c('SPCRD', 'SPRCBD') || exp.design()[['is_multisite']])) {
         analysisCode <- '\n\n# assumptions tests\nshapiro.test(residuals(model.fit))'
+      } else {
+        analysisCode <- ''
       }
       if (exp.design()[['exp.design']] != 'LR') {
         formulas <- GenerateIndividualFormulas(transformation)
