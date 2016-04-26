@@ -12,18 +12,18 @@ http://ikkyle.com/playground/aip-analysis/
 
 This Shiny app has been built into a package and the development version is
 hosted on Github. Currently, it can be installed from source using the
-`devtools` R package.
+`ghit` R package.
 
 Install devtools:
 
 ```R
-> install.packages('devtools')
+> install.packages('ghit')
 ```
 
 Now install and load the development version of the app with:
 
 ```R
-> devtools::install_github('ucd-ipo/aip-analysis')
+> ghit::install_github('ucd-ipo/aip-analysis')
 > library(AIP)
 ```
 
