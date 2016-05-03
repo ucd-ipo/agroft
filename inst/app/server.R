@@ -1,7 +1,6 @@
 library(shiny)
 library(shinyBS)
 library(shinyAce) # for displaying R code
-library(agricolae) # for LSD.Test()
 library(car)  # for leveneTest() and Anova()
 library(nlme) #for split plot designs
 library(knitr) # for loading dynamic reports.
@@ -1237,7 +1236,7 @@ EvalFit <- function(transformation){
   # Post hoc tab
   #############################################################################
   
-  MakePostHocPlot <- function(fit, dep.var, ind.var, type) {
+  MakePostHocPlot <- function(fit, dep.var, ind.var) {
     if (length(ind.var) == 2) {
       x.label = paste(ind.var, collapse = ":")
     } else {
@@ -1246,27 +1245,6 @@ EvalFit <- function(transformation){
     
     strp <- function(x){ gsub('^\\s*|\\s*$', '', x) }
     
-    if(type == 'fixef'){
-    lsd.results <- LSD.test(fit, ind.var)
-    lsd.results$means$trt <- row.names(lsd.results$means)
-    lsd.results$groups$trt <- strp(as.character(lsd.results$groups$trt))
-    lsd.results <- merge(lsd.results$groups, lsd.results$means, by = 'trt')
-    dat <- lsd.results[,dep.var]
-    
-    names(dat) <- lsd.results$trt
-    b <- barplot(dat, xlab = x.label, ylab = dep.var,
-                 ylim = c(0, max(lsd.results$UCL)+max(lsd.results$UCL)*.10),
-                 cex.names = .8)
-    abline(h=0)
-    arrows(x0 = b, 
-           y0 = lsd.results$LCL, 
-           y1 = lsd.results$UCL,
-           code = 3, angle = 90, length=.1)
-    
-    text(x=b, y=lsd.results$UCL+(lsd.results$UCL*.08) ,
-         labels = lsd.results$M)
-    }
-    if(type == 'ranef'){
       f <- as.formula(paste0('~', paste0(ind.var, collapse='+')))
       lsd.results <- cld(lsmeans(fit, f), Letters=letters)
       lsd.results <- lsd.results[order(lsd.results[,1], lsd.results[,2]),]
@@ -1288,7 +1266,6 @@ EvalFit <- function(transformation){
       
       text(x=b, y=lsd.results$upper.CL*1.08,
            labels = strp(lsd.results$.group))
-    }
   }
   
   ##### code to run post-hoc tests #####
@@ -1317,9 +1294,6 @@ EvalFit <- function(transformation){
       probcol <- ifelse(exp.design()[['is_multisite']] | 
                           exp.design()[['exp.design']] %in% c('SPRCBD', 'SPCRD'), 
                         'Pr(>Chisq)', 'Pr(>F)')
-      type <- ifelse(exp.design()[['is_multisite']] | 
-                       exp.design()[['exp.design']] %in% c('SPRCBD', 'SPCRD'), 
-                     'ranef', 'fixef')
       alpha <- 0.05
       if (exp.design()[['exp.design']] == 'LR') {
         return(list(text='Post hoc tests are not run for simple linear regression.'))
@@ -1327,22 +1301,17 @@ EvalFit <- function(transformation){
         p.value <- Anova(model.fit, type = 3, singular.ok=TRUE)[2, probcol]
         if (p.value < alpha) {
           f <- as.formula(paste0('~ ', ind.vars))
-          if (type == 'fixef') {
-          lsd.results.text <- quote(
-            LSD.test(model.fit, ind.vars, console = TRUE)
-          )
-          } 
-          if (type == 'ranef') {
+
             lsd.results.text <- quote(
               cld(lsmeans(model.fit, f), Letters=letters)
             )
-          }
+
           lsd.bar.plot <- quote(
-            MakePostHocPlot(model.fit, dep.var, ind.vars, type)
+            MakePostHocPlot(model.fit, dep.var, ind.vars)
           )
           return(list(text=paste0(ind.vars, ' is significant'),
                       res = lsd.results.text, 
-                      f = f, type = type,
+                      f = f,
                       plt = lsd.bar.plot,
                       model.fit=model.fit, dep.var=dep.var, ind.vars=ind.vars))
         } else {
@@ -1371,66 +1340,51 @@ EvalFit <- function(transformation){
             return(list(text=text))
           }
           f <- as.formula(paste0('~ ', paste0(ind.vars, collapse = ' + ')))
-          if (type == 'fixef') {
-            lsd.results.text <- quote(
-              LSD.test(model.fit, ind.vars, console = TRUE)
-            )
-          } 
-          if (type == 'ranef') {
+
             lsd.results.text <- quote(
               cld(lsmeans(model.fit, f), Letters=letters)
             )
-          }
+            
           lsd.bar.plot <- quote(
-            MakePostHocPlot(model.fit, dep.var, lsd.vars, type)
+            MakePostHocPlot(model.fit, dep.var, lsd.vars)
           )
           return(list(text=text,
                       res=lsd.results.text, f=f,
-                      plt=lsd.bar.plot, type=type,
+                      plt=lsd.bar.plot,
                       model.fit=model.fit, dep.var=dep.var, lsd.vars=lsd.vars))
         } else if (var.one.p.value < .05 & var.two.p.value >= .05) {
           lsd.vars <- ind.var.one
           f <- as.formula(paste0('~ ', paste0(ind.vars, collapse = ' + ')))
-          if (type == 'fixef') {
-            lsd.results.text <- quote(
-              LSD.test(model.fit, ind.vars, console = TRUE)
-            )
-          } 
-          if (type == 'ranef') {
+
             lsd.results.text <- quote(
               cld(lsmeans(model.fit, f), Letters=letters)
             )
-          }
+
           lsd.bar.plot <- quote(
-            MakePostHocPlot(model.fit, dep.var, lsd.vars, type)
+            MakePostHocPlot(model.fit, dep.var, lsd.vars)
           )
           text <- paste('Only the ', ind.var.one, ' main effect is significant.')
           return(list(text=text,
                       res=lsd.results.text,
-                      plt=lsd.bar.plot, type=type,
+                      plt=lsd.bar.plot, 
                       model.fit=model.fit, dep.var=dep.var, 
                       ind.var.one = ind.var.one))
           
           } else if (var.one.p.value >= .05 & var.two.p.value < .05) {
             lsd.vars <- ind.var.two
             f <- as.formula(paste0('~ ', paste0(ind.vars, collapse = ' + ')))
-            if (type == 'fixef') {
-              lsd.results.text <- quote(
-                LSD.test(model.fit, ind.vars, console = TRUE)
-              )
-            } 
-            if (type == 'ranef') {
+
               lsd.results.text <- quote(
                 cld(lsmeans(model.fit, f), Letters=letters)
               )
-            }
+
             lsd.bar.plot <- quote(
-              MakePostHocPlot(model.fit, dep.var, lsd.vars, type)
+              MakePostHocPlot(model.fit, dep.var, lsd.vars)
             )
             text <- paste('Only the ', ind.var.two, ' main effect is significant')
             return(list(text=text,
                         res=lsd.results.text,
-                        plt=lsd.bar.plot, type=type,
+                        plt=lsd.bar.plot, 
                         model.fit=model.fit, dep.var=dep.var, 
                         ind.var.two = ind.var.two))
             
@@ -1469,12 +1423,11 @@ EvalFit <- function(transformation){
             cld(lsmeans(model.fit, f), Letters=letters)
           )
           lsd.bar.plot <- quote(
-            MakePostHocPlot(model.fit, dep.var, lsd.vars, type)
+            MakePostHocPlot(model.fit, dep.var, lsd.vars)
           )
           return(list(text = text, 
                       res = lsd.results.text, 
                       plt = lsd.bar.plot,
-                      type=type,
                       f=f, model.fit=model.fit, dep.var=dep.var, lsd.vars=lsd.vars))
         } else if (var.one.p.value < .05 & var.two.p.value >= .05) {
           lsd.vars <- ind.var.one
@@ -1484,12 +1437,11 @@ EvalFit <- function(transformation){
             cld(lsmeans(model.fit, f), Letters=letters)
           )
           lsd.bar.plot <- quote(
-            MakePostHocPlot(model.fit, dep.var, lsd.vars, type)
+            MakePostHocPlot(model.fit, dep.var, lsd.vars)
           )
           return(list(text = text, 
                       res = lsd.results.text, 
                       plt = lsd.bar.plot,
-                      type=type,
                       f=f, model.fit=model.fit, dep.var=dep.var, lsd.vars=lsd.vars))
           
         } else if (var.one.p.value >= .05 & var.two.p.value < .05) {
@@ -1500,12 +1452,11 @@ EvalFit <- function(transformation){
             cld(lsmeans(model.fit, f), Letters=letters)
           )
           lsd.bar.plot <- quote(
-            MakePostHocPlot(model.fit, dep.var, lsd.vars, type)
+            MakePostHocPlot(model.fit, dep.var, lsd.vars)
           )
           return(list(text = text, 
                       res = lsd.results.text, 
                       plt = lsd.bar.plot,
-                      type=type,
                       f=f, model.fit=model.fit, dep.var=dep.var, lsd.vars=lsd.vars))
         } else {
           return(list(text=paste0('No effects are significant and post ',
