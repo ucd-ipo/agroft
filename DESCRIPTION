@@ -14,7 +14,8 @@ Imports:
   car,
   yaml,
   nlme,
-  lsmeans
+  lsmeans,
+  multcompView
 Description: Package for supporting the USAID agricultural data analysis training.
 License: BSD_3_clause
 URL: https://github.com/ucd-ipo/aip-analysis
