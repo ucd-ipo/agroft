@@ -183,20 +183,29 @@ shinyServer( function(input, output, session) {
                       SqrtTfm = paste0(input$dependent.variable, '.sqrt'))
     if (exp.design()[['exp.design']] %in% c('LR', 'CRD1')) {
       right.side <- input$independent.variable.one
-    } else if (exp.design()[['exp.design']] == 'CRD2') {
+    } 
+    if (exp.design()[['exp.design']] == 'CRD2') {
       right.side <- paste0(input$independent.variable.one, ' * ',
                            input$independent.variable.two)
-    } else if (exp.design()[['exp.design']] == 'RCBD1') {
-      right.side <- paste0(input$independent.variable.one, ' + ',
-                           input$independent.variable.blk)
-    } else if (exp.design()[['exp.design']] == 'RCBD2') {
+    }
+    if (exp.design()[['exp.design']] == 'RCBD1') {
+      if(exp.design()[['is_multisite']]){
+        right.side <- paste0(input$independent.variable.one)
+      } else {
+        right.side <- paste0(input$independent.variable.one, ' + ',
+                             input$independent.variable.blk)
+      }
+    } 
+    if (exp.design()[['exp.design']] == 'RCBD2') {
       right.side <- paste0(input$independent.variable.one, ' * ',
                            input$independent.variable.two, ' + ',
                            input$independent.variable.blk)
-    } else if (exp.design()[['exp.design']] == 'SPRCBD') {
+    } 
+    if (exp.design()[['exp.design']] == 'SPRCBD') {
       right.side <- paste0(input$independent.variable.one, ' * ',
                            input$independent.variable.two)
-    } else if (exp.design()[['exp.design']] == 'SPCRD'){
+    } 
+    if (exp.design()[['exp.design']] == 'SPCRD'){
       right.side <- paste0(input$independent.variable.one, ' * ',
                            input$independent.variable.two)
     }
@@ -1235,7 +1244,6 @@ EvalFit <- function(transformation){
   #############################################################################
   # Post hoc tab
   #############################################################################
-
   
   ##### code to run post-hoc tests #####
   
