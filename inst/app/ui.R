@@ -299,7 +299,7 @@ analysis.editor.posthoc <- aceEditor('code_used_posthoc',
                                      value = '# code used to run post-hoc tests',
                                      mode = 'r',
                                      readOnly = TRUE, 
-                                     height = '50px')
+                                     height = '40px')
 
 
 posthoc.tab <-
