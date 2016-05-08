@@ -927,10 +927,15 @@ EvalFit <- function(transformation){
     # }
   })
   
-  
   plot.residuals.vs.fitted <- function(transformation){
     model.fit <- ModelFitWithoutError(transformation)
-    plot(model.fit, which = 1)
+    
+    scatter.smooth(fitted.values(model.fit), 
+                   residuals(model.fit),
+                   main = 'Residuals vs Predicted', 
+                   xlab = 'Predicted', ylab = 'Residuals',
+                   lpars = list(col='red'))
+    abline(h=0, lty=2, col='gray')
   }
   
   output$no_plot.residuals.vs.fitted <- renderPlot({
