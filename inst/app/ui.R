@@ -263,7 +263,7 @@ sqrtTrnsfrmTab <- tabPanel(
 
 data.analysis.tab <-
   tabPanel(
-    '2. Model Design and Diagnostics',
+    '2. Experiment Setup and Assumption Tests',
     sidebarLayout(
       sidebarPanel(
         bsCollapse(

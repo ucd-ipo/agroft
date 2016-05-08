@@ -26,10 +26,6 @@ shinyServer( function(input, output, session) {
     # length zero (i.e. corrupt or weird filetype) and the user hasn't selected
     # use sample data, then... make the reactive expression "GetLoadCall" NULL,
     # otherwise, do read in data things
-#     if ((is.null(input$data_file) || length(input$data_file) == 0) &&
-#         !input$use_sample_data) {
-#       return(NULL)
-#     } else {
       # if a data file has been uploaded and the user doesn't want to use sample
       # data...
       if (length(input$data_file) > 0 && !input$use_sample_data) {
@@ -57,8 +53,6 @@ shinyServer( function(input, output, session) {
   LoadData <- reactive({
     # Returns a data.frame with the appropriate data set or NULL.
     
-    # TODO : This should only run if GetLoadCall returns a name.
-    # TODO : This should probably be in the GetLoadCall function.
     # The following loads the selected agricolae data set into the workspace,
     # regardless if the user selects "Use sample data instead". The name of the
     # data.frame is the same as input$sample_data_buttons.
@@ -564,7 +558,7 @@ EvalFit <- function(transformation){
                                   'Completly Random Design' = 'CRD'))
       
       n_iv <- conditionalPanel('input.analysis_type != "LR" && input.analysis_subtype != "SP"', 
-                               radioButtons('n_ivs', "Select the number of treatments in your analysis", 
+                               radioButtons('n_ivs', "Select the number of factors in your experiment", 
                                             choices = 1:2, 
                                             inline = TRUE))
       n_iv_msg1 <- conditionalPanel('input.analysis_type == "LR"',
