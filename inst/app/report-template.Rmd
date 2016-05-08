@@ -28,4 +28,5 @@ replace_with_post_hoc_code
 ```{r echo=FALSE, warning=FALSE, error=FALSE, message=FALSE}
 obj <- lsd.code()
 eval(obj$res, envir = obj)
+eval(obj$plt, envir = obj)
 ```
