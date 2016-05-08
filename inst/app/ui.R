@@ -303,7 +303,7 @@ analysis.editor.posthoc <- aceEditor('code_used_posthoc',
 
 
 posthoc.tab <-
-  tabPanel('3. Results and Post-hoc tests',
+  tabPanel('3. Results',
            sidebarLayout(
              sidebarPanel(
                actionButton('view_anova_table',
@@ -328,9 +328,9 @@ posthoc.tab <-
                                  placement = 'left',
                                  trigger = 'click'),
                        uiOutput('interaction.plot'))),
-                tabPanel('Post-hoc Tests',        
+                tabPanel('Mean Comparison Tests & Figures',        
                conditionalPanel('input.view_anova_table > 0',
-                       h3('Post hoc tests and figures'),
+                       h3('Mean Comparison Tests & Figures'),
                        analysis.editor.posthoc
                        ),
                        uiOutput('lsd.results'))))
