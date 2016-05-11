@@ -141,7 +141,7 @@ shinyServer( function(input, output, session) {
   
   ComputeExponent <- reactive({
     # Returns the exponent numeric to be used in the power transformation.
-    if (exp.design()[['exp.design']] %in% c('LR', 'CRD1', 'RCBD1')) {
+    if (exp.design()[['exp.design']] %in% c('CRD1', 'RCBD1')) {
       form = paste(input$dependent.variable, '~',
                    input$independent.variable.one)
     } else {
@@ -175,7 +175,7 @@ shinyServer( function(input, output, session) {
                       PwrTfm = paste0(input$dependent.variable, '.pow'),
                       LogTfm = paste0(input$dependent.variable, '.log10'),
                       SqrtTfm = paste0(input$dependent.variable, '.sqrt'))
-    if (exp.design()[['exp.design']] %in% c('LR', 'CRD1')) {
+    if (exp.design()[['exp.design']] == 'CRD1') {
       right.side <- input$independent.variable.one
     } 
     if (exp.design()[['exp.design']] == 'CRD2') {
@@ -270,7 +270,7 @@ EvalFit <- function(transformation){
                       'PwrTfm' = paste0(input$dependent.variable, '.pow'),
                       'LogTfm' = paste0(input$dependent.variable, '.log10'),
                       'SqrtTfm' = paste0(input$dependent.variable, '.sqrt'))
-    if (exp.design()[['exp.design']] %in% c('LR', 'CRD1', 'RCBD1')) {
+    if (exp.design()[['exp.design']] %in% c('CRD1', 'RCBD1')) {
       f <- paste0(dep.var, ' ~ ',
                   input$independent.variable.one)
       l <- list()
@@ -325,7 +325,7 @@ EvalFit <- function(transformation){
   GenerateAnalysisCodePwr <- reactive({
       dep.var <- paste0(input$dependent.variable, '.pow')
         analysisCode <- '\n# transform the dependent variable\n'
-        if (exp.design()[['exp.design']] %in% c('LR', 'CRD1', 'RCBD1')) {
+        if (exp.design()[['exp.design']] %in% c('CRD1', 'RCBD1')) {
           analysisCode <- paste0(analysisCode, 'mean.data <- aggregate(', dep.var, ' ~ ',
                                  input$independent.variable.one)
         } else {
@@ -383,12 +383,12 @@ EvalFit <- function(transformation){
       } else {
         analysisCode <- ''
       }
-      if (exp.design()[['exp.design']] != 'LR') {
-        formulas <- GenerateIndividualFormulas(transformation)
-        levene.calls <- paste0('leveneTest(', formulas, ', data = my.data)',
+
+      formulas <- GenerateIndividualFormulas(transformation)
+      levene.calls <- paste0('leveneTest(', formulas, ', data = my.data)',
                                collapse = '\n')
-        analysisCode <- paste0(analysisCode, "\n\n# Levene's Test\n", levene.calls)
-      }
+      analysisCode <- paste0(analysisCode, "\n\n# Levene's Test\n", levene.calls)
+
       
       # trans.dep.var <- TransformedDepVarColName()
       if (exp.design()[['exp.design']] %in% c('CRD2', 'RCBD2')) {
@@ -499,10 +499,6 @@ EvalFit <- function(transformation){
       analysisCode <- paste0("# Residuals vs. Fitted\nplot(model.fit, which = 1)")
       analysisCode <- paste0(analysisCode, "\n\n# Kernel Density Plot\nplot(density(residuals(model.fit)))")
     
-    if (exp.design()[['exp.design']] == 'LR') {
-      analysisCode <- paste0(analysisCode, "\n\n# Best Fit Line\nplot(formula = ",
-                             GenerateFormula(transformation), ", data = my.data)\nabline(model.fit)")
-    } else {
       dep.var <- switch(transformation,
                         NoTfm = input$dependent.variable,
                         PwrTfm = paste0(input$dependent.variable, '.pow'),
@@ -517,7 +513,7 @@ EvalFit <- function(transformation){
                              "boxplot(", f1, ", data = my.data, main = '", main,
                              "', xlab = '", ind.var.one,
                              "', ylab = '", dep.var,  "')")
-      if (!exp.design()[['exp.design']] %in% c('LR', 'CRD1', 'RCBD1')) {
+      if (!exp.design()[['exp.design']] %in% c('CRD1', 'RCBD1')) {
         f2 <- paste0(dep.var, ' ~ ', ind.var.two)
         main <- paste0("Effect of ", ind.var.two, " on ",
                        dep.var)
@@ -525,9 +521,8 @@ EvalFit <- function(transformation){
                                main, "', xlab = '", ind.var.two,
                                "', ylab = '", dep.var,  "')")
       }
-    }
     
-    if (!exp.design()[['exp.design']] %in% c('LR', 'CRD1', 'RCBD1')) {
+    if (!exp.design()[['exp.design']] %in% c('CRD1', 'RCBD1')) {
       analysisCode <- paste0(analysisCode, "\n# Interaction Plots\n",
                              "interaction.plot(my.data$", ind.var.one, ", my.data$",
                              ind.var.two, ", my.data$", dep.var, ", xlab = '",
@@ -553,16 +548,14 @@ EvalFit <- function(transformation){
       
       alys_type <- radioButtons('analysis_type', 
                                 'Select your experimental design', 
-                                c('Linear Regression' = 'LR',
-                                  'Randomized Complete Block Design' = 'RCBD',
+                                c('Randomized Complete Block Design' = 'RCBD',
                                   'Completly Random Design' = 'CRD'))
       
-      n_iv <- conditionalPanel('input.analysis_type != "LR" && input.analysis_subtype != "SP"', 
+      n_iv <- conditionalPanel('input.analysis_subtype != "SP"', 
                                radioButtons('n_ivs', "Select the number of factors in your experiment", 
                                             choices = 1:2, 
                                             inline = TRUE))
-      n_iv_msg1 <- conditionalPanel('input.analysis_type == "LR"',
-                                    h4('You may only run Linear Regression with one treatment')) 
+
       n_iv_msg2 <- conditionalPanel('input.analysis_subtype == "SP"',
                                     h4('You must use two treatments in split-plot design')) 
       
@@ -571,10 +564,8 @@ EvalFit <- function(transformation){
                                    c('Not Applicable' = 'NA',
                                      'Split-plot Design' = 'SP',
                                      'Multisite experiment' = 'multisite')))
-      subtype_msg <- conditionalPanel("input.analysis_type == 'LR' && input.analysis_subtype != 'NA'", 
-                                      h4('Split-plot and multisite analysis sub-types not available in linear regression'))
       
-      return(list(alys_type, alys_subtype, n_iv, n_iv_msg1, n_iv_msg2, subtype_msg))
+      return(list(alys_type, alys_subtype, n_iv, n_iv_msg2))
       
     }
   })
@@ -583,10 +574,10 @@ EvalFit <- function(transformation){
     if(is.null(input$analysis_type) && is.null(input$n_ivs) && is.null(input$analysis_subtype)){
       return(NULL)
     }
-    subtype <- ifelse(input$analysis_subtype %in% c('multisite', 'NA') | input$analysis_type == 'LR', 
+    subtype <- ifelse(input$analysis_subtype %in% c('multisite', 'NA'), 
                       '', input$analysis_subtype)
     is_multisite <- input$analysis_subtype == 'multisite'
-    n_iv <- ifelse(input$analysis_type == 'LR' | input$analysis_subtype == 'SP', '', input$n_ivs)
+    n_iv <- ifelse(input$analysis_subtype == 'SP', '', input$n_ivs)
     dsng <- paste0(subtype, input$analysis_type, n_iv)
     return(list(exp.design = dsng, 
                 is_multisite = is_multisite))
@@ -616,12 +607,7 @@ EvalFit <- function(transformation){
       input1 <- input2 <- input3 <- input4 <- NULL
       all.col.names <- names(ConvertData())
       choices = all.col.names[!(all.col.names %in% input$dependent.variable)]
-      if (exp.design()[['exp.design']] == 'LR') {
-        input1 <- selectInput('independent.variable.one',
-                    'Select a single continous independent variable:',
-                    choices = choices,
-                    selected = NULL)
-      } else if (exp.design()[['exp.design']] == 'CRD1') {
+      if (exp.design()[['exp.design']] == 'CRD1') {
         input1 <- selectInput('independent.variable.one',
                     'Select a single independent factor variable:',
                     choices = choices,
@@ -754,7 +740,6 @@ EvalFit <- function(transformation){
       input$view_anova_table
       isolate({
       list(h2('Model Fit Summary'),
-           if (exp.design()[['exp.design']] != 'LR') { h3('ANOVA Table') } else{ NULL },
            verbatimTextOutput('fitSummaryText'))
       })
     # }
@@ -1023,63 +1008,7 @@ EvalFit <- function(transformation){
   output$sqrt_kernel.density.plot <- renderUI({
     kernel.density.plot('SqrtTfm')
   })
-  
-  plot.best.fit <- function(transformation){
-    dep.var <- switch(transformation,
-                      NoTfm = input$dependent.variable,
-                      PwrTfm = paste0(input$dependent.variable, '.pow'),
-                      LogTfm = paste0(input$dependent.variable, '.log10'),
-                      SqrtTfm = paste0(input$dependent.variable, '.sqrt'))
-    f <- paste0(dep.var, ' ~ ',
-                input$independent.variable.one)
-    my.data <- AddTransformationColumns()
-    plot(formula = as.formula(f), data = my.data)
-    model.fit <- ModelFitWithoutError(transformation)
-    abline(model.fit)
-  }
-  
-  output$no_plot.best.fit <- renderPlot({
-    plot.best.fit('NoTfm')
-  })
-  output$pwr_plot.best.fit <- renderPlot({
-    plot.best.fit('PwrTfm')
-  })
-  output$log_plot.best.fit <- renderPlot({
-    plot.best.fit('LogTfm')
-  })
-  output$sqrt_plot.best.fit <- renderPlot({
-    plot.best.fit('SqrtTfm')
-  })
-  
-  best.fit.plot <- function(transformation){
-#     if (is.null(input$run_analysis) || input$run_analysis == 0) {
-#       return(NULL)
-#     } else {
-      if (exp.design()[['exp.design']] == 'LR') {
-        res <- switch(transformation,
-                      NoTfm = 'no_plot.best.fit',
-                      PwrTfm = 'pwr_plot.best.fit',
-                      LogTfm = 'log_plot.best.fit',
-                      SqrtTfm = 'sqrt_plot.best.fit')
-        list(h2('Best Fit'),
-             plotOutput(res))
-      } else {
-        return(NULL)
-      }
-    # }
-  }
-  output$no_best.fit.plot <- renderUI({
-    best.fit.plot('NoTfm')
-  })
-  output$pwr_best.fit.plot <- renderUI({
-    best.fit.plot('PwrTfm')
-  })
-  output$log_best.fit.plot <- renderUI({
-    best.fit.plot('LogTfm')
-  })
-  output$sqrt_best.fit.plot <- renderUI({
-    best.fit.plot('SqrtTfm')
-  })
+
   
   plot.boxplot.one <- function(transformation){
     dep.var <- switch(transformation,
@@ -1088,7 +1017,7 @@ EvalFit <- function(transformation){
                       LogTfm = paste0(input$dependent.variable, '.log10'),
                       SqrtTfm = paste0(input$dependent.variable, '.sqrt'))
     
-    if (exp.design()[['exp.design']] != 'LR') {
+
       my.data <- AddTransformationColumns()
       f1 <- paste0(dep.var, ' ~ ',
                    input$independent.variable.one)
@@ -1097,7 +1026,7 @@ EvalFit <- function(transformation){
                             " on ", dep.var),
               xlab = input$independent.variable.one,
               ylab = dep.var)
-    }
+
   }
   
   plot.boxplot.two <- function(transformation){
@@ -1106,7 +1035,7 @@ EvalFit <- function(transformation){
                       PwrTfm = paste0(input$dependent.variable, '.pow'),
                       LogTfm = paste0(input$dependent.variable, '.log10'),
                       SqrtTfm = paste0(input$dependent.variable, '.sqrt'))
-    if (!exp.design()[['exp.design']] %in% c('LR', 'CRD1', 'RCBD1')) {
+    if (!exp.design()[['exp.design']] %in% c('CRD1', 'RCBD1')) {
       my.data <- AddTransformationColumns()
       f2 <- paste0(dep.var, ' ~ ',
                    input$independent.variable.two)
@@ -1157,7 +1086,6 @@ EvalFit <- function(transformation){
 #     if (is.null(input$run_analysis) || input$run_analysis == 0) {
 #       return(NULL)
 #     } else {
-      if (exp.design()[['exp.design']] != 'LR') {
         if (!exp.design()[['exp.design']] %in% c('CRD1', 'RCBD1')) {
           elements <- list(h2('Effects Box Plots'),
                            plotOutput(bp1),
@@ -1167,9 +1095,7 @@ EvalFit <- function(transformation){
                            plotOutput(bp1))
         }
         return(elements)
-      } else {
-        return(NULL)
-      }
+
     # }
   }
 
@@ -1189,7 +1115,7 @@ EvalFit <- function(transformation){
   output$plot.interaction.one <- renderPlot({
     input$view_anova_table
     # isolate({
-      if (!exp.design()[['exp.design']] %in% c('LR', 'CRD1', 'RCBD1')) {
+      if (!exp.design()[['exp.design']] %in% c('CRD1', 'RCBD1')) {
         dep.var <- switch(input$transformation,
                NoTfm = input$dependent.variable,
                PwrTfm = paste0(input$dependent.variable, '.pow'),
@@ -1208,7 +1134,7 @@ EvalFit <- function(transformation){
   output$plot.interaction.two <- renderPlot({
     input$view_anova_table
     # isolate({
-      if (!exp.design()[['exp.design']] %in% c('LR', 'CRD1', 'RCBD1')) {
+      if (!exp.design()[['exp.design']] %in% c('CRD1', 'RCBD1')) {
         dep.var <-  switch(input$transformation,
                            NoTfm = input$dependent.variable,
                            PwrTfm = paste0(input$dependent.variable, '.pow'),
@@ -1229,7 +1155,7 @@ EvalFit <- function(transformation){
 #     if (is.null(input$run_analysis) || input$run_analysis == 0) {
 #       return(NULL)
 #     } else {
-      if (!exp.design()[['exp.design']] %in% c('LR', 'CRD1', 'RCBD1')) {
+      if (!exp.design()[['exp.design']] %in% c('CRD1', 'RCBD1')) {
         return(list(h2('Interaction Plots'),
                     plotOutput('plot.interaction.one'),
                     plotOutput('plot.interaction.two')))
@@ -1271,9 +1197,7 @@ EvalFit <- function(transformation){
                           exp.design()[['exp.design']] %in% c('SPRCBD', 'SPCRD'), 
                         'Pr(>Chisq)', 'Pr(>F)')
       alpha <- 0.05
-      if (exp.design()[['exp.design']] == 'LR') {
-        return(list(text='Post hoc tests are not run for simple linear regression.'))
-      } else if (exp.design %in% c('CRD1', 'RCBD1')) {
+      if (exp.design %in% c('CRD1', 'RCBD1')) {
         p.value <- Anova(model.fit, type = 3, singular.ok=TRUE)[2, probcol]
         if (p.value < alpha) {
           f <- as.formula(paste0('~ ', ind.vars))
@@ -1580,7 +1504,6 @@ EvalFit <- function(transformation){
       'input.run_analysis > 0',
       uiOutput('log_residuals.vs.fitted.plot'),
       uiOutput('log_kernel.density.plot'),
-      uiOutput('log_best.fit.plot'),
       uiOutput('log_boxplot.plot'),
       h2('Shapiro-Wilk Normality Test Results'),
       verbatimTextOutput('log_shapiro.wilk.results.text'),
