@@ -391,7 +391,7 @@ EvalFit <- function(transformation){
 
       
       # trans.dep.var <- TransformedDepVarColName()
-      if (exp.design()[['exp.design']] %in% c('CRD2', 'RCBD2')) {
+      if (exp.design()[['exp.design']] %in% c('RCBD1', 'RCBD2')) {
         fit.name <- 'model.fit'
         fit.line <- ''
         analysisCode <- paste0("\n\n# Tukey's Test for Nonadditivity\n", fit.line,
@@ -1007,7 +1007,7 @@ EvalFit <- function(transformation){
   })
   output$sqrt_kernel.density.plot <- renderUI({
     kernel.density.plot('SqrtTfm')
-  })
+  })  
 
   
   plot.boxplot.one <- function(transformation){
