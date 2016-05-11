@@ -391,7 +391,7 @@ EvalFit <- function(transformation){
       }
       
       # trans.dep.var <- TransformedDepVarColName()
-      if (!exp.design()[['exp.design']] %in% c('LR', 'CRD1', 'CRD2', 'RCBD1', 'RCBD2')) {
+      if (exp.design()[['exp.design']] %in% c('CRD2', 'RCBD2')) {
         fit.name <- 'model.fit'
         fit.line <- ''
         analysisCode <- paste0("\n\n# Tukey's Test for Nonadditivity\n", fit.line,
@@ -874,7 +874,7 @@ EvalFit <- function(transformation){
   })
 
   tukey.results <- function(transformation){
-      if (!exp.design()[['exp.design']] %in% c('LR', 'CRD1', 'CRD2')) {
+      if (exp.design()[['exp.design']] %in% c('CRD2', 'RCBD2')) {
           dep.var <- switch(transformation,
                             NoTfm = input$dependent.variable,
                             PwrTfm = paste0(input$dependent.variable, '.pow'),
