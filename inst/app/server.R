@@ -1470,12 +1470,14 @@ EvalFit <- function(transformation){
   
   output$downloadSlides1 <- downloadHandler(
     filename = function(){"Workshop Slides Day 1.pdf"},
-    content  = function(file) file.copy('www/AIP Workshop Day 1.pdf', file, overwrite = FALSE)
+    content  = function(file) file.copy('www/Stats Tutorial Day 1.pptx', 
+                                        file, overwrite = FALSE)
   )
   
   output$downloadSlides2 <- downloadHandler(
     filename = function(){"Workshop Slides Day 2.pdf"},
-    content  = function(file) file.copy('www/AIP Workshop Day 2.pdf', file, overwrite = FALSE)
+    content  = function(file) file.copy('www/Stats Tutorial Day 2.pptx', 
+                                        file, overwrite = FALSE)
   )
   
   #############################################################################
