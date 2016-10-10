@@ -1,6 +1,6 @@
-library(shiny)
-library(shinyBS)
-library(shinyAce)
+suppressPackageStartupMessages(library(shiny))
+suppressPackageStartupMessages(library(shinyBS))
+suppressPackageStartupMessages(library(shinyAce))
 
 ###############################################################################
 # Load Data Tab
@@ -374,8 +374,8 @@ about.tab <-
 ###############################################################################
 shinyUI(
   navbarPage(
-    title = 'Agricultural Field Trial Statistics Package',
-    windowTitle = 'Agricultural Field Trial Statistics Package',
+    title = 'Agroft: Agricultural Field Trial Statistics Package',
+    windowTitle = 'Agroft',
     position = 'fixed-top',
     load.data.tab,
     data.analysis.tab,
