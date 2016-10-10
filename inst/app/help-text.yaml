@@ -87,7 +87,7 @@ exp.design.types : >
 dependent.variable.info : >
   Placeholder for dependent variable choice explanation.
 about : >
-  The "Agricultural Field Statistics Package" is software developed to provide
+  The "Agroft Agricultural Field Statistics Package" is software developed to provide
   free and open source statisitics software to farmers around the world.
 disclaimer : >
   To best of our knowledge this is correct and we cannot be held accountable for
