@@ -1,7 +1,7 @@
-Package: AIP
-Version: 0.1.1
-Date: 2015-11-29
-Title: Agricultural Field Trial Statistics Package
+Package: agroft
+Version: 0.2
+Date: 2016-10-12
+Title: Agroft: An Agricultural Field Trial Statistics Package
 Authors@R: c(
   person("Ian", "Kyle", email = "iankyle1@gmail.com", role = c("cre", "aut")),
   person("Jason", "Moore", email = "moorepants@gmail.com", role = "aut"))
@@ -17,5 +17,5 @@ Imports:
   multcompView
 Description: Package for supporting the USAID agricultural data analysis training.
 License: BSD_3_clause
-URL: https://github.com/ucd-ipo/aip-analysis
-BugReports: https://github.com/ucd-ipo/aip-analysis/issues
+URL: https://github.com/ucd-ipo/agroft
+BugReports: https://github.com/ucd-ipo/agroft/issues
