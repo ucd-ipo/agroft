@@ -1,10 +1,10 @@
-library(shiny)
-library(shinyBS)
-library(shinyAce) # for displaying R code
-library(car)  # for leveneTest() and Anova()
-library(nlme) #for split plot designs
-library(knitr) # for loading dynamic reports.
-library(lsmeans)
+suppressPackageStartupMessages(library(shiny))
+suppressPackageStartupMessages(library(shinyBS))
+suppressPackageStartupMessages(library(shinyAce)) # for displaying R code
+suppressPackageStartupMessages(library(car))  # for leveneTest() and Anova()
+suppressPackageStartupMessages(library(nlme)) #for split plot designs
+suppressPackageStartupMessages(library(knitr)) # for loading dynamic reports.
+suppressPackageStartupMessages(library(lsmeans))
 #library(readxl) # for reading in excel files (not yet implimented)
 
 shinyServer( function(input, output, session) {
@@ -62,7 +62,7 @@ shinyServer( function(input, output, session) {
     # data.frame is the same as input$sample_data_buttons.
     eval(call('data', 
               input$sample_data_buttons, 
-              package='AIP',
+              package='agroft',
               envir=environment()))
     
     # set "data" to the GetLoadCall object
@@ -87,7 +87,7 @@ shinyServer( function(input, output, session) {
     if (!input$use_sample_data) {
       return(deparse(GetLoadCall()))
     } else {
-      l <- paste0("\ndata('",input$sample_data_buttons,  "', package='AIP')")
+      l <- paste0("\ndata('",input$sample_data_buttons,  "', package='agroft')")
       l <- paste0(l, '\nmy.data <- ', input$sample_data_buttons)
     }
   })
@@ -1554,6 +1554,7 @@ EvalFit <- function(transformation){
   #############################################################################
 
   session$onSessionEnded(function() { 
+    cat('\n\n\nThank you for using Agroft.\nYou can start another Agroft session by typing "launch()" at the R prompt (>) and pressing enter.\n\n')
     stopApp()
   })
   
