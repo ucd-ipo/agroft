@@ -1,4 +1,4 @@
-# Agricultural Field Trial Statistics Package
+# Agroft: Agricultural Field Trial Statistics Package
 
 An analysis interface for the Agriculture Innovation Project
 
@@ -17,17 +17,23 @@ Install `devtools`:
 Now install and load the development version of the app with:
 
 ```R
-> devtools::install_github('ucd-ipo/aip-analysis')
+> devtools::install_github('ucd-ipo/agroft')
 > library(AIP)
 ```
 
 ## Usage
 
-The function `AIP` will run the app (i.e., just run `AIP()` in the console):
+The function `launch` will run the app (i.e., just run `launch()` in the console):
 
 ```R
-> AIP()
+> launch()
 ```
 
 The app should open in your default web browser. If not, navigate to the
 provided URL.
+
+You can also use the `setup` function to confugre R so that it will launch an agroft session when R starts. 
+
+```R
+> setup()
+```
