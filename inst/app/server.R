@@ -29,7 +29,11 @@ shinyServer( function(input, output, session) {
       # if a data file has been uploaded and the user doesn't want to use sample
       # data...
       if (length(input$data_file) > 0 && !input$use_sample_data) {
-        # uncomment once readxl gets on CRAN
+        # uncomment once readxl gets on CRAN 
+        # NOTE: readxl has issues reading files without the .xls/.xlsx file extention
+        #       and shiny makes the uploaded file a temp file with no extansion
+        #       so there needs to be a bit of file copying and renaming done in the background 
+        #       to get around that issue. tl;dr, just uncommenting below won't work. 
         #         readcall <- switch(file_ext(input$data_file$name),
         #                            'csv'='read.csv',
         #                            'xls'='read_excel',
