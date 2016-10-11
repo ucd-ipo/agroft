@@ -1278,7 +1278,10 @@ EvalFit <- function(transformation){
           return(list(text=text,
                       res=lsd.results.text,
                       plt=lsd.bar.plot, f=f,
+<<<<<<< HEAD
                       lsd.vars = lsd.vars,
+=======
+>>>>>>> 11caa8998a526d5fd880253c352e84f0ff609a7b
                       model.fit=model.fit, dep.var=dep.var, 
                       ind.var.one = ind.var.one))
           
