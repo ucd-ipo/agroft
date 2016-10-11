@@ -5,7 +5,16 @@ An analysis interface for the Agriculture Innovation Project
 ## Installation
 
 This Shiny app has been built into a package and the development version is
-hosted on Github. Currently, it can be installed from source using the
+hosted on Github. The easiest way to install it is via `install.packages`, 
+specifying this repository in addition to the normal CRAN repositories. 
+
+```R
+install.packages('agroft', 
+                 repos = c('@CRAN@', 'https://ucd-ipo.github.io/agroft'), 
+                 type='source')
+```
+
+It can also be installed from source using the
 `devtools` R package.
 
 Install `devtools`:
@@ -18,7 +27,7 @@ Now install and load the development version of the app with:
 
 ```R
 > devtools::install_github('ucd-ipo/agroft')
-> library(AIP)
+> library(agroft)
 ```
 
 ## Usage
