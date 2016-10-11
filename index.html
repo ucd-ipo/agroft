@@ -123,7 +123,7 @@ $(document).ready(function ()  {
 
     // establish options
     var options = {
-      selectors: "h1,h2,h3",
+      selectors: "h1,h2",
       theme: "bootstrap3",
       context: '.toc-content',
       hashGenerator: function (text) {
@@ -236,7 +236,42 @@ div.tocify {
 </div>
 <div id="installation" class="section level1">
 <h1>Installation</h1>
-<p>to do.</p>
+<div id="installing-r" class="section level3">
+<h3>Installing R</h3>
+<p>Since Agroft is based on the powerful R language, you must first download and install R on your computer. R is available for all popular operating systems. Go to <a href="https://cran.r-project.org/" class="uri">https://cran.r-project.org/</a> and click the link that says “Download R for &lt;your operating system&gt;” that corresponds to your operating system.</p>
+<p><em>Important:</em> Windows users will also need to install a program called “Rtools” or Agroft won’t work. Go to <a href="https://cran.r-project.org/bin/windows/Rtools/" class="uri">https://cran.r-project.org/bin/windows/Rtools/</a> and download the Rtools exe file that is compatable with the version of R you just installed. After you have installed R, install Rtools.</p>
+<p>If you already have an older version of R installed on your computer, you may not have install a new version. Your version of R should be at least version 3.0.0. If your existing R version is less than that, you will need tp upgrade to the latest version.</p>
+</div>
+<div id="installing-agroft" class="section level3">
+<h3>Installing Agroft</h3>
+<p>Once R and, if you use Windows, Rtools, have been installed, you are ready to install Agroft.</p>
+<p>Start by opening the R application. A window will open and some text will appear that looks like the following:</p>
+<pre><code>R version 3.3.1 (2016-06-21) -- &quot;Bug in Your Hair&quot;
+Copyright (C) 2016 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type &#39;license()&#39; or &#39;licence()&#39; for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type &#39;contributors()&#39; for more information and
+&#39;citation()&#39; on how to cite R or R packages in publications.
+
+Type &#39;demo()&#39; for some demos, &#39;help()&#39; for on-line help, or
+&#39;help.start()&#39; for an HTML browser interface to help.
+Type &#39;q()&#39; to quit R.</code></pre>
+<p>Under that text will be the “R prompt”, which is a single “greater-than-symbol” (looks like “&gt;”). To interact with R, the user types special commands at that prompt that tell R to do different things. R is very powerful, but can also be difficult to learn. Agroft allows you to use R’s abilities without have to learn any programming, but you will have to enter a few commands to get Agroft working first.</p>
+<p>The commands are slightly different for Windows and OSX, so make sure to enter the commands for your operating system. <em>Important:</em> If your version of R is less than 3.2.0 because you already had</p>
+<div id="windows" class="section level4">
+<h4>Windows</h4>
+</div>
+<div id="osx" class="section level4">
+<h4>OSX</h4>
+</div>
+</div>
 </div>
 <div id="using-agroft" class="section level1">
 <h1>Using Agroft</h1>
