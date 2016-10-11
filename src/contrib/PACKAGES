@@ -5,10 +5,4 @@ License: BSD_3_clause
 MD5sum: b8d81c540350027ab002729e399d959c
 NeedsCompilation: no
 
-Package: drat
-Version: 0.0.4
-Suggests: git2r, knitr
-License: GPL (>= 2)
-MD5sum: 96a3a1f4d859b60fc83066f66e9d4761
-NeedsCompilation: no
 
