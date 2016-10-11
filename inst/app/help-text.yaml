@@ -88,7 +88,8 @@ dependent.variable.info : >
   Placeholder for dependent variable choice explanation.
 about : >
   The "Agroft Agricultural Field Statistics Package" is software developed to provide
-  free and open source statisitics software to farmers around the world.
+  free and open source statisitics software to farmers and researchers around the world. More information
+  on how to use this software can be found in the manual
 disclaimer : >
   To best of our knowledge this is correct and we cannot be held accountable for
   any conclusions or data generated using this software.
@@ -96,4 +97,4 @@ funding : >
   This software is funded by USAID and the UC Davis International Programs Office.
 license : >
   This sofware is open source and licensed under the 3-clause BSD License. The
-  source code can be obtained here:
+  source code can be obtained

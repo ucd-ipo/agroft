@@ -30,8 +30,8 @@ load.data.side.panel <- sidebarPanel(
                            'CRD 2 IVs'='clone_crd2',
                            'RCBD 2 IVs'='clone_rcbd2',
                            'SP-RCBD 2 IVs' = 'oats_sprcbd',
-                           'Multisite RCBD 2 IVs' = 'multisite_RCBD', 
-                           'Transformation Data 1' = 'crd_transformed1', 
+                           'Multisite RCBD 2 IVs' = 'multisite_RCBD',
+                           'Transformation Data 1' = 'crd_transformed1',
                            'Transformation Data 2' = 'crd_transformed2',
                            'Transformation Data 3' = 'crd_transformed3')
     )),
@@ -133,9 +133,9 @@ independent.panel <-
 # transformation.panel <-
 #     radioButtons('transformation',
 #                 'Select a transformation for the dependent variable:',
-#                 choices = c('None' = 'NoTfm', 
-#                             'Power' = 'PwrTfm', 
-#                             'Logarithmic' = 'LogTfm', 
+#                 choices = c('None' = 'NoTfm',
+#                             'Power' = 'PwrTfm',
+#                             'Logarithmic' = 'LogTfm',
 #                             'Square Root' = 'SqrtTfm'),
 #                 selected = 'NoTfm',
 #                 inline=TRUE)
@@ -148,10 +148,10 @@ analysis.editorLogTfm <- aceEditor('log_code_used_model', value='# code to run a
                              mode='r', readOnly=TRUE, height='200px')
 analysis.editorSqrtTfm <- aceEditor('sqrt_code_used_model', value='# code to run analysis',
                              mode='r', readOnly=TRUE, height='200px')
-analysis.editorANOVA <- aceEditor('code_used_anova', 
+analysis.editorANOVA <- aceEditor('code_used_anova',
                                   value = '# code used to run ANOVA',
-                                  mode = 'r', 
-                                  readOnly = TRUE, 
+                                  mode = 'r',
+                                  readOnly = TRUE,
                                   height = '75px')
 
 
@@ -295,7 +295,7 @@ data.analysis.tab <-
 analysis.editor.posthoc <- aceEditor('code_used_posthoc',
                                      value = '# code used to run post-hoc tests',
                                      mode = 'r',
-                                     readOnly = TRUE, 
+                                     readOnly = TRUE,
                                      height = '40px')
 
 
@@ -305,7 +305,7 @@ posthoc.tab <-
              sidebarPanel(
                actionButton('view_anova_table',
                                        'Run Data Analysis'),
-                          conditionalPanel('input.view_anova_table != 0', 
+                          conditionalPanel('input.view_anova_table != 0',
                                            h2('Model Formula'),
                                            verbatimTextOutput('formula')
                           )),
@@ -325,7 +325,7 @@ posthoc.tab <-
                                  placement = 'left',
                                  trigger = 'click'),
                        uiOutput('interaction.plot'))),
-                tabPanel('Mean Comparison Tests & Figures',        
+                tabPanel('Mean Comparison Tests & Figures',
                conditionalPanel('input.view_anova_table > 0',
                        h3('Mean Comparison Tests & Figures'),
                        analysis.editor.posthoc
@@ -353,7 +353,7 @@ report.tab <-
 about.tab <-
   tabPanel('About',
            verticalLayout(
-             p(help.text$about),
+             p(help.text$about, HTML('<a href="http://ucd-ipo.github.io/agroft/" target="_blank"> here.</a>')),
              h1('Funding'),
              p(help.text$funding),
              img(src = "usaid-logo-600.png", width = "300px"),
@@ -363,7 +363,7 @@ about.tab <-
              h1('Disclaimer'),
              p(help.text$disclaimer),
              h1('License'),
-             p(help.text$license, tags$a('http://github.com/ucd-ipo/aip-analysis')),
+             p(help.text$license, HTML('<a href="http://github.com/ucd-ipo/agroft" target="_blank"> here</a>')),
              downloadButton('downloadSlides1', label = 'Download Workshop Day 1 Slides'),
              downloadButton('downloadSlides2', label = 'Download Workshop Day 2 Slides')
            )
