@@ -1,59 +1,295 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<html>
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15">
-  <title>drat</title>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css">
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
-  <link href="//maxcdn.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.min.css" rel="stylesheet"> <!-- FontAwesome -->
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+
+
+<title>Agroft User Manual</title>
+
+<script src="libs/jquery-1.11.3/jquery.min.js"></script>
+<script src="libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="libs/tocify-1.9.1/jquery.tocify.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="libs/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+
+<style type="text/css">code{white-space: pre;}</style>
+<link rel="stylesheet"
+      href="libs/highlight/default.css"
+      type="text/css" />
+<script src="libs/highlight/highlight.js"></script>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs && document.readyState && document.readyState === "complete") {
+   window.setTimeout(function() {
+      hljs.initHighlighting();
+   }, 0);
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
 </head>
+
 <body>
-  <div class="jumbotron">
-    <div class="container">
-      <h2>drat: R Repositories made easy</h2>
-    </div>
-  </div><!-- /.umbotron -->
-  <div class="row"> &nbsp; </div>
-  <div class="container">
-    <div class="row">
-      <div class="col-md-6">
-        <h4><a href="https://github.com/eddelbuettel/drat/tree/gh-pages/src/contrib">Current Content of Drat Repo</a></h4>
-        <div class="row"> &nbsp; </div>
-        <h4>Vignettes about Drat</h3>
-        <ul class="list-group">
-          <li class="list-group-item"><a href="DratFAQ.html">Drat FAQ</a></li>
-          <li class="list-group-item"><a href="DratForPackageUsers.html">Drat for Package Users</a></li>
-          <li class="list-group-item"><a href="DratForPackageAuthors.html">Drat for Package Authors</a></li>
-          <li class="list-group-item"><a href="WhyDrat.html">Why Drat?</a> guest post</li>
-          <li class="list-group-item"><a href="CombiningDratAndTravis.html">Combining Drat and Travis CI</a> guest post</li>
-        </ul>
-        <div class="row"> &nbsp; </div>
-        <h4>Source for Drat Code</h3>
-        <ul class="list-group">
-          <li class="list-group-item"><a href="http://dirk.eddelbuettel.com/code/drat.html">Package page</a></li>
-          <li class="list-group-item"><a href="https://github.com/eddelbuettel/drat">GitHub repo</a></li>
-          <li class="list-group-item"><a href="https://cran.rstudio.com/package=drat">CRAN page</a></li>
-        </ul>
-      </div>
-      <div class="col-md-6">
-        <center>
-        <img src="http://i.imgur.com/dXKsSSK.jpg">
-        </center>
-      </div>
-    </div>
-   </div>
-   <div class="row"> &nbsp; </div>
-   <footer class="footer">
-     <div class="container">
-       <a href="http://twitter.com/eddelbuettel"><i class="icon-twitter"></i></a>
-       <a href="https://plus.google.com/+DirkEddelbuettel"><i class="icon-google-plus"></i></a>
-       <a href="https://github.com/eddelbuettel"><i class="icon-github"></i></a>
-       <!-- <a href="http://stackoverflow.com/users/143305/dirk-eddelbuettel"><i class="icon-stackexchange"></i></a> -->
-       <a href="http://www.linkedin.com/in/dirkeddelbuettel/"><i class="icon-linkedin"></i></a>
-       <a href="http://dirk.eddelbuettel.com"><i class="icon-home"></i>
-       <a href="http://dirk.eddelbuettel.com/blog/index.rss"><i class="icon-rss"></i></a>
-     </div>
-   </footer>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script src="libs/navigation-1.1/tabsets.js"></script>
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = false;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.9em;
+  padding-left: 5px;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+.tocify-subheader {
+  display: inline;
+}
+.tocify-subheader .tocify-item {
+  font-size: 0.95em;
+  padding-left: 10px;
+}
+
+</style>
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Agroft User Manual</h1>
+
+</div>
+
+
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>Agroft is a free software tool designed to help agricultural researchers running field trials analyze the data they collect. It uses a powerful, free, but complicated scientific programming language called “R” to run all the analyses, but is packaged into an easy to use interface.</p>
+<p>Take some time to watch the video below. It will quickly walk you through the main features of Agroft so you have an idea of how to use it and what it can do for you. More detailed information on how to use the specific features of this software are available in the “Using Agroft” section of this webpage.</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/mL27TAJGlWc?list=PL9FE4E32D5F2AA0BA" frameborder="0" allowfullscreen>
+</iframe>
+<p>Agroft is cross-platform software. It can run on Windows, OSX, and Linux platforms. To run Agroft, you will need to first install R and, if you use Windows, a helper program called Rtools. See the next section, “Installation”, for more information on this.</p>
+</div>
+<div id="installation" class="section level1">
+<h1>Installation</h1>
+<p>rv</p>
+</div>
+<div id="using-agroft" class="section level1">
+<h1>Using Agroft</h1>
+<div id="formatting-and-loading-data" class="section level2">
+<h2>Formatting and Loading Data</h2>
+<p>fved</p>
+</div>
+<div id="experimental-design-setup" class="section level2">
+<h2>Experimental Design Setup</h2>
+<p>fv</p>
+</div>
+<div id="checking-assumptions" class="section level2">
+<h2>Checking Assumptions</h2>
+<p>gvdfs</p>
+</div>
+<div id="data-analysis-and-post-hoc-tests" class="section level2">
+<h2>Data Analysis and Post-hoc Tests</h2>
+<p>gvbrfd</p>
+</div>
+</div>
+<div id="additional-resources-and-help" class="section level1">
+<h1>Additional Resources and Help</h1>
+<p>grfsd</p>
+</div>
+<div id="troubleshooting" class="section level1">
+<h1>Troubleshooting</h1>
+<p>grfd</p>
+</div>
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+$(document).ready(function () {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+});
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
 </body>
 </html>
