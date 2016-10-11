@@ -290,7 +290,8 @@ EvalFit <- function(transformation){
       l[[f1]] <- as.formula(f1)
       l[[f2]] <- as.formula(f2)
       return(l)
-  }}
+    }
+  }
  
   GenerateTukeyFormula <- function(transformation){
     dep.var <- switch(transformation,
@@ -374,7 +375,10 @@ EvalFit <- function(transformation){
     })
     
     GenerateAnalysisCodeANOVA2 <- function(transformation){
-      paste0('\n# fit the model\n',
+      pkg <- if (exp.design()[['exp.design']] %in% c('SPCRD', 'SPRCBD') || 
+                 exp.design()[['is_multisite']]) 'library(nlme)\n' else ''
+      paste0('\n# fit the model\n', 
+             pkg,
              'model.fit <- ', deparse(GetFitCall(transformation), width.cutoff=500L))
     }
     
@@ -391,7 +395,7 @@ EvalFit <- function(transformation){
       formulas <- GenerateIndividualFormulas(transformation)
       levene.calls <- paste0('leveneTest(', formulas, ', data = my.data)',
                                collapse = '\n')
-      analysisCode <- paste0(analysisCode, "\n\n# Levene's Test\n", levene.calls)
+      analysisCode <- paste0(analysisCode, "\n\n# Levene's Test\nlibrary(car)\n", levene.calls)
 
       
       # trans.dep.var <- TransformedDepVarColName()
