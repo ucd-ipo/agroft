@@ -824,8 +824,11 @@ EvalFit <- function(transformation){
  
   
   tukey.results.text <- function(transformation){
-      # TODO : Check to make sure this is what I'm supposed to use for the split
-      # plot results.
+
+    if (!exp.design()[['exp.design']] %in% c('RCBD1', 'RCBD2')) {
+      return(NULL)
+    }
+    
       fit <- ModelFitWithoutError(transformation)
       my.data <- AddTransformationColumns()
       
@@ -867,7 +870,7 @@ EvalFit <- function(transformation){
   })
 
   tukey.results <- function(transformation){
-      if (exp.design()[['exp.design']] %in% c('CRD2', 'RCBD2')) {
+      if (exp.design()[['exp.design']] %in% c('RCBD1', 'RCBD2')) {
           dep.var <- switch(transformation,
                             NoTfm = input$dependent.variable,
                             PwrTfm = paste0(input$dependent.variable, '.pow'),
@@ -1274,7 +1277,7 @@ EvalFit <- function(transformation){
           text <- paste('Only the ', ind.var.one, ' main effect is significant.')
           return(list(text=text,
                       res=lsd.results.text,
-                      plt=lsd.bar.plot, 
+                      plt=lsd.bar.plot, f=f,
                       model.fit=model.fit, dep.var=dep.var, 
                       ind.var.one = ind.var.one))
           
@@ -1292,7 +1295,7 @@ EvalFit <- function(transformation){
             text <- paste('Only the ', ind.var.two, ' main effect is significant')
             return(list(text=text,
                         res=lsd.results.text,
-                        plt=lsd.bar.plot, 
+                        plt=lsd.bar.plot, f=f,
                         model.fit=model.fit, dep.var=dep.var, 
                         ind.var.two = ind.var.two))
             
