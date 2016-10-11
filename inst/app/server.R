@@ -561,7 +561,7 @@ EvalFit <- function(transformation){
                                             inline = TRUE))
 
       n_iv_msg2 <- conditionalPanel('input.analysis_subtype == "SP"',
-                                    h4('You must use two treatments in split-plot design')) 
+                                    h4('You must use two factors in split-plot design')) 
       
       alys_subtype <- conditionalPanel('input.analysis_type == "RCBD" || input.analysis_type == "CRD"', 
                                        radioButtons('analysis_subtype', 'Select Analysis Subtype',
