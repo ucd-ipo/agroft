@@ -2,4 +2,4 @@
 ^\.Rproj\.user$
 .*~$
 .gitignore
-R/dratinit.R
+R/dratinit
