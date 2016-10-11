@@ -17,5 +17,5 @@ Imports:
   multcompView
 Description: Package for supporting the USAID agricultural data analysis training.
 License: BSD_3_clause
-URL: https://github.com/ucd-ipo/agroft
+URL: http://ucd-ipo.github.io/agroft/
 BugReports: https://github.com/ucd-ipo/agroft/issues
