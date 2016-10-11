@@ -16,7 +16,7 @@ load.data.side.panel <- sidebarPanel(
   h4('Upload your CSV file by pressing "Load data" below'),
   h5(paste('Your data should appear to the right. If ',
            'this data is correct, please move to tab ',
-           '2: "Data analysis"', sep='')),
+           '2. Experiment Setup and Assumption Tests', sep='')),
   fileInput('data_file', 'Load data'),
   h6('Code used to read in data:'),
   load.data.editor,
