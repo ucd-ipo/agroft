@@ -1,0 +1,22 @@
+name: "user_manual"
+navbar:
+  title: "Agroft User Manual"
+  left:
+    - text: "Introduction"
+      href: index.html
+    - text: "Installation"
+      href: install.html
+    - text: "Using Agroft"
+      menu:
+        - text: "Formatting and Loading Data"
+          href: tab1.html
+        - text: "Experimental Design Setup"
+          href: tab2.html
+        - text: "Checking Assumptions"
+          href: tab3.html
+        - text: "Data Analysis and Post-hoc Tests"
+          href: tab4.html
+      - text: "Additional Resources and Help"
+        href: help.html
+      - text: "Troubleshooting"
+        href: trouble.html
