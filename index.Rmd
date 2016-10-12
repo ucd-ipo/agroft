@@ -1,5 +1,5 @@
 ---
-title: "Agroft User Manual"
+title: "Agroft: Agricultural Field Trial Statistics Package User Manual"
 output:
   html_document:
     lib_dir: libs
@@ -23,7 +23,7 @@ output:
 
 # Using Agroft {#use}
 
-This section contains detailed videos that will walk you through how to use the various Agroft features available to you. 
+This section contains detailed videos that will walk you through how to use the various Agroft features available to you.
 
 ## Formatting and Loading Data {#tab1}
 
