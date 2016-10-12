@@ -1,8 +1,7 @@
 setup <- function(autostart=NULL){
 
 	if(!interactive() & is.null(autostart)) {
-		message('setup function is for interactive use')
-		return(NULL)
+		stop('setup function is for interactive use', call.=TRUE)
 	}
 
 	if (interactive() && is.null(autostart)) {
