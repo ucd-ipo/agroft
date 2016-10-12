@@ -19,6 +19,8 @@ The additional software required by Windows to run Agroft is called "Rtools" and
 
 To install Rtools, go to [https://cran.r-project.org/bin/windows/Rtools/](https://cran.r-project.org/bin/windows/Rtools/) and download the Rtools exe file that is compatible with the version of R you just installed. Double click on the Rtools.exe file after it finishes downloading to install it.
 
+Make sure to restart your computer after installing R and Rtools.
+
 ***
 
 ##### OSX
@@ -78,10 +80,12 @@ At the R prompt, Enter the first command shown below, exactly as it appears, and
 options(download.file.method = "wininet", url.method = "wininet")
 ```
 
-Now, run the command below to install Agroft. This command can take several minutes, depending on your computer and internet connection. You will know that it is complete when a new R prompt appears. A small window may open after running this command that asks you to select a "CRAN Mirror". Select the first one in the list that will be presented to you, called "0-Cloud [https]" and click "OK".
+Now, run the commands below to install Agroft. This command can take several minutes, depending on your computer and internet connection. You will know that it is complete when a new R prompt appears. A small window may open after running this command that asks you to select a "CRAN Mirror". Select the first one in the list that will be presented to you, called "0-Cloud [https]" and click "OK".
 
 ```R
-install.packages('agroft', repos = c('@CRAN@', 'https://ucd-ipo.github.io/agroft'), type='source')
+pkgs <- c("shiny", "shinyAce", "shinyBS", "knitr", "car", "yaml", "nlme","lsmeans", "multcompView")
+install.packages(pkgs, repos = 'https://cloud.r-project.org/', type = 'binary')
+install.packages('agroft', repos = c('https://ucd-ipo.github.io/agroft'), type='source')
 ```
 
 A lot of text will start popping up when this command is running. After it is done, look near the end of the output for text that says:
@@ -120,7 +124,9 @@ options(download.file.method = "libcurl", url.method = "libcurl")
 Now, run the command below to install Agroft. This command can take several minutes, depending on your computer and internet connection. You will know that it is complete when a new R prompt appears. A small window may open after running this command that asks you to select a "CRAN Mirror". Select the first one in the list that will be presented to you, called "0-Cloud [https]" and click "OK".
 
 ```R
-install.packages('agroft', repos = c('@CRAN@', 'https://ucd-ipo.github.io/agroft'), type='source')
+pkgs <- c("shiny", "shinyAce", "shinyBS", "knitr", "car", "yaml", "nlme","lsmeans", "multcompView")
+install.packages(pkgs, repos = 'https://cloud.r-project.org/', type = 'binary')
+install.packages('agroft', repos = c('https://ucd-ipo.github.io/agroft'), type='source')
 ```
 
 A lot of text will start popping up when this command is running. After it is done, look near the end of the output for text that says:
