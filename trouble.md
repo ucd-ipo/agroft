@@ -3,7 +3,7 @@ title: "Troubleshooting"
 output: html_document
 ---
 
-#### Agroft Wont Install {#trouble-install}
+#### Installing Agroft {#trouble-install}
 
 If you are still having trouble installing Agroft, open a fresh R session and run the following code.
 

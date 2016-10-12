@@ -113,7 +113,7 @@ Warning message:
 package "agroft" is not available (for R version x.y.z)
 ```
 
-then Agroft was not installed. Check to make sure you installed Rtools correctly and your R version is greater than or equal to 3.2.0. If not, install Rtools correctly and then try the instructions listed under the tab "For  R <3.2.0".
+then Agroft was not installed. Check to make sure R is installed in a directory with no spaces in th path name, you installed Rtools correctly and your R version is greater than or equal to 3.2.0. If not, fix the issue and try again. If that still fails, try the instructions listed under the tab "For  R <3.2.0".
 
 ***
 
@@ -181,9 +181,9 @@ Warning in install.packages :
   installation of package 'devtools' had non-zero exit status
 ```
 
-Then check to make sure Rtools or Xcode developer tools was installed correctly and try again.
+Then check to make sure Rtools (Windows) or Xcode developer tools (OSX) was installed correctly and try again.
 
-Once that works, you are ready to install Agroft. Run the following command and wait for it to complete. This may take a couple minutes. You will know it is done when a new R prompt appears.
+Once devtools in installed, you are ready to install Agroft. Run the following command and wait for it to complete. This may take a couple minutes. You will know it is done when a new R prompt appears.
 
 ```R
 devtools::install_github('ucd-ipo/agroft')

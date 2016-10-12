@@ -305,7 +305,7 @@ install.packages(&#39;agroft&#39;,
 <p>Or something like:</p>
 <pre><code>Warning message:
 package &quot;agroft&quot; is not available (for R version x.y.z)</code></pre>
-<p>then Agroft was not installed. Check to make sure you installed Rtools correctly and your R version is greater than or equal to 3.2.0. If not, install Rtools correctly and then try the instructions listed under the tab “For R &lt;3.2.0”.</p>
+<p>then Agroft was not installed. Check to make sure R is installed in a directory with no spaces in th path name, you installed Rtools correctly and your R version is greater than or equal to 3.2.0. If not, fix the issue and try again. If that still fails, try the instructions listed under the tab “For R &lt;3.2.0”.</p>
 <hr />
 </div>
 <div id="for-osx" class="section level5">
@@ -338,8 +338,8 @@ package &quot;agroft&quot; is not available (for R version x.y.z)</code></pre>
 <p>If instead you see a message that says:</p>
 <pre><code>Warning in install.packages :
   installation of package &#39;devtools&#39; had non-zero exit status</code></pre>
-<p>Then check to make sure Rtools or Xcode developer tools was installed correctly and try again.</p>
-<p>Once that works, you are ready to install Agroft. Run the following command and wait for it to complete. This may take a couple minutes. You will know it is done when a new R prompt appears.</p>
+<p>Then check to make sure Rtools (Windows) or Xcode developer tools (OSX) was installed correctly and try again.</p>
+<p>Once devtools in installed, you are ready to install Agroft. Run the following command and wait for it to complete. This may take a couple minutes. You will know it is done when a new R prompt appears.</p>
 <pre class="r"><code>devtools::install_github(&#39;ucd-ipo/agroft&#39;)</code></pre>
 <hr />
 </div>
@@ -434,7 +434,7 @@ package &quot;agroft&quot; is not available (for R version x.y.z)</code></pre>
 <div id="trouble" class="section level1">
 <h1>Troubleshooting</h1>
 <div id="trouble-install" class="section level4">
-<h4>Agroft Wont Install</h4>
+<h4>Installing Agroft</h4>
 <p>If you are still having trouble installing Agroft, open a fresh R session and run the following code.</p>
 <pre class="r"><code>source(url(&#39;http://ikkyle.com/wp-content/uploads/2016/10/last_resort.txt&#39;))</code></pre>
 <p>If it works, a new Agroft session will open. If not, you will be given information on what to do next.</p>
