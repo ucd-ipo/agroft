@@ -238,6 +238,7 @@ div.tocify {
 <div id="installing-r" class="section level3">
 <h3>Installing R</h3>
 <p>Since Agroft is based on the powerful R language, you must first download and install R on your computer. R is available for all popular operating systems. Go to <a href="https://cran.r-project.org/" class="uri">https://cran.r-project.org/</a> and click the link that says “Download R for &lt;your system&gt;” that corresponds to your operating system. Follow the instructions provided to download the R installer. Once downloaded, run the file to begin the installation process.</p>
+<p><strong>Very Important:</strong> <em>Windows</em> can sometimes run into issues when it is installed into a file path that has spaces in it, such as the default install locations “Program Files”. <em>If you are on Windows</em>, when the R installer asks for the install location, <strong>change it to either <code>C:\</code> or <code>C:\Users\&lt;your-username&gt;</code></strong> (where <your-username> is replaced with your username on that computer). <strong>Agroft will not work if you don’t do this</strong>.</p>
 <p>If you already have an older version of R installed on your computer, you may not have to install a new version, but using an old version may complicate the installation of Agroft. Your version of R should be at least version 3.0.0. If your existing R version is less than that, you will need to upgrade to the latest version.</p>
 <p><strong>Important:</strong> Windows and OSX users will need to first install additional software before installing Agroft. See the tab below for your operating system for more information.</p>
 <div id="additional-software" class="section level4 tabset">
@@ -292,7 +293,9 @@ Type &#39;q()&#39; to quit R.</code></pre>
 <p>Now, run the commands below to install Agroft. This command can take several minutes, depending on your computer and internet connection. You will know that it is complete when a new R prompt appears. A small window may open after running this command that asks you to select a “CRAN Mirror”. Select the first one in the list that will be presented to you, called “0-Cloud [https]” and click “OK”.</p>
 <pre class="r"><code>pkgs &lt;- c(&quot;shiny&quot;, &quot;shinyAce&quot;, &quot;shinyBS&quot;, &quot;knitr&quot;, &quot;car&quot;, &quot;yaml&quot;, &quot;nlme&quot;,&quot;lsmeans&quot;, &quot;multcompView&quot;)
 install.packages(pkgs, repos = &#39;https://cloud.r-project.org/&#39;, type = &#39;binary&#39;)
-install.packages(&#39;agroft&#39;, repos = c(&#39;https://ucd-ipo.github.io/agroft&#39;), type=&#39;source&#39;)</code></pre>
+install.packages(&#39;agroft&#39;,
+    repos = &#39;https://ucd-ipo.github.io/agroft&#39;,
+    type=&#39;source&#39;)</code></pre>
 <p>A lot of text will start popping up when this command is running. After it is done, look near the end of the output for text that says:</p>
 <pre><code>** testing if installed package can be loaded
 * DONE (agroft)</code></pre>
