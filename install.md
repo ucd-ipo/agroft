@@ -105,7 +105,7 @@ Warning message:
 package "agroft" is not available (for R version x.y.z)
 ```
 
-then Agroft was not installed. Check to make sure you installed Rtools correctly and your R version is greater than or equal to 3.2.0. If not, install Rtools and then try the instructions listed under the tab "For  R <3.2.0".
+then Agroft was not installed. Check to make sure you installed Rtools correctly and your R version is greater than or equal to 3.2.0. If not, install Rtools correctly and then try the instructions listed under the tab "For  R <3.2.0".
 
 ***
 
@@ -144,7 +144,7 @@ Warning message:
 package "agroft" is not available (for R version x.y.z)
 ```
 
-then Agroft was not installed. Check to make sure your R version is greater than or equal to 3.2.0 and that you have correctly installed Xcode Command line Developer Tools. If not, try the instructions listed under the tab "[For  R <3.2.0](#install-old)" after Xcode Command line tools have been installed.
+then Agroft was not installed. Check to make sure your R version is greater than or equal to 3.2.0 and that you have correctly installed Xcode Command line Developer Tools. If not, try the instructions listed under the tab "For  R <3.2.0" after Xcode Command line tools have been installed.
 
 ***
 
