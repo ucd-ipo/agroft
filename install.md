@@ -130,7 +130,7 @@ Now, run the command below to install Agroft. This command can take several minu
 ```R
 pkgs <- c("shiny", "shinyAce", "shinyBS", "knitr", "car", "yaml", "nlme","lsmeans", "multcompView")
 install.packages(pkgs, repos = 'https://cloud.r-project.org/', type = 'binary')
-install.packages('agroft', repos = c('https://ucd-ipo.github.io/agroft'), type='source')
+install.packages('agroft', repos = 'https://ucd-ipo.github.io/agroft', type='source')
 ```
 
 A lot of text will start popping up when this command is running. After it is done, look near the end of the output for text that says:
