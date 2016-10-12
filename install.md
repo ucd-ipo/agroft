@@ -5,7 +5,7 @@ output: html_document
 
 ### Installing R
 
-Since Agroft is based on the powerful R language, you must first download and install R on your computer. R is available for all popular operating systems. Go to [https://cran.r-project.org/](https://cran.r-project.org/) and click the link that says "Download R for \<your system\>" that corresponds to your operating system. Follow the instructions provided to download the R installer.  Once downloaded, run the file to begin the installation process.
+Since Agroft is based on the powerful R language, you must first download and install R on your computer. R is available for all popular operating systems. Click [here for Windows](https://cran.r-project.org/bin/windows/base/) or click [here for OSX](https://cran.r-project.org/bin/macosx/). Follow the instructions provided to download the correct R installer.  Once downloaded, run the file to begin the installation process.
 
 **Very Important:** Windows can sometimes run into issues when it is installed into a file path that has spaces in it, such as the default install location "`C:\Program Files\`". *If you are on Windows*, when the R installer asks for the install location, **change it to either `C:\` or `C:\Users\<your-username>`** (where `<your-username>` is replaced with your username on your computer). **Agroft will not work on Windows unless you do this**.
 
