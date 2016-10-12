@@ -7,7 +7,7 @@ output: html_document
 
 Since Agroft is based on the powerful R language, you must first download and install R on your computer. R is available for all popular operating systems. Go to [https://cran.r-project.org/](https://cran.r-project.org/) and click the link that says "Download R for \<your operating system\>" that corresponds to your operating system. 
 
-**Important:** Windows users will also need to install a program called "Rtools" or Agroft won't work. Go to [https://cran.r-project.org/bin/windows/Rtools/](https://cran.r-project.org/bin/windows/Rtools/) and download the Rtools exe file that is compatible with the version of R you just installed. After you have installed R, install Rtools. 
+**Important:** Windows users will also need to install a program called "Rtools" and OSX users will need to enable x-code developer tools. Go to [https://cran.r-project.org/bin/windows/Rtools/](https://cran.r-project.org/bin/windows/Rtools/) and download the Rtools exe file that is compatible with the version of R you just installed. After you have installed R, install Rtools. 
 
 If you already have an older version of R installed on your computer, you may not have to install a new version. Your version of R should be at least version 3.0.0. If your existing R version is less than that, you will need to upgrade to the latest version. 
 
