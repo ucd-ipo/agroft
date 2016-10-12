@@ -103,7 +103,7 @@ Warning in install.packages :
 ```
 
 Or something like:
-#### Github Issues Page
+
 ```
 Warning message:
 package "agroft" is not available (for R version x.y.z)
