@@ -23,6 +23,8 @@ output:
 
 # Using Agroft {#use}
 
+This section contains detailed videos that will walk you through how to use the various Agroft features available to you. 
+
 ## Formatting and Loading Data {#tab1}
 
 ```{r child='tab1.md'}
