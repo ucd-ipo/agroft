@@ -1,6 +1,6 @@
 ---
 title: "Agroft User Manual"
-output: 
+output:
   html_document:
     lib_dir: libs
     self_contained: no
@@ -11,45 +11,44 @@ output:
       smooth_scroll: yes
 ---
 
-
-# Introduction
+# Introduction {#intro}
 
 ```{r child='intro.md'}
 ```
 
-# Installation
+# Installation {#install}
 
 ```{r child='install.md'}
 ```
 
-# Using Agroft
+# Using Agroft {#use}
 
-## Formatting and Loading Data
+## Formatting and Loading Data {#tab1}
 
 ```{r child='tab1.md'}
 ```
 
-## Experimental Design Setup
+## Experimental Design Setup {#tab2}
 
 ```{r child='tab2.md'}
 ```
 
-## Checking Assumptions
+## Checking Assumptions {#tab3}
 
 ```{r child='tab3.md'}
 ```
 
-## Data Analysis and Post-hoc Tests
+## Data Analysis and Post-hoc Tests {#tab4}
 
 ```{r child='tab4.md'}
 ```
 
-# Additional Resources and Help
+# Additional Resources and Help {#help}
 
 ```{r child='help.md'}
 ```
 
-# Troubleshooting
+# Troubleshooting {#trouble}
 
 ```{r child='trouble.md'}
 ```

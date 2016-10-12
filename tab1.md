@@ -3,4 +3,4 @@ title: "Formatting and Loading Data"
 output: html_document
 ---
 
-to do.
+<iframe width="560" height="315" src="https://www.youtube.com/embed/NpEaa2P7qZI" frameborder="0" allowfullscreen></iframe>

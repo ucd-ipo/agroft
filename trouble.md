@@ -3,4 +3,7 @@ title: "Troubleshooting"
 output: html_document
 ---
 
-to do.
+#### Agroft wont install {#trouble-install}
+
+
+#### Reporting Bugs and Issues

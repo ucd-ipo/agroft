@@ -225,27 +225,43 @@ div.tocify {
 </div>
 
 
-<div id="introduction" class="section level1">
+<div id="intro" class="section level1">
 <h1>Introduction</h1>
 <p>Agroft is a free software tool designed to help agricultural researchers running field trials analyze the data they collect. It uses a powerful, free, but complicated scientific programming language called “R” to run all the analyses, but is packaged into an easy to use interface.</p>
-<p>Take some time to watch the video below. It will quickly walk you through the main features of Agroft so you have an idea of how to use it and what it can do for you. More detailed information on how to use the specific features of this software are available in the “Using Agroft” section of this webpage.</p>
-<iframe width="560" height="315" src="https://www.youtube.com/embed/mL27TAJGlWc?list=PL9FE4E32D5F2AA0BA" frameborder="0" allowfullscreen>
+<p>Take some time to watch the video below. It will quickly walk you through the main features of Agroft so you have an idea of how to use it and what it can do for you. More detailed information on how to use the specific features of this software are available in the <a href="#use">Using Agroft</a> section of this webpage.</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/NpEaa2P7qZI" frameborder="0" allowfullscreen>
 </iframe>
-<p>(placeholder, for now)</p>
-<p>Agroft is cross-platform software. It can run on Windows, OSX, and Linux platforms. To run Agroft, you will need to first install R and, if you use Windows, a helper program called Rtools. See the next section, “Installation”, for more information on this.</p>
+<p>Agroft is cross-platform software. It can run on Windows, Mac OSX, and Linux platforms. To run Agroft, you will need to first install R and, if you use Windows, a helper program called “Rtools” or if you use OSX, Xcode Command Line Tools. See the next section for more information on this.</p>
 </div>
-<div id="installation" class="section level1">
+<div id="install" class="section level1">
 <h1>Installation</h1>
 <div id="installing-r" class="section level3">
 <h3>Installing R</h3>
-<p>Since Agroft is based on the powerful R language, you must first download and install R on your computer. R is available for all popular operating systems. Go to <a href="https://cran.r-project.org/" class="uri">https://cran.r-project.org/</a> and click the link that says “Download R for &lt;your operating system&gt;” that corresponds to your operating system.</p>
-<p><strong>Important:</strong> Windows users will also need to install a program called “Rtools” and OSX users will need to enable x-code developer tools. Go to <a href="https://cran.r-project.org/bin/windows/Rtools/" class="uri">https://cran.r-project.org/bin/windows/Rtools/</a> and download the Rtools exe file that is compatible with the version of R you just installed. After you have installed R, install Rtools.</p>
-<p>If you already have an older version of R installed on your computer, you may not have to install a new version. Your version of R should be at least version 3.0.0. If your existing R version is less than that, you will need to upgrade to the latest version.</p>
+<p>Since Agroft is based on the powerful R language, you must first download and install R on your computer. R is available for all popular operating systems. Go to <a href="https://cran.r-project.org/" class="uri">https://cran.r-project.org/</a> and click the link that says “Download R for &lt;your system&gt;” that corresponds to your operating system. Follow the instructions provided to download the R installer. Once downloaded, run the file to begin the installation process.</p>
+<p>If you already have an older version of R installed on your computer, you may not have to install a new version, but using an old version may complicate the installation of Agroft. Your version of R should be at least version 3.0.0. If your existing R version is less than that, you will need to upgrade to the latest version.</p>
+<p><strong>Important:</strong> Windows and OSX users will need to first install additional software before installing Agroft. See the tab below for your operating system for more information.</p>
+<div id="additional-software" class="section level4 tabset">
+<h4>Additional Software</h4>
+<div id="windows" class="section level5">
+<h5>Windows</h5>
+<p>The additional software required by Windows to run Agroft is called “Rtools” and is made by the same developers who created R. It gives your computer the extra tools it needs to run specific code.</p>
+<p>To install Rtools, go to <a href="https://cran.r-project.org/bin/windows/Rtools/" class="uri">https://cran.r-project.org/bin/windows/Rtools/</a> and download the Rtools exe file that is compatible with the version of R you just installed. Double click on the Rtools.exe file after it finishes downloading to install it.</p>
+<hr />
+</div>
+<div id="osx" class="section level5">
+<h5>OSX</h5>
+<p>The additional software required by OSX to run Agroft, “Xcode Command Line Tools” is made and distributed by Apple. If you are running OSX 10.9 or higher, open a terminal and execute the following command:</p>
+<pre><code>xcode-select --install</code></pre>
+<p>Follow the instructions on your screen as they appear to install Xcode command line tools.</p>
+<p>See <a href="http://stackoverflow.com/a/9329325" class="uri">http://stackoverflow.com/a/9329325</a> for more information on this.</p>
+<hr />
+</div>
+</div>
 </div>
 <div id="installing-agroft" class="section level3">
 <h3>Installing Agroft</h3>
-<p>Once R and, if you use Windows, Rtools, have been installed, you are ready to install Agroft.</p>
-<p>Start by opening the R application. A window will open and some text will appear that looks like the following:</p>
+<p>Once R and your operating system-specific software have been installed, you are ready to install Agroft.</p>
+<p>Start by opening the R application. A window will open and some text will appear that will look similar to the following:</p>
 <pre><code>R version 3.3.1 (2016-06-21) -- &quot;Bug in Your Hair&quot;
 Copyright (C) 2016 The R Foundation for Statistical Computing
 Platform: x86_64-pc-linux-gnu (64-bit)
@@ -263,9 +279,9 @@ Type &#39;contributors()&#39; for more information and
 Type &#39;demo()&#39; for some demos, &#39;help()&#39; for on-line help, or
 &#39;help.start()&#39; for an HTML browser interface to help.
 Type &#39;q()&#39; to quit R.</code></pre>
-<p>Under that text will be the “R prompt”, which is a single “greater-than-symbol” (looks like “&gt;”). To interact with R, the user types special commands at that prompt that tell R to do different things. R is very powerful, but can also be difficult to learn. Agroft allows you to use R’s abilities without have to learn any programming, but you will have to enter a few commands to get Agroft working first.</p>
+<p>Under that text will be the “R prompt”, which is a single “greater-than-symbol” (looks like <code>&gt;</code>). To interact with R, the user types special commands at that prompt that tell R to do different things. R is very powerful, but can also be difficult to learn. Agroft allows you to use R’s abilities without having to learn any programming. Despite this, you will have to enter a few simple commands to get Agroft working.</p>
 <p>The commands are slightly different for Windows and OSX, so make sure to enter the commands for your operating system.</p>
-<p><strong>Important:</strong> If your version of R is less than 3.2.0 because you already had R installed and chose to not upgrade, look at the instructions on the tab called “For R &lt;3.2.0”, regardless of your operating system.</p>
+<p><strong>Important:</strong> If your version of R is less than 3.2.0 because you already have R installed and choose to not upgrade, look at the instructions on the tab called “For R &lt;3.2.0”, regardless of your operating system.</p>
 <div id="code" class="section level4 tabset">
 <h4>Code</h4>
 <div id="for-windows" class="section level5">
@@ -282,7 +298,7 @@ Type &#39;q()&#39; to quit R.</code></pre>
   installation of package &#39;agroft&#39; had non-zero exit status</code></pre>
 <p>Or something like:</p>
 <pre><code>Warning message:
-package &quot;agroft&quot; is not available (for R version x.y.z) </code></pre>
+package &quot;agroft&quot; is not available (for R version x.y.z)</code></pre>
 <p>then Agroft was not installed. Check to make sure you installed Rtools correctly and your R version is greater than or equal to 3.2.0. If not, install Rtools and then try the instructions listed under the tab “For R &lt;3.2.0”.</p>
 <hr />
 </div>
@@ -300,13 +316,13 @@ package &quot;agroft&quot; is not available (for R version x.y.z) </code></pre>
   installation of package &#39;agroft&#39; had non-zero exit status</code></pre>
 <p>Or something like:</p>
 <pre><code>Warning message:
-package &quot;agroft&quot; is not available (for R version x.y.z) </code></pre>
-<p>then Agroft was not installed. Check to make sure your R version greater than or equal to 3.2.0. If not, try the instructions listed under the tab “For R &lt;3.2.0”.</p>
+package &quot;agroft&quot; is not available (for R version x.y.z)</code></pre>
+<p>then Agroft was not installed. Check to make sure your R version is greater than or equal to 3.2.0 and that you have correctly installed Xcode Command line Developer Tools. If not, try the instructions listed under the tab “<a href="#install-old">For R &lt;3.2.0</a>” after Xcode Command line tools have been installed.</p>
 <hr />
 </div>
-<div id="for-r-3.2.0" class="section level5">
+<div id="install-old" class="section level5">
 <h5>For R &lt;3.2.0</h5>
-<p>At the R prompt, Enter the first command shown below, exactly as it appears, and press enter. The command can take a couple minutes, and a new prompt should appear directly below the old one once it is done.</p>
+<p>At the R prompt, Enter the first command shown below, exactly as it appears, and press enter. The command will take a couple minutes, and a new prompt should appear directly below the old one once it is done.</p>
 <pre class="r"><code>install.packages(&#39;devtools&#39;, repos = &#39;http://cran.r-project.org&#39;)</code></pre>
 <p>A lot of text will start popping up when this command is running. After it is done, look near the end of the output for text that says:</p>
 <pre><code>** testing if installed package can be loaded
@@ -314,14 +330,18 @@ package &quot;agroft&quot; is not available (for R version x.y.z) </code></pre>
 <p>If instead you see a message that says:</p>
 <pre><code>Warning in install.packages :
   installation of package &#39;devtools&#39; had non-zero exit status</code></pre>
-<p>Then check to make sure Rtools was installed correctly (if you use Windows) and try again.</p>
+<p>Then check to make sure Rtools or Xcode developer tools was installed correctly and try again.</p>
 <p>Once that works, you are ready to install Agroft. Run the following command and wait for it to complete. This may take a couple minutes. You will know it is done when a new R prompt appears.</p>
 <pre class="r"><code>devtools::install_github(&#39;ucd-ipo/agroft&#39;)</code></pre>
 <hr />
 </div>
 </div>
-<div id="starting-agroft" class="section level4">
-<h4>Starting Agroft</h4>
+<div id="issues" class="section level4">
+<h4>Issues</h4>
+<p>If you still can’t get Agroft installed, see the section on installing Agroft in <a href="#trouble-install">Troubleshooting</a>.</p>
+</div>
+<div id="launching-agroft" class="section level4">
+<h4>Launching Agroft</h4>
 <p>With Agroft successfully installed, you are ready to launch your first Agroft session.</p>
 <p>Every time you start a new R session, you will also need to load Agroft in order to use it. Do this by running the command below.</p>
 <pre class="r"><code>library(agroft)</code></pre>
@@ -330,34 +350,53 @@ package &quot;agroft&quot; is not available (for R version x.y.z) </code></pre>
 <pre class="r"><code>launch()</code></pre>
 <p>If you want to quit R, close the R program. This will also close any active Agroft session you are running at that time.</p>
 </div>
+<div id="automatically-starting-agroft" class="section level4">
+<h4>Automatically Starting Agroft</h4>
+<p>If you will only be using R to run Agroft, you can tell R to automatically load Agroft and start an Agroft session when you open the R application. You can do this using the <code>setup</code> function in Agroft.</p>
+<p>Run the following command to begin this process:</p>
+<pre class="r"><code>agroft::setup()</code></pre>
+<p>Some information about automatically starting Agroft will be printed on the screen and you will be asked “Do you want Agroft to open automatically when you start R?”</p>
+<p>Type “yes”, “no”, or “cancel” and press Enter. If you chose “yes”, the next time you open R, an Agroft session will start automatically.</p>
+<p>If at anytime you change your mind, you can re-run <code>agroft::setup()</code>, and change your answer. The next time you start R, your new decision will go into effect and will remain in effect until you change it again.</p>
 </div>
 </div>
-<div id="using-agroft" class="section level1">
+</div>
+<div id="use" class="section level1">
 <h1>Using Agroft</h1>
-<div id="formatting-and-loading-data" class="section level2">
+<div id="tab1" class="section level2">
 <h2>Formatting and Loading Data</h2>
-<p>to do.</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/NpEaa2P7qZI" frameborder="0" allowfullscreen>
+</iframe>
 </div>
-<div id="experimental-design-setup" class="section level2">
+<div id="tab2" class="section level2">
 <h2>Experimental Design Setup</h2>
-<p>to do.</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/NpEaa2P7qZI" frameborder="0" allowfullscreen>
+</iframe>
 </div>
-<div id="checking-assumptions" class="section level2">
+<div id="tab3" class="section level2">
 <h2>Checking Assumptions</h2>
-<p>to do.</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/NpEaa2P7qZI" frameborder="0" allowfullscreen>
+</iframe>
 </div>
-<div id="data-analysis-and-post-hoc-tests" class="section level2">
+<div id="tab4" class="section level2">
 <h2>Data Analysis and Post-hoc Tests</h2>
-<p>to do.</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/NpEaa2P7qZI" frameborder="0" allowfullscreen>
+</iframe>
 </div>
 </div>
-<div id="additional-resources-and-help" class="section level1">
+<div id="help" class="section level1">
 <h1>Additional Resources and Help</h1>
-<p>to do.</p>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/NpEaa2P7qZI" frameborder="0" allowfullscreen>
+</iframe>
 </div>
-<div id="troubleshooting" class="section level1">
+<div id="trouble" class="section level1">
 <h1>Troubleshooting</h1>
-<p>to do.</p>
+<div id="trouble-install" class="section level4">
+<h4>Agroft wont install</h4>
+</div>
+<div id="reporting-bugs-and-issues" class="section level4">
+<h4>Reporting Bugs and Issues</h4>
+</div>
 </div>
 
 
