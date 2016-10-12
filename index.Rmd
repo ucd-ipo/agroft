@@ -2,12 +2,13 @@
 title: "Agroft User Manual"
 output: 
   html_document:
-    toc: true
-    toc_float:
-      collapsed: false
-      smooth_scroll: true
-    self_contained: false
     lib_dir: libs
+    self_contained: no
+    toc: yes
+    toc_depth: 2
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
 ---
 
 
