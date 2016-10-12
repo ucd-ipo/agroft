@@ -1,0 +1,28 @@
+##### 1. Introduction video
+##### 2. Formatting and Loading Data
+
+In order to use Agroft to analyze the data you have collected, you'll need to load it into the app during an Agroft session. The first page you see when you launch an Agroft session is the "Load Data" page.  On this page you can browse your computer for data files, choose one, load it into your Agroft session, and view it. This page also include the option to easily view and use preloaded example data, which is useful both when learning how to use the Agroft interface, and in learning how your data will need to be structured in order to analyze it properly.
+
+Every person's data is different. But in order for Agroft to understand and analyze a wide variety of data, the structure and format of the data that goes into Agroft must be standardized.
+
+First, your data must be a csv file. CSV, which stands for Comma Separated Values, is a common file specification that used to store matrix-like data. CSV files are just plain text files, but they must conform a set of guidelines for what can and cannot be in them.
+
+These guidelines vary depending on the application. For Agroft, we have <N> specific guidelines that are important to follow so that the data can be loaded and analyzed correctly. I will list them all, then go though each one individually in more detail.
+
+These guidelines are:
+
+First:  Your data must be matrix-like
+Second: Your data must have a header row
+Third:  Your data must use commas as the delimiter
+Fourth: Your data must use periods as a decimal separator
+
+Further, It is suggested, but not required, that you use double quotes to distinguish character data.
+
+The first guideline, matrix-like, means your data must look like a two dimensionl matrix.
+
+
+
+
+##### 3. Experimental Design Setup
+##### 4. Checking Assumptions
+##### 5. Data Analysis and Post-hoc Tests
