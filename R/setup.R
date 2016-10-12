@@ -1,4 +1,12 @@
-setup <- function(){
+setup <- function(autostart=NULL){
+
+	if(!interactive() & is.null(autostart)) {
+		message('setup function is for interactive use')
+		return(NULL)
+	}
+
+	if (interactive() && is.null(autostart)) {
+
   cat('\nBegining Agroft Analysis app setup...\n')
   Sys.sleep(.5)
   cat('\nYou can have an Agroft session start automatically when you open R.')
@@ -9,6 +17,7 @@ setup <- function(){
   cat('Do you want Agroft to open automatically when you start R?\n')
 
   autostart <- readline(prompt = 'Type "yes", "no", or "cancel": ')
+	}
 
   code <- 'local({old <- getOption("defaultPackages"); options(defaultPackages = c(old, "agroft"))})'
 
@@ -47,13 +56,13 @@ setup <- function(){
   	y <- FALSE
   }
 
-  n1 <- 'An Agroft session will no-longer automatically start when R starts'
+  n1 <- 'An Agroft session will no longer automatically start when R starts'
   n2 <- 'An Agroft session will not start automatically when R starts'
   y1 <- 'An Agroft session will now run start automatically when you start R'
   c1 <- 'Action cancelled'
 
   msg <- if (exists('y', inherits=FALSE)) {if (y) y1 else if (red) n1 else n2} else c1
-  cat('\n', msg)
+  message(msg)
 }
 
 
