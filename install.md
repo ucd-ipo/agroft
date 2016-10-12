@@ -84,6 +84,7 @@ package "agroft" is not available (for R version x.y.z)
 
 then Agroft was not installed. Check to make sure you installed Rtools correctly and your R version is greater than or equal to 3.2.0. If not, install Rtools and then try the instructions listed under the tab "For  R <3.2.0".
 
+***
 
 ##### For OSX
 
@@ -122,6 +123,8 @@ package "agroft" is not available (for R version x.y.z)
 
 then Agroft was not installed. Check to make sure your R version greater than or equal to 3.2.0. If not, try the instructions listed under the tab "For  R <3.2.0".
 
+***
+
 ##### For  R <3.2.0
 
 At the R prompt, Enter the first command shown below, exactly as it appears, and press enter. The command can take a couple minutes, and a new prompt should appear directly below the old one once it is done. 
@@ -152,7 +155,9 @@ Once that works, you are ready to install Agroft. Run the following command and 
 ```R
 devtools::install_github('ucd-ipo/agroft')
 ```
---------------------
+
+***
+
 #### Starting Agroft
 
 With Agroft successfully installed, you are ready to launch your first Agroft session. 
