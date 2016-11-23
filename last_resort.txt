@@ -1,7 +1,7 @@
 r <- 'http://cloud.r-project.org/'
 pkgs <- c("shiny", "shinyAce", "shinyBS", "knitr", "car", "yaml", "nlme",
 					"lsmeans", "multcompView", 'ghit')
-install.packages(pkgs, repos = r, type = 'source')
+install.packages(pkgs, repos = r, type = 'binary')
 ghit::install_github('ucd-ipo/agroft')
 
 if(!require(agroft)) {
